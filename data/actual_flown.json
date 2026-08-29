@@ -1,0 +1,526 @@
+{
+  "PHDWA": [
+    {
+      "date": "2026-07-24",
+      "from": "LFMN",
+      "to": "LECO",
+      "mission_hint": "M018"
+    },
+    {
+      "date": "2026-07-24",
+      "from": "LECO",
+      "to": "LHBP",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-26",
+      "from": "LHBP",
+      "to": "EGGW",
+      "mission_hint": "M019_or_M009"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EGGW",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-27",
+      "from": "EBLG",
+      "to": "LCLK",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-28",
+      "from": "LCLK",
+      "to": "LIRF",
+      "mission_hint": "M020"
+    },
+    {
+      "date": "2026-07-28",
+      "from": "LIRF",
+      "to": "LHBP",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-29",
+      "from": "LHBP",
+      "to": "LGAV",
+      "mission_hint": "M021"
+    },
+    {
+      "date": "2026-07-29",
+      "from": "LGAV",
+      "to": "LBSF",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-30",
+      "from": "LBSF",
+      "to": "LGAV",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LGAV",
+      "to": "LHBP",
+      "mission_hint": "M022"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LHBP",
+      "to": "EDDH",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-31",
+      "from": "EDDH",
+      "to": "EFTP",
+      "mission_hint": "M023"
+    },
+    {
+      "date": "2026-08-02",
+      "from": "EFTP",
+      "to": "EBAW",
+      "mission_hint": "M025"
+    },
+    {
+      "date": "2026-08-03",
+      "from": "EBAW",
+      "to": "LATI",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-03",
+      "from": "LATI",
+      "to": "EIDW",
+      "mission_hint": "M028"
+    },
+    {
+      "date": "2026-08-05",
+      "from": "EIDW",
+      "to": "LATI",
+      "mission_hint": "M035"
+    },
+    {
+      "date": "2026-08-05",
+      "from": "LATI",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EBLG",
+      "to": "EYSA",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EYSA",
+      "to": "ETNG",
+      "mission_hint": "M044"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "ETNG",
+      "to": "EGKB",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-08",
+      "from": "EGKB",
+      "to": "LFRG",
+      "mission_hint": "M045"
+    },
+    {
+      "date": "2026-08-11",
+      "from": "LFRG",
+      "to": "EGKB",
+      "mission_hint": "M051"
+    }
+  ],
+  "PHDWC": [
+    {
+      "date": "2026-07-24",
+      "from": "EBAW",
+      "to": "LEIB",
+      "mission_hint": "M001"
+    },
+    {
+      "date": "2026-07-24",
+      "from": "LEIB",
+      "to": "EBAW",
+      "mission_hint": "M002"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EBAW",
+      "to": "LHBP",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-26",
+      "from": "LHBP",
+      "to": "EGTC",
+      "mission_hint": "M007"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EGTC",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-27",
+      "from": "EBLG",
+      "to": "EBAW",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-27",
+      "from": "EBAW",
+      "to": "LEIB",
+      "mission_hint": "M003"
+    },
+    {
+      "date": "2026-07-27",
+      "from": "LEIB",
+      "to": "EBAW",
+      "mission_hint": "M004"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "EBAW",
+      "to": "LEIB",
+      "mission_hint": "M005"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LEIB",
+      "to": "EBAW",
+      "mission_hint": "M006"
+    },
+    {
+      "date": "2026-08-01",
+      "from": "EBAW",
+      "to": "EGGW",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-01",
+      "from": "EGGW",
+      "to": "EDDC",
+      "mission_hint": "M024"
+    },
+    {
+      "date": "2026-08-03",
+      "from": "EDDC",
+      "to": "LDPL",
+      "mission_hint": "M029"
+    },
+    {
+      "date": "2026-08-05",
+      "from": "LDPL",
+      "to": "LCLK",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-05",
+      "from": "LCLK",
+      "to": "LRCL",
+      "mission_hint": "M033"
+    },
+    {
+      "date": "2026-08-05",
+      "from": "LRCL",
+      "to": "LDPL",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-06",
+      "from": "LDPL",
+      "to": "LYBE",
+      "mission_hint": "M036"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "LYBE",
+      "to": "EGMC",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EGMC",
+      "to": "LIRI",
+      "mission_hint": "M042"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "LIRI",
+      "to": "LYBE",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-08",
+      "from": "LYBE",
+      "to": "LRBS",
+      "mission_hint": "M048"
+    },
+    {
+      "date": "2026-08-08",
+      "from": "LRBS",
+      "to": "LIRI",
+      "mission_hint": null
+    }
+  ],
+  "PHDWP": [
+    {
+      "date": "2026-07-24",
+      "from": "LDRI",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-24",
+      "from": "EBLG",
+      "to": "EGAE",
+      "mission_hint": "M008"
+    },
+    {
+      "date": "2026-07-24",
+      "from": "EGAE",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EBLG",
+      "to": "LHBP",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-26",
+      "from": "LHBP",
+      "to": "EGGW",
+      "mission_hint": "M009_or_M019"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EGGW",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-29",
+      "from": "EBLG",
+      "to": "EDDM",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-30",
+      "from": "EDDM",
+      "to": "LHBP",
+      "mission_hint": "M010"
+    },
+    {
+      "date": "2026-07-30",
+      "from": "LHBP",
+      "to": "LGAV",
+      "mission_hint": "M011"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LGAV",
+      "to": "LUKK",
+      "mission_hint": "M012"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LUKK",
+      "to": "EDDM",
+      "mission_hint": "M013"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "EDDM",
+      "to": "EBAW",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-03",
+      "from": "EBAW",
+      "to": "LEIB",
+      "mission_hint": "M027"
+    },
+    {
+      "date": "2026-08-03",
+      "from": "LEIB",
+      "to": "EBAW",
+      "mission_hint": "M030"
+    },
+    {
+      "date": "2026-08-04",
+      "from": "EBAW",
+      "to": "LWSK",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-05",
+      "from": "LWSK",
+      "to": "EBLG",
+      "mission_hint": "M032"
+    },
+    {
+      "date": "2026-08-05",
+      "from": "EBLG",
+      "to": "EGPH",
+      "mission_hint": "M034"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EGPH",
+      "to": "EBLG",
+      "mission_hint": "M038"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EBLG",
+      "to": "LWSK",
+      "mission_hint": "M039"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "LWSK",
+      "to": "LKPR",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-07",
+      "from": "LKPR",
+      "to": "EBKT",
+      "mission_hint": "M041"
+    },
+    {
+      "date": "2026-08-08",
+      "from": "EBKT",
+      "to": "LSZH",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-08",
+      "from": "LSZH",
+      "to": "EKAH",
+      "mission_hint": "M047"
+    }
+  ],
+  "PHDWS": [
+    {
+      "date": "2026-07-24",
+      "from": "EPGD",
+      "to": "EGNM",
+      "mission_hint": "M014"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EGNM",
+      "to": "LHBP",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-26",
+      "from": "LHBP",
+      "to": "EGGW",
+      "mission_hint": "M009_or_M019"
+    },
+    {
+      "date": "2026-07-26",
+      "from": "EGGW",
+      "to": "EGNM",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-07-27",
+      "from": "EGNM",
+      "to": "LIRP",
+      "mission_hint": "M015"
+    },
+    {
+      "date": "2026-07-29",
+      "from": "LIRP",
+      "to": "LEMD",
+      "mission_hint": "M016"
+    },
+    {
+      "date": "2026-07-31",
+      "from": "LEMD",
+      "to": "LEMG",
+      "mission_hint": "M017"
+    },
+    {
+      "date": "2026-08-02",
+      "from": "LEMG",
+      "to": "LOWW",
+      "mission_hint": "M026"
+    },
+    {
+      "date": "2026-08-04",
+      "from": "LOWW",
+      "to": "EGMC",
+      "mission_hint": "M031"
+    },
+    {
+      "date": "2026-08-04",
+      "from": "EGMC",
+      "to": "EBLG",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-06",
+      "from": "EBLG",
+      "to": "LPPR",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-06",
+      "from": "LPPR",
+      "to": "EGBB",
+      "mission_hint": "M037"
+    },
+    {
+      "date": "2026-08-06",
+      "from": "EGBB",
+      "to": "EBAW",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-07",
+      "from": "EBAW",
+      "to": "LEIB",
+      "mission_hint": "M040"
+    },
+    {
+      "date": "2026-08-07",
+      "from": "LEIB",
+      "to": "EBAW",
+      "mission_hint": "M043"
+    },
+    {
+      "date": "2026-08-08",
+      "from": "EBAW",
+      "to": "LPPR",
+      "mission_hint": null
+    },
+    {
+      "date": "2026-08-08",
+      "from": "LPPR",
+      "to": "EDDV",
+      "mission_hint": "M046"
+    },
+    {
+      "date": "2026-08-08",
+      "from": "EDDV",
+      "to": "EBAW",
+      "mission_hint": null
+    }
+  ]
+}

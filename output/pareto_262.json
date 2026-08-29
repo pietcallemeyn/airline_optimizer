@@ -1,0 +1,3418 @@
+{
+  "objectives": {
+    "total_operational_cost_eur": 1217666.68,
+    "complexity_score": 81,
+    "empty_legs": 63,
+    "charged_pilot_days": 110,
+    "aircraft_parking_days": 6
+  },
+  "cost_breakdown": {
+    "commercial_flight_cost_eur": 555541.35,
+    "empty_flight_cost_eur": 582925.33,
+    "pilot_cost_eur": 66000.0,
+    "crew_deadhead_return_cost_eur": 7200.0,
+    "inbound_crew_deadhead_cost_eur": 0.0,
+    "nonhome_swap_cost_eur": 0.0,
+    "aircraft_parking_cost_eur": 6000.0,
+    "commercial_flight_hours": 92.59,
+    "empty_flight_hours": 97.15
+  },
+  "metrics": {
+    "empty_nm": 35528.23,
+    "empty_legs": 63,
+    "charged_pilot_days": 110,
+    "aircraft_parking_days": 6,
+    "changed_pilot_count": 34,
+    "nonhomebase_swap_events": 0,
+    "crew_return_pilots": 12,
+    "inbound_crew_deadhead_pilots": 0,
+    "idle_return_events": 31,
+    "crew_positioning_nm": 0.0,
+    "complexity_breakdown": {
+      "empty_positioning": 63,
+      "inbound_deadheads": 0,
+      "nonhome_swaps": 0,
+      "away_parking": 6,
+      "crew_returns": 12
+    }
+  },
+  "dataset_fingerprint": "58be1b856c2d2e74",
+  "mission_snapshot": {
+    "M001": {
+      "id": "M001",
+      "origin": "EBLG",
+      "destination": "EGAE",
+      "departure": "2026-07-24T01:05:00",
+      "arrival": "2026-07-24T02:32:07.440758",
+      "pax": 37
+    },
+    "M002": {
+      "id": "M002",
+      "origin": "EBAW",
+      "destination": "LEIB",
+      "departure": "2026-07-24T07:05:00",
+      "arrival": "2026-07-24T09:04:52.592747",
+      "pax": 20
+    },
+    "M003": {
+      "id": "M003",
+      "origin": "LFMN",
+      "destination": "LECO",
+      "departure": "2026-07-24T07:13:00",
+      "arrival": "2026-07-24T09:02:19.064915",
+      "pax": 21
+    },
+    "M004": {
+      "id": "M004",
+      "origin": "EPGD",
+      "destination": "EGNM",
+      "departure": "2026-07-24T10:23:00",
+      "arrival": "2026-07-24T12:16:23.133633",
+      "pax": 16
+    },
+    "M005": {
+      "id": "M005",
+      "origin": "LEIB",
+      "destination": "EBAW",
+      "departure": "2026-07-24T10:56:00",
+      "arrival": "2026-07-24T12:55:52.592747",
+      "pax": 29
+    },
+    "M006": {
+      "id": "M006",
+      "origin": "LHBP",
+      "destination": "EGTC",
+      "departure": "2026-07-26T18:36:00",
+      "arrival": "2026-07-26T20:45:28.336170",
+      "pax": 25
+    },
+    "M007": {
+      "id": "M007",
+      "origin": "LHBP",
+      "destination": "EGGW",
+      "departure": "2026-07-26T19:00:00",
+      "arrival": "2026-07-26T21:07:48.075498",
+      "pax": 14
+    },
+    "M008": {
+      "id": "M008",
+      "origin": "LHBP",
+      "destination": "EGGW",
+      "departure": "2026-07-26T19:06:00",
+      "arrival": "2026-07-26T21:13:48.075498",
+      "pax": 22
+    },
+    "M009": {
+      "id": "M009",
+      "origin": "EBAW",
+      "destination": "LEIB",
+      "departure": "2026-07-27T08:05:00",
+      "arrival": "2026-07-27T10:04:52.592747",
+      "pax": 14
+    },
+    "M010": {
+      "id": "M010",
+      "origin": "LEIB",
+      "destination": "EBAW",
+      "departure": "2026-07-27T11:43:00",
+      "arrival": "2026-07-27T13:42:52.592747",
+      "pax": 14
+    },
+    "M011": {
+      "id": "M011",
+      "origin": "EGNM",
+      "destination": "LIRP",
+      "departure": "2026-07-27T11:53:00",
+      "arrival": "2026-07-27T13:56:08.657437",
+      "pax": 16
+    },
+    "M012": {
+      "id": "M012",
+      "origin": "LCLK",
+      "destination": "LIRF",
+      "departure": "2026-07-28T06:20:00",
+      "arrival": "2026-07-28T09:08:54.464436",
+      "pax": 28
+    },
+    "M013": {
+      "id": "M013",
+      "origin": "LHBP",
+      "destination": "LGAV",
+      "departure": "2026-07-29T10:26:00",
+      "arrival": "2026-07-29T12:04:45.326135",
+      "pax": 40
+    },
+    "M014": {
+      "id": "M014",
+      "origin": "LIRP",
+      "destination": "LEMD",
+      "departure": "2026-07-29T10:46:00",
+      "arrival": "2026-07-29T12:31:05.688835",
+      "pax": 16
+    },
+    "M015": {
+      "id": "M015",
+      "origin": "EDDM",
+      "destination": "LHBP",
+      "departure": "2026-07-30T05:50:00",
+      "arrival": "2026-07-30T06:44:42.987227",
+      "pax": 30
+    },
+    "M016": {
+      "id": "M016",
+      "origin": "LHBP",
+      "destination": "LGAV",
+      "departure": "2026-07-30T11:14:00",
+      "arrival": "2026-07-30T12:52:45.326135",
+      "pax": 30
+    },
+    "M017": {
+      "id": "M017",
+      "origin": "LGAV",
+      "destination": "LUKK",
+      "departure": "2026-07-31T06:20:00",
+      "arrival": "2026-07-31T07:55:19.053513",
+      "pax": 30
+    },
+    "M018": {
+      "id": "M018",
+      "origin": "EBAW",
+      "destination": "LEIB",
+      "departure": "2026-07-31T07:05:00",
+      "arrival": "2026-07-31T09:04:52.592747",
+      "pax": 7
+    },
+    "M019": {
+      "id": "M019",
+      "origin": "LGAV",
+      "destination": "LHBP",
+      "departure": "2026-07-31T10:06:00",
+      "arrival": "2026-07-31T11:44:45.326135",
+      "pax": 40
+    },
+    "M020": {
+      "id": "M020",
+      "origin": "LEMD",
+      "destination": "LEMG",
+      "departure": "2026-07-31T10:40:00",
+      "arrival": "2026-07-31T11:24:11.823086",
+      "pax": 16
+    },
+    "M021": {
+      "id": "M021",
+      "origin": "LEIB",
+      "destination": "EBAW",
+      "departure": "2026-07-31T10:53:00",
+      "arrival": "2026-07-31T12:52:52.592747",
+      "pax": 30
+    },
+    "M022": {
+      "id": "M022",
+      "origin": "LUKK",
+      "destination": "EDDM",
+      "departure": "2026-07-31T11:30:00",
+      "arrival": "2026-07-31T13:22:03.107722",
+      "pax": 30
+    },
+    "M023": {
+      "id": "M023",
+      "origin": "EDDH",
+      "destination": "EFTP",
+      "departure": "2026-07-31T14:52:00",
+      "arrival": "2026-07-31T16:35:28.379425",
+      "pax": 19
+    },
+    "M024": {
+      "id": "M024",
+      "origin": "EGGW",
+      "destination": "EDDC",
+      "departure": "2026-08-01T14:02:00",
+      "arrival": "2026-08-01T15:29:27.768696",
+      "pax": 13
+    },
+    "M025": {
+      "id": "M025",
+      "origin": "EFTP",
+      "destination": "EBAW",
+      "departure": "2026-08-02T09:35:00",
+      "arrival": "2026-08-02T11:53:37.780574",
+      "pax": 19
+    },
+    "M026": {
+      "id": "M026",
+      "origin": "LEMG",
+      "destination": "LOWW",
+      "departure": "2026-08-02T12:06:00",
+      "arrival": "2026-08-02T15:04:44.447633",
+      "pax": 16
+    },
+    "M027": {
+      "id": "M027",
+      "origin": "EBAW",
+      "destination": "LEIB",
+      "departure": "2026-08-03T08:06:00",
+      "arrival": "2026-08-03T10:05:52.592747",
+      "pax": 21
+    },
+    "M028": {
+      "id": "M028",
+      "origin": "LATI",
+      "destination": "EIDW",
+      "departure": "2026-08-03T08:59:00",
+      "arrival": "2026-08-03T12:14:25.255751",
+      "pax": 41
+    },
+    "M029": {
+      "id": "M029",
+      "origin": "EDDC",
+      "destination": "LDPL",
+      "departure": "2026-08-03T10:50:00",
+      "arrival": "2026-08-03T11:54:50.407686",
+      "pax": 13
+    },
+    "M030": {
+      "id": "M030",
+      "origin": "LEIB",
+      "destination": "EBAW",
+      "departure": "2026-08-03T11:29:00",
+      "arrival": "2026-08-03T13:28:52.592747",
+      "pax": 9
+    },
+    "M031": {
+      "id": "M031",
+      "origin": "LOWW",
+      "destination": "EGMC",
+      "departure": "2026-08-04T10:00:00",
+      "arrival": "2026-08-04T11:44:44.007714",
+      "pax": 16
+    },
+    "M032": {
+      "id": "M032",
+      "origin": "LWSK",
+      "destination": "EBLG",
+      "departure": "2026-08-05T07:09:00",
+      "arrival": "2026-08-05T09:22:53.677300",
+      "pax": 37
+    },
+    "M033": {
+      "id": "M033",
+      "origin": "LCLK",
+      "destination": "LRCL",
+      "departure": "2026-08-05T09:05:00",
+      "arrival": "2026-08-05T11:18:32.616197",
+      "pax": 17
+    },
+    "M034": {
+      "id": "M034",
+      "origin": "EBLG",
+      "destination": "EGPH",
+      "departure": "2026-08-05T10:30:00",
+      "arrival": "2026-08-05T11:45:38.970815",
+      "pax": 37
+    },
+    "M035": {
+      "id": "M035",
+      "origin": "EIDW",
+      "destination": "LATI",
+      "departure": "2026-08-05T11:15:00",
+      "arrival": "2026-08-05T14:30:25.255751",
+      "pax": 39
+    },
+    "M036": {
+      "id": "M036",
+      "origin": "LDPL",
+      "destination": "LYBE",
+      "departure": "2026-08-06T11:00:00",
+      "arrival": "2026-08-06T11:49:46.572040",
+      "pax": 13
+    },
+    "M037": {
+      "id": "M037",
+      "origin": "LPPR",
+      "destination": "EGBB",
+      "departure": "2026-08-06T11:20:00",
+      "arrival": "2026-08-06T13:16:47.450577",
+      "pax": 17
+    },
+    "M038": {
+      "id": "M038",
+      "origin": "EGPH",
+      "destination": "EBLG",
+      "departure": "2026-08-07T00:32:00",
+      "arrival": "2026-08-07T01:47:38.970815",
+      "pax": 37
+    },
+    "M039": {
+      "id": "M039",
+      "origin": "EBLG",
+      "destination": "LWSK",
+      "departure": "2026-08-07T02:44:00",
+      "arrival": "2026-08-07T04:57:53.677300",
+      "pax": 37
+    },
+    "M040": {
+      "id": "M040",
+      "origin": "EBAW",
+      "destination": "LEIB",
+      "departure": "2026-08-07T06:50:00",
+      "arrival": "2026-08-07T08:49:52.592747",
+      "pax": 10
+    },
+    "M041": {
+      "id": "M041",
+      "origin": "LKPR",
+      "destination": "EBKT",
+      "departure": "2026-08-07T08:26:00",
+      "arrival": "2026-08-07T09:38:04.402077",
+      "pax": 18
+    },
+    "M042": {
+      "id": "M042",
+      "origin": "EGMC",
+      "destination": "LIRI",
+      "departure": "2026-08-07T09:35:00",
+      "arrival": "2026-08-07T11:54:00.775906",
+      "pax": 32
+    },
+    "M043": {
+      "id": "M043",
+      "origin": "LEIB",
+      "destination": "EBAW",
+      "departure": "2026-08-07T10:46:00",
+      "arrival": "2026-08-07T12:45:52.592747",
+      "pax": 19
+    },
+    "M044": {
+      "id": "M044",
+      "origin": "EYSA",
+      "destination": "ETNG",
+      "departure": "2026-08-07T11:09:00",
+      "arrival": "2026-08-07T12:59:17.429080",
+      "pax": 15
+    },
+    "M045": {
+      "id": "M045",
+      "origin": "EGKB",
+      "destination": "LFRG",
+      "departure": "2026-08-08T08:15:00",
+      "arrival": "2026-08-08T08:42:17.025723",
+      "pax": 16
+    },
+    "M046": {
+      "id": "M046",
+      "origin": "LPPR",
+      "destination": "EDDV",
+      "departure": "2026-08-08T08:45:00",
+      "arrival": "2026-08-08T11:22:09.935301",
+      "pax": 15
+    },
+    "M047": {
+      "id": "M047",
+      "origin": "LSZH",
+      "destination": "EKAH",
+      "departure": "2026-08-08T09:00:00",
+      "arrival": "2026-08-08T10:28:30.943760",
+      "pax": 22
+    },
+    "M048": {
+      "id": "M048",
+      "origin": "LYBE",
+      "destination": "LRBS",
+      "departure": "2026-08-08T10:50:00",
+      "arrival": "2026-08-08T11:36:18.435897",
+      "pax": 13
+    },
+    "M049": {
+      "id": "M049",
+      "origin": "EKAH",
+      "destination": "EBBR",
+      "departure": "2026-08-09T09:40:00",
+      "arrival": "2026-08-09T10:47:11.008030",
+      "pax": 22
+    },
+    "M050": {
+      "id": "M050",
+      "origin": "LIRI",
+      "destination": "EGMC",
+      "departure": "2026-08-10T17:10:00",
+      "arrival": "2026-08-10T19:29:00.775906",
+      "pax": 30
+    },
+    "M051": {
+      "id": "M051",
+      "origin": "LFRG",
+      "destination": "EGKB",
+      "departure": "2026-08-11T10:54:00",
+      "arrival": "2026-08-11T11:21:17.025723",
+      "pax": 16
+    }
+  },
+  "routes": {
+    "PHDWA": [
+      "M004",
+      "M006",
+      "M012",
+      "M013",
+      "M019",
+      "M023",
+      "M025",
+      "M028",
+      "M035",
+      "M038",
+      "M039",
+      "M044",
+      "M046",
+      "M049"
+    ],
+    "PHDWC": [
+      "M014",
+      "M015",
+      "M016",
+      "M017",
+      "M022",
+      "M037",
+      "M040",
+      "M043",
+      "M047"
+    ],
+    "PHDWP": [
+      "M001",
+      "M003",
+      "M007",
+      "M011",
+      "M018",
+      "M021",
+      "M024",
+      "M029",
+      "M031",
+      "M032",
+      "M034",
+      "M036",
+      "M042",
+      "M048"
+    ],
+    "PHDWS": [
+      "M002",
+      "M005",
+      "M008",
+      "M009",
+      "M010",
+      "M020",
+      "M026",
+      "M027",
+      "M030",
+      "M033",
+      "M041",
+      "M045",
+      "M050",
+      "M051"
+    ]
+  },
+  "aircraft_movements": {
+    "PHDWA": [
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EPGD",
+        "start": "2026-07-24T08:36:08.629524",
+        "end": "2026-07-24T10:03:00",
+        "nm": 525.18,
+        "target_mission": "M004",
+        "purpose": "INITIAL_POSITION",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M004",
+        "from": "EPGD",
+        "to": "EGNM",
+        "start": "2026-07-24T10:23:00",
+        "end": "2026-07-24T12:16:23.133633",
+        "pax": 16,
+        "target_mission": "M004",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGNM",
+        "to": "EBLG",
+        "start": "2026-07-24T12:36:23.133633",
+        "end": "2026-07-24T13:33:56.318088",
+        "nm": 324.95,
+        "target_mission": "M006",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LHBP",
+        "start": "2026-07-26T16:41:46.085076",
+        "end": "2026-07-26T18:16:00",
+        "nm": 575.58,
+        "target_mission": "M006",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M006",
+        "from": "LHBP",
+        "to": "EGTC",
+        "start": "2026-07-26T18:36:00",
+        "end": "2026-07-26T20:45:28.336170",
+        "pax": 25,
+        "target_mission": "M006",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGTC",
+        "to": "EBLG",
+        "start": "2026-07-26T21:05:28.336170",
+        "end": "2026-07-26T21:51:01.173913",
+        "nm": 242.91,
+        "target_mission": "M012",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LCLK",
+        "start": "2026-07-28T02:03:46.187959",
+        "end": "2026-07-28T06:00:00",
+        "nm": 1545.91,
+        "target_mission": "M012",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M012",
+        "from": "LCLK",
+        "to": "LIRF",
+        "start": "2026-07-28T06:20:00",
+        "end": "2026-07-28T09:08:54.464436",
+        "pax": 28,
+        "target_mission": "M012",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LIRF",
+        "to": "LHBP",
+        "start": "2026-07-29T08:49:53.073578",
+        "end": "2026-07-29T10:06:00",
+        "nm": 451.79,
+        "target_mission": "M013",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M013",
+        "from": "LHBP",
+        "to": "LGAV",
+        "start": "2026-07-29T10:26:00",
+        "end": "2026-07-29T12:04:45.326135",
+        "pax": 40,
+        "target_mission": "M013",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LGAV",
+        "to": "EBLG",
+        "start": "2026-07-29T12:24:45.326135",
+        "end": "2026-07-29T15:15:08.473580",
+        "nm": 1095.97,
+        "target_mission": "M019",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C08",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LGAV",
+        "start": "2026-07-31T06:55:36.852555",
+        "end": "2026-07-31T09:46:00",
+        "nm": 1095.97,
+        "target_mission": "M019",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M019",
+        "from": "LGAV",
+        "to": "LHBP",
+        "start": "2026-07-31T10:06:00",
+        "end": "2026-07-31T11:44:45.326135",
+        "pax": 40,
+        "target_mission": "M019",
+        "purpose": "CUSTOMER",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LHBP",
+        "to": "EDDH",
+        "start": "2026-07-31T13:07:00.980370",
+        "end": "2026-07-31T14:32:00",
+        "nm": 512.39,
+        "target_mission": "M023",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M023",
+        "from": "EDDH",
+        "to": "EFTP",
+        "start": "2026-07-31T14:52:00",
+        "end": "2026-07-31T16:35:28.379425",
+        "pax": 19,
+        "target_mission": "M023",
+        "purpose": "CUSTOMER",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EFTP",
+        "to": "EBLG",
+        "start": "2026-07-31T16:55:28.379425",
+        "end": "2026-07-31T19:14:40.590500",
+        "nm": 882.89,
+        "target_mission": "M025",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EFTP",
+        "start": "2026-08-02T06:55:47.788925",
+        "end": "2026-08-02T09:15:00",
+        "nm": 882.89,
+        "target_mission": "M025",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M025",
+        "from": "EFTP",
+        "to": "EBAW",
+        "start": "2026-08-02T09:35:00",
+        "end": "2026-08-02T11:53:37.780574",
+        "pax": 19,
+        "target_mission": "M025",
+        "purpose": "CUSTOMER",
+        "captain": "C11",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LATI",
+        "start": "2026-08-03T06:23:08.332094",
+        "end": "2026-08-03T08:39:00",
+        "nm": 860.05,
+        "target_mission": "M028",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M028",
+        "from": "LATI",
+        "to": "EIDW",
+        "start": "2026-08-03T08:59:00",
+        "end": "2026-08-03T12:14:25.255751",
+        "pax": 41,
+        "target_mission": "M028",
+        "purpose": "CUSTOMER",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EIDW",
+        "to": "EBAW",
+        "start": "2026-08-03T12:34:25.255751",
+        "end": "2026-08-03T13:45:13.141189",
+        "nm": 415.45,
+        "target_mission": "M035",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "EIDW",
+        "start": "2026-08-05T09:44:12.114562",
+        "end": "2026-08-05T10:55:00",
+        "nm": 415.45,
+        "target_mission": "M035",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M035",
+        "from": "EIDW",
+        "to": "LATI",
+        "start": "2026-08-05T11:15:00",
+        "end": "2026-08-05T14:30:25.255751",
+        "pax": 39,
+        "target_mission": "M035",
+        "purpose": "CUSTOMER",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LATI",
+        "to": "EBLG",
+        "start": "2026-08-05T14:50:25.255751",
+        "end": "2026-08-05T16:59:00.680033",
+        "nm": 810.37,
+        "target_mission": "M038",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C03",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EGPH",
+        "start": "2026-08-06T22:56:21.029185",
+        "end": "2026-08-07T00:12:00",
+        "nm": 448.61,
+        "target_mission": "M038",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C07",
+        "fo": "F13"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M038",
+        "from": "EGPH",
+        "to": "EBLG",
+        "start": "2026-08-07T00:32:00",
+        "end": "2026-08-07T01:47:38.970815",
+        "pax": 37,
+        "target_mission": "M038",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F13"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M039",
+        "from": "EBLG",
+        "to": "LWSK",
+        "start": "2026-08-07T02:44:00",
+        "end": "2026-08-07T04:57:53.677300",
+        "pax": 37,
+        "target_mission": "M039",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F13"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LWSK",
+        "to": "EBAW",
+        "start": "2026-08-07T05:17:53.677300",
+        "end": "2026-08-07T07:38:58.139110",
+        "nm": 895.67,
+        "target_mission": "M044",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F13"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "EYSA",
+        "start": "2026-08-07T08:52:16.794039",
+        "end": "2026-08-07T10:49:00",
+        "nm": 729.25,
+        "target_mission": "M044",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C04",
+        "fo": "F07"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M044",
+        "from": "EYSA",
+        "to": "ETNG",
+        "start": "2026-08-07T11:09:00",
+        "end": "2026-08-07T12:59:17.429080",
+        "pax": 15,
+        "target_mission": "M044",
+        "purpose": "CUSTOMER",
+        "captain": "C04",
+        "fo": "F07"
+      },
+      {
+        "type": "EMPTY",
+        "from": "ETNG",
+        "to": "EBAW",
+        "start": "2026-08-07T13:19:17.429080",
+        "end": "2026-08-07T13:38:15.142800",
+        "nm": 61.24,
+        "target_mission": "M046",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C04",
+        "fo": "F07"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LPPR",
+        "start": "2026-08-08T06:16:58.566693",
+        "end": "2026-08-08T08:25:00",
+        "nm": 806.5,
+        "target_mission": "M046",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C06",
+        "fo": "F03"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M046",
+        "from": "LPPR",
+        "to": "EDDV",
+        "start": "2026-08-08T08:45:00",
+        "end": "2026-08-08T11:22:09.935301",
+        "pax": 15,
+        "target_mission": "M046",
+        "purpose": "CUSTOMER",
+        "captain": "C06",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EDDV",
+        "to": "EKAH",
+        "start": "2026-08-09T08:35:54.325121",
+        "end": "2026-08-09T09:20:00",
+        "nm": 232.98,
+        "target_mission": "M049",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C06",
+        "fo": "F03"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M049",
+        "from": "EKAH",
+        "to": "EBBR",
+        "start": "2026-08-09T09:40:00",
+        "end": "2026-08-09T10:47:11.008030",
+        "pax": 22,
+        "target_mission": "M049",
+        "purpose": "CUSTOMER",
+        "captain": "C06",
+        "fo": "F03"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBBR",
+        "to": "EBAW",
+        "start": "2026-08-09T11:07:11.008030",
+        "end": "2026-08-09T11:19:43.046792",
+        "nm": 17.32,
+        "target_mission": "__END__",
+        "captain": "C06",
+        "fo": "F03"
+      }
+    ],
+    "PHDWC": [
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LIRP",
+        "start": "2026-07-29T09:08:09.713636",
+        "end": "2026-07-29T10:26:00",
+        "nm": 463.56,
+        "target_mission": "M014",
+        "purpose": "INITIAL_POSITION",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M014",
+        "from": "LIRP",
+        "to": "LEMD",
+        "start": "2026-07-29T10:46:00",
+        "end": "2026-07-29T12:31:05.688835",
+        "pax": 16,
+        "target_mission": "M014",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LEMD",
+        "to": "EBLG",
+        "start": "2026-07-29T12:51:05.688835",
+        "end": "2026-07-29T14:45:50.545129",
+        "nm": 715.78,
+        "target_mission": "M015",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EDDM",
+        "start": "2026-07-30T04:38:37.990893",
+        "end": "2026-07-30T05:30:00",
+        "nm": 282.67,
+        "target_mission": "M015",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M015",
+        "from": "EDDM",
+        "to": "LHBP",
+        "start": "2026-07-30T05:50:00",
+        "end": "2026-07-30T06:44:42.987227",
+        "pax": 30,
+        "target_mission": "M015",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M016",
+        "from": "LHBP",
+        "to": "LGAV",
+        "start": "2026-07-30T11:14:00",
+        "end": "2026-07-30T12:52:45.326135",
+        "pax": 30,
+        "target_mission": "M016",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M017",
+        "from": "LGAV",
+        "to": "LUKK",
+        "start": "2026-07-31T06:20:00",
+        "end": "2026-07-31T07:55:19.053513",
+        "pax": 30,
+        "target_mission": "M017",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M022",
+        "from": "LUKK",
+        "to": "EDDM",
+        "start": "2026-07-31T11:30:00",
+        "end": "2026-07-31T13:22:03.107722",
+        "pax": 30,
+        "target_mission": "M022",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EDDM",
+        "to": "EBAW",
+        "start": "2026-07-31T13:42:03.107722",
+        "end": "2026-07-31T14:40:29.038118",
+        "nm": 330.95,
+        "target_mission": "M037",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F11"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LPPR",
+        "start": "2026-08-06T08:51:58.566693",
+        "end": "2026-08-06T11:00:00",
+        "nm": 806.5,
+        "target_mission": "M037",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C01",
+        "fo": "F01"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M037",
+        "from": "LPPR",
+        "to": "EGBB",
+        "start": "2026-08-06T11:20:00",
+        "end": "2026-08-06T13:16:47.450577",
+        "pax": 17,
+        "target_mission": "M037",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F01"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGBB",
+        "to": "EBAW",
+        "start": "2026-08-06T13:36:47.450577",
+        "end": "2026-08-06T14:22:16.682166",
+        "nm": 242.5,
+        "target_mission": "M040",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C01",
+        "fo": "F01"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M040",
+        "from": "EBAW",
+        "to": "LEIB",
+        "start": "2026-08-07T06:50:00",
+        "end": "2026-08-07T08:49:52.592747",
+        "pax": 10,
+        "target_mission": "M040",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F01"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M043",
+        "from": "LEIB",
+        "to": "EBAW",
+        "start": "2026-08-07T10:46:00",
+        "end": "2026-08-07T12:45:52.592747",
+        "pax": 19,
+        "target_mission": "M043",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F01"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LSZH",
+        "start": "2026-08-08T07:49:43.724145",
+        "end": "2026-08-08T08:40:00",
+        "nm": 275.19,
+        "target_mission": "M047",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C04",
+        "fo": "F02"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M047",
+        "from": "LSZH",
+        "to": "EKAH",
+        "start": "2026-08-08T09:00:00",
+        "end": "2026-08-08T10:28:30.943760",
+        "pax": 22,
+        "target_mission": "M047",
+        "purpose": "CUSTOMER",
+        "captain": "C04",
+        "fo": "F02"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EKAH",
+        "to": "EBAW",
+        "start": "2026-08-08T10:48:30.943760",
+        "end": "2026-08-08T11:53:37.834389",
+        "nm": 376.62,
+        "target_mission": "__END__",
+        "captain": "C04",
+        "fo": "F02"
+      }
+    ],
+    "PHDWP": [
+      {
+        "type": "MISSION",
+        "mission": "M001",
+        "from": "EBLG",
+        "to": "EGAE",
+        "start": "2026-07-24T01:05:00",
+        "end": "2026-07-24T02:32:07.440758",
+        "pax": 37,
+        "target_mission": "M001",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGAE",
+        "to": "LFMN",
+        "start": "2026-07-24T04:33:59.390091",
+        "end": "2026-07-24T06:53:00",
+        "nm": 881.57,
+        "target_mission": "M003",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M003",
+        "from": "LFMN",
+        "to": "LECO",
+        "start": "2026-07-24T07:13:00",
+        "end": "2026-07-24T09:02:19.064915",
+        "pax": 21,
+        "target_mission": "M003",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LECO",
+        "to": "EBAW",
+        "start": "2026-07-24T09:22:19.064915",
+        "end": "2026-07-24T11:15:19.631191",
+        "nm": 703.9,
+        "target_mission": "M007",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LHBP",
+        "start": "2026-07-26T16:59:15.698815",
+        "end": "2026-07-26T18:40:00",
+        "nm": 620.05,
+        "target_mission": "M007",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M007",
+        "from": "LHBP",
+        "to": "EGGW",
+        "start": "2026-07-26T19:00:00",
+        "end": "2026-07-26T21:07:48.075498",
+        "pax": 14,
+        "target_mission": "M007",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGGW",
+        "to": "EBLG",
+        "start": "2026-07-26T21:27:48.075498",
+        "end": "2026-07-26T22:11:32.726412",
+        "nm": 230.59,
+        "target_mission": "M011",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EGNM",
+        "start": "2026-07-27T10:35:26.815545",
+        "end": "2026-07-27T11:33:00",
+        "nm": 324.95,
+        "target_mission": "M011",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M011",
+        "from": "EGNM",
+        "to": "LIRP",
+        "start": "2026-07-27T11:53:00",
+        "end": "2026-07-27T13:56:08.657437",
+        "pax": 16,
+        "target_mission": "M011",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LIRP",
+        "to": "EBAW",
+        "start": "2026-07-27T14:16:08.657437",
+        "end": "2026-07-27T15:40:51.942361",
+        "nm": 510.6,
+        "target_mission": "M018",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M018",
+        "from": "EBAW",
+        "to": "LEIB",
+        "start": "2026-07-31T07:05:00",
+        "end": "2026-07-31T09:04:52.592747",
+        "pax": 7,
+        "target_mission": "M018",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M021",
+        "from": "LEIB",
+        "to": "EBAW",
+        "start": "2026-07-31T10:53:00",
+        "end": "2026-07-31T12:52:52.592747",
+        "pax": 30,
+        "target_mission": "M021",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "EGGW",
+        "start": "2026-08-01T13:04:56.107602",
+        "end": "2026-08-01T13:42:00",
+        "nm": 184.94,
+        "target_mission": "M024",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M024",
+        "from": "EGGW",
+        "to": "EDDC",
+        "start": "2026-08-01T14:02:00",
+        "end": "2026-08-01T15:29:27.768696",
+        "pax": 13,
+        "target_mission": "M024",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M029",
+        "from": "EDDC",
+        "to": "LDPL",
+        "start": "2026-08-03T10:50:00",
+        "end": "2026-08-03T11:54:50.407686",
+        "pax": 13,
+        "target_mission": "M029",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LDPL",
+        "to": "EBLG",
+        "start": "2026-08-03T12:14:50.407686",
+        "end": "2026-08-03T13:35:51.013489",
+        "nm": 485.24,
+        "target_mission": "M031",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LOWW",
+        "start": "2026-08-04T08:22:39.771844",
+        "end": "2026-08-04T09:40:00",
+        "nm": 460.14,
+        "target_mission": "M031",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M031",
+        "from": "LOWW",
+        "to": "EGMC",
+        "start": "2026-08-04T10:00:00",
+        "end": "2026-08-04T11:44:44.007714",
+        "pax": 16,
+        "target_mission": "M031",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGMC",
+        "to": "LWSK",
+        "start": "2026-08-05T04:08:11.533839",
+        "end": "2026-08-05T06:49:00",
+        "nm": 1030.52,
+        "target_mission": "M032",
+        "purpose": "DIRECT_POSITION",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M032",
+        "from": "LWSK",
+        "to": "EBLG",
+        "start": "2026-08-05T07:09:00",
+        "end": "2026-08-05T09:22:53.677300",
+        "pax": 37,
+        "target_mission": "M032",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M034",
+        "from": "EBLG",
+        "to": "EGPH",
+        "start": "2026-08-05T10:30:00",
+        "end": "2026-08-05T11:45:38.970815",
+        "pax": 37,
+        "target_mission": "M034",
+        "purpose": "CUSTOMER",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGPH",
+        "to": "EBLG",
+        "start": "2026-08-05T12:05:38.970815",
+        "end": "2026-08-05T13:21:17.941630",
+        "nm": 448.61,
+        "target_mission": "M036",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C10",
+        "fo": "F09"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LDPL",
+        "start": "2026-08-06T09:18:59.394197",
+        "end": "2026-08-06T10:40:00",
+        "nm": 485.24,
+        "target_mission": "M036",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C08",
+        "fo": "F12"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M036",
+        "from": "LDPL",
+        "to": "LYBE",
+        "start": "2026-08-06T11:00:00",
+        "end": "2026-08-06T11:49:46.572040",
+        "pax": 13,
+        "target_mission": "M036",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LYBE",
+        "to": "EBAW",
+        "start": "2026-08-06T12:09:46.572040",
+        "end": "2026-08-06T14:08:08.181559",
+        "nm": 740.46,
+        "target_mission": "M042",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C08",
+        "fo": "F12"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "EGMC",
+        "start": "2026-08-07T08:44:04.564026",
+        "end": "2026-08-07T09:15:00",
+        "nm": 142.98,
+        "target_mission": "M042",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C02",
+        "fo": "F04"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M042",
+        "from": "EGMC",
+        "to": "LIRI",
+        "start": "2026-08-07T09:35:00",
+        "end": "2026-08-07T11:54:00.775906",
+        "pax": 32,
+        "target_mission": "M042",
+        "purpose": "CUSTOMER",
+        "captain": "C02",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LIRI",
+        "to": "EBAW",
+        "start": "2026-08-07T12:14:00.775906",
+        "end": "2026-08-07T14:16:29.656595",
+        "nm": 768.62,
+        "target_mission": "M048",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C02",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LYBE",
+        "start": "2026-08-08T08:31:38.390481",
+        "end": "2026-08-08T10:30:00",
+        "nm": 740.46,
+        "target_mission": "M048",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C01",
+        "fo": "F07"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M048",
+        "from": "LYBE",
+        "to": "LRBS",
+        "start": "2026-08-08T10:50:00",
+        "end": "2026-08-08T11:36:18.435897",
+        "pax": 13,
+        "target_mission": "M048",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F07"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LRBS",
+        "to": "EBAW",
+        "start": "2026-08-08T11:56:18.435897",
+        "end": "2026-08-08T14:26:06.789448",
+        "nm": 955.34,
+        "target_mission": "__END__",
+        "captain": "C01",
+        "fo": "F07"
+      }
+    ],
+    "PHDWS": [
+      {
+        "type": "MISSION",
+        "mission": "M002",
+        "from": "EBAW",
+        "to": "LEIB",
+        "start": "2026-07-24T07:05:00",
+        "end": "2026-07-24T09:04:52.592747",
+        "pax": 20,
+        "target_mission": "M002",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F05"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M005",
+        "from": "LEIB",
+        "to": "EBAW",
+        "start": "2026-07-24T10:56:00",
+        "end": "2026-07-24T12:55:52.592747",
+        "pax": 29,
+        "target_mission": "M005",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F05"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LHBP",
+        "start": "2026-07-26T17:05:15.698815",
+        "end": "2026-07-26T18:46:00",
+        "nm": 620.05,
+        "target_mission": "M008",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M008",
+        "from": "LHBP",
+        "to": "EGGW",
+        "start": "2026-07-26T19:06:00",
+        "end": "2026-07-26T21:13:48.075498",
+        "pax": 22,
+        "target_mission": "M008",
+        "purpose": "CUSTOMER",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGGW",
+        "to": "EBAW",
+        "start": "2026-07-26T21:33:48.075498",
+        "end": "2026-07-26T22:10:51.967896",
+        "nm": 184.94,
+        "target_mission": "M009",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M009",
+        "from": "EBAW",
+        "to": "LEIB",
+        "start": "2026-07-27T08:05:00",
+        "end": "2026-07-27T10:04:52.592747",
+        "pax": 14,
+        "target_mission": "M009",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M010",
+        "from": "LEIB",
+        "to": "EBAW",
+        "start": "2026-07-27T11:43:00",
+        "end": "2026-07-27T13:42:52.592747",
+        "pax": 14,
+        "target_mission": "M010",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LEMD",
+        "start": "2026-07-31T08:24:08.191753",
+        "end": "2026-07-31T10:20:00",
+        "nm": 723.4,
+        "target_mission": "M020",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M020",
+        "from": "LEMD",
+        "to": "LEMG",
+        "start": "2026-07-31T10:40:00",
+        "end": "2026-07-31T11:24:11.823086",
+        "pax": 16,
+        "target_mission": "M020",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LEMG",
+        "to": "EBAW",
+        "start": "2026-07-31T11:44:11.823086",
+        "end": "2026-07-31T14:13:30.898271",
+        "nm": 952.01,
+        "target_mission": "M026",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LEMG",
+        "start": "2026-08-02T09:16:40.924815",
+        "end": "2026-08-02T11:46:00",
+        "nm": 952.01,
+        "target_mission": "M026",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M026",
+        "from": "LEMG",
+        "to": "LOWW",
+        "start": "2026-08-02T12:06:00",
+        "end": "2026-08-02T15:04:44.447633",
+        "pax": 16,
+        "target_mission": "M026",
+        "purpose": "CUSTOMER",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LOWW",
+        "to": "EBAW",
+        "start": "2026-08-02T15:24:44.447633",
+        "end": "2026-08-02T16:48:38.510624",
+        "nm": 504.99,
+        "target_mission": "M027",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C01",
+        "fo": "F04"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M027",
+        "from": "EBAW",
+        "to": "LEIB",
+        "start": "2026-08-03T08:06:00",
+        "end": "2026-08-03T10:05:52.592747",
+        "pax": 21,
+        "target_mission": "M027",
+        "purpose": "CUSTOMER",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M030",
+        "from": "LEIB",
+        "to": "EBAW",
+        "start": "2026-08-03T11:29:00",
+        "end": "2026-08-03T13:28:52.592747",
+        "pax": 9,
+        "target_mission": "M030",
+        "purpose": "CUSTOMER",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LCLK",
+        "start": "2026-08-05T04:41:43.520824",
+        "end": "2026-08-05T08:45:00",
+        "nm": 1594.04,
+        "target_mission": "M033",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M033",
+        "from": "LCLK",
+        "to": "LRCL",
+        "start": "2026-08-05T09:05:00",
+        "end": "2026-08-05T11:18:32.616197",
+        "pax": 17,
+        "target_mission": "M033",
+        "purpose": "CUSTOMER",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LRCL",
+        "to": "EBAW",
+        "start": "2026-08-05T11:38:32.616197",
+        "end": "2026-08-05T13:45:32.591807",
+        "nm": 799.5,
+        "target_mission": "M041",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C02",
+        "fo": "F06"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LKPR",
+        "start": "2026-08-07T07:00:36.736916",
+        "end": "2026-08-07T08:06:00",
+        "nm": 378.48,
+        "target_mission": "M041",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C03",
+        "fo": "F02"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M041",
+        "from": "LKPR",
+        "to": "EBKT",
+        "start": "2026-08-07T08:26:00",
+        "end": "2026-08-07T09:38:04.402077",
+        "pax": 18,
+        "target_mission": "M041",
+        "purpose": "CUSTOMER",
+        "captain": "C03",
+        "fo": "F02"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBKT",
+        "to": "EBLG",
+        "start": "2026-08-07T09:58:04.402077",
+        "end": "2026-08-07T10:20:35.874140",
+        "nm": 85.58,
+        "target_mission": "M045",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C03",
+        "fo": "F02"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "EGKB",
+        "start": "2026-08-08T07:14:27.913161",
+        "end": "2026-08-08T07:55:00",
+        "nm": 208.65,
+        "target_mission": "M045",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C07",
+        "fo": "F08"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M045",
+        "from": "EGKB",
+        "to": "LFRG",
+        "start": "2026-08-08T08:15:00",
+        "end": "2026-08-08T08:42:17.025723",
+        "pax": 16,
+        "target_mission": "M045",
+        "purpose": "CUSTOMER",
+        "captain": "C07",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "LFRG",
+        "to": "EBLG",
+        "start": "2026-08-08T09:02:17.025723",
+        "end": "2026-08-08T09:44:10.001681",
+        "nm": 217.87,
+        "target_mission": "M050",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C07",
+        "fo": "F08"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBLG",
+        "to": "LIRI",
+        "start": "2026-08-10T14:54:41.140946",
+        "end": "2026-08-10T16:50:00",
+        "nm": 719.65,
+        "target_mission": "M050",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C08",
+        "fo": "F13"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M050",
+        "from": "LIRI",
+        "to": "EGMC",
+        "start": "2026-08-10T17:10:00",
+        "end": "2026-08-10T19:29:00.775906",
+        "pax": 30,
+        "target_mission": "M050",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F13"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGMC",
+        "to": "EBAW",
+        "start": "2026-08-10T19:49:00.775906",
+        "end": "2026-08-10T20:19:56.211880",
+        "nm": 142.98,
+        "target_mission": "M051",
+        "purpose": "IDLE_RETURN_HOME",
+        "captain": "C08",
+        "fo": "F13"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EBAW",
+        "to": "LFRG",
+        "start": "2026-08-11T09:54:59.966731",
+        "end": "2026-08-11T10:34:00",
+        "nm": 198.17,
+        "target_mission": "M051",
+        "purpose": "POSITION_FROM_HOME",
+        "captain": "C08",
+        "fo": "F13"
+      },
+      {
+        "type": "MISSION",
+        "mission": "M051",
+        "from": "LFRG",
+        "to": "EGKB",
+        "start": "2026-08-11T10:54:00",
+        "end": "2026-08-11T11:21:17.025723",
+        "pax": 16,
+        "target_mission": "M051",
+        "purpose": "CUSTOMER",
+        "captain": "C08",
+        "fo": "F13"
+      },
+      {
+        "type": "EMPTY",
+        "from": "EGKB",
+        "to": "EBLG",
+        "start": "2026-08-11T11:41:17.025723",
+        "end": "2026-08-11T12:21:49.112562",
+        "nm": 208.65,
+        "target_mission": "__END__",
+        "captain": "C08",
+        "fo": "F13"
+      }
+    ]
+  },
+  "aircraft_actions": {
+    "PHDWA": [
+      {
+        "mission": "M004",
+        "transition_mode": "START_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M006",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M012",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M013",
+        "transition_mode": "DIRECT",
+        "parking_days": 1,
+        "parking_cost_eur": 1000.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LHBP"
+      },
+      {
+        "mission": "M019",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M023",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EDDH"
+      },
+      {
+        "mission": "M025",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M028",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M035",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M038",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M039",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M044",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M046",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M049",
+        "transition_mode": "DIRECT",
+        "parking_days": 1,
+        "parking_cost_eur": 1000.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EKAH"
+      },
+      {
+        "mission": "__END__",
+        "transition_mode": "RETURN_END_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0
+      }
+    ],
+    "PHDWC": [
+      {
+        "mission": "M014",
+        "transition_mode": "START_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M015",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M016",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LHBP"
+      },
+      {
+        "mission": "M017",
+        "transition_mode": "DIRECT",
+        "parking_days": 1,
+        "parking_cost_eur": 1000.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LGAV"
+      },
+      {
+        "mission": "M022",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LUKK"
+      },
+      {
+        "mission": "M037",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M040",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M043",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LEIB"
+      },
+      {
+        "mission": "M047",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "__END__",
+        "transition_mode": "RETURN_END_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0
+      }
+    ],
+    "PHDWP": [
+      {
+        "mission": "M001",
+        "transition_mode": "START_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M003",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LFMN"
+      },
+      {
+        "mission": "M007",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M011",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M018",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M021",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LEIB"
+      },
+      {
+        "mission": "M024",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EGGW"
+      },
+      {
+        "mission": "M029",
+        "transition_mode": "DIRECT",
+        "parking_days": 2,
+        "parking_cost_eur": 2000.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EDDC"
+      },
+      {
+        "mission": "M031",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M032",
+        "transition_mode": "DIRECT",
+        "parking_days": 1,
+        "parking_cost_eur": 1000.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LWSK"
+      },
+      {
+        "mission": "M034",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M036",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M042",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M048",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "__END__",
+        "transition_mode": "RETURN_END_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0
+      }
+    ],
+    "PHDWS": [
+      {
+        "mission": "M002",
+        "transition_mode": "START_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M005",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LEIB"
+      },
+      {
+        "mission": "M008",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M009",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M010",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LEIB"
+      },
+      {
+        "mission": "M020",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M026",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M027",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M030",
+        "transition_mode": "DIRECT",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": null,
+        "crew_handover_airport": "LEIB"
+      },
+      {
+        "mission": "M033",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M041",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "M045",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M050",
+        "transition_mode": "IDLE_RETURN_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBLG",
+        "crew_handover_airport": "EBLG"
+      },
+      {
+        "mission": "M051",
+        "transition_mode": "IDLE_RETURN_EBAW",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0,
+        "idle_return_base": "EBAW",
+        "crew_handover_airport": "EBAW"
+      },
+      {
+        "mission": "__END__",
+        "transition_mode": "RETURN_END_EBLG",
+        "parking_days": 0,
+        "parking_cost_eur": 0.0
+      }
+    ]
+  },
+  "crew_assignments": {
+    "M001": {
+      "captain": "C07",
+      "fo": "F12"
+    },
+    "M002": {
+      "captain": "C01",
+      "fo": "F05"
+    },
+    "M003": {
+      "captain": "C07",
+      "fo": "F12"
+    },
+    "M004": {
+      "captain": "C08",
+      "fo": "F08"
+    },
+    "M005": {
+      "captain": "C01",
+      "fo": "F05"
+    },
+    "M006": {
+      "captain": "C08",
+      "fo": "F08"
+    },
+    "M007": {
+      "captain": "C07",
+      "fo": "F12"
+    },
+    "M008": {
+      "captain": "C02",
+      "fo": "F06"
+    },
+    "M009": {
+      "captain": "C01",
+      "fo": "F04"
+    },
+    "M010": {
+      "captain": "C01",
+      "fo": "F04"
+    },
+    "M011": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M012": {
+      "captain": "C08",
+      "fo": "F08"
+    },
+    "M013": {
+      "captain": "C08",
+      "fo": "F08"
+    },
+    "M014": {
+      "captain": "C07",
+      "fo": "F11"
+    },
+    "M015": {
+      "captain": "C07",
+      "fo": "F11"
+    },
+    "M016": {
+      "captain": "C07",
+      "fo": "F11"
+    },
+    "M017": {
+      "captain": "C07",
+      "fo": "F11"
+    },
+    "M018": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M019": {
+      "captain": "C11",
+      "fo": "F12"
+    },
+    "M020": {
+      "captain": "C01",
+      "fo": "F04"
+    },
+    "M021": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M022": {
+      "captain": "C07",
+      "fo": "F11"
+    },
+    "M023": {
+      "captain": "C11",
+      "fo": "F12"
+    },
+    "M024": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M025": {
+      "captain": "C11",
+      "fo": "F12"
+    },
+    "M026": {
+      "captain": "C01",
+      "fo": "F04"
+    },
+    "M027": {
+      "captain": "C02",
+      "fo": "F06"
+    },
+    "M028": {
+      "captain": "C03",
+      "fo": "F03"
+    },
+    "M029": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M030": {
+      "captain": "C02",
+      "fo": "F06"
+    },
+    "M031": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M032": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M033": {
+      "captain": "C02",
+      "fo": "F06"
+    },
+    "M034": {
+      "captain": "C10",
+      "fo": "F09"
+    },
+    "M035": {
+      "captain": "C03",
+      "fo": "F03"
+    },
+    "M036": {
+      "captain": "C08",
+      "fo": "F12"
+    },
+    "M037": {
+      "captain": "C01",
+      "fo": "F01"
+    },
+    "M038": {
+      "captain": "C07",
+      "fo": "F13"
+    },
+    "M039": {
+      "captain": "C07",
+      "fo": "F13"
+    },
+    "M040": {
+      "captain": "C01",
+      "fo": "F01"
+    },
+    "M041": {
+      "captain": "C03",
+      "fo": "F02"
+    },
+    "M042": {
+      "captain": "C02",
+      "fo": "F04"
+    },
+    "M043": {
+      "captain": "C01",
+      "fo": "F01"
+    },
+    "M044": {
+      "captain": "C04",
+      "fo": "F07"
+    },
+    "M045": {
+      "captain": "C07",
+      "fo": "F08"
+    },
+    "M046": {
+      "captain": "C06",
+      "fo": "F03"
+    },
+    "M047": {
+      "captain": "C04",
+      "fo": "F02"
+    },
+    "M048": {
+      "captain": "C01",
+      "fo": "F07"
+    },
+    "M049": {
+      "captain": "C06",
+      "fo": "F03"
+    },
+    "M050": {
+      "captain": "C08",
+      "fo": "F13"
+    },
+    "M051": {
+      "captain": "C08",
+      "fo": "F13"
+    }
+  },
+  "crew_actions": [
+    {
+      "mission": "M001",
+      "aircraft": "PHDWP",
+      "captain": "C07",
+      "fo": "F12",
+      "action": "INITIAL_ATTACH",
+      "handover_airport": "EBLG",
+      "transition_mode": "START_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M002",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F05",
+      "action": "INITIAL_ATTACH",
+      "handover_airport": "EBAW",
+      "transition_mode": "START_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M003",
+      "aircraft": "PHDWP",
+      "captain": "C07",
+      "fo": "F12",
+      "action": "CONTINUE",
+      "handover_airport": "LFMN",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M004",
+      "aircraft": "PHDWA",
+      "captain": "C08",
+      "fo": "F08",
+      "action": "INITIAL_ATTACH",
+      "handover_airport": "EBLG",
+      "transition_mode": "START_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M005",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F05",
+      "action": "CONTINUE",
+      "handover_airport": "LEIB",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M006",
+      "aircraft": "PHDWA",
+      "captain": "C08",
+      "fo": "F08",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M007",
+      "aircraft": "PHDWP",
+      "captain": "C07",
+      "fo": "F12",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M008",
+      "aircraft": "PHDWS",
+      "captain": "C02",
+      "fo": "F06",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M009",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F04",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M010",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F04",
+      "action": "CONTINUE",
+      "handover_airport": "LEIB",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M011",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M012",
+      "aircraft": "PHDWA",
+      "captain": "C08",
+      "fo": "F08",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M013",
+      "aircraft": "PHDWA",
+      "captain": "C08",
+      "fo": "F08",
+      "action": "CONTINUE",
+      "handover_airport": "LHBP",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M014",
+      "aircraft": "PHDWC",
+      "captain": "C07",
+      "fo": "F11",
+      "action": "INITIAL_ATTACH",
+      "handover_airport": "EBLG",
+      "transition_mode": "START_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M015",
+      "aircraft": "PHDWC",
+      "captain": "C07",
+      "fo": "F11",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M016",
+      "aircraft": "PHDWC",
+      "captain": "C07",
+      "fo": "F11",
+      "action": "CONTINUE",
+      "handover_airport": "LHBP",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M017",
+      "aircraft": "PHDWC",
+      "captain": "C07",
+      "fo": "F11",
+      "action": "CONTINUE",
+      "handover_airport": "LGAV",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M018",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M019",
+      "aircraft": "PHDWA",
+      "captain": "C11",
+      "fo": "F12",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M020",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F04",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M021",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "LEIB",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M022",
+      "aircraft": "PHDWC",
+      "captain": "C07",
+      "fo": "F11",
+      "action": "CONTINUE",
+      "handover_airport": "LUKK",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M023",
+      "aircraft": "PHDWA",
+      "captain": "C11",
+      "fo": "F12",
+      "action": "CONTINUE",
+      "handover_airport": "EDDH",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M024",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "EGGW",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M025",
+      "aircraft": "PHDWA",
+      "captain": "C11",
+      "fo": "F12",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M026",
+      "aircraft": "PHDWS",
+      "captain": "C01",
+      "fo": "F04",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M027",
+      "aircraft": "PHDWS",
+      "captain": "C02",
+      "fo": "F06",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M028",
+      "aircraft": "PHDWA",
+      "captain": "C03",
+      "fo": "F03",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M029",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "EDDC",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M030",
+      "aircraft": "PHDWS",
+      "captain": "C02",
+      "fo": "F06",
+      "action": "CONTINUE",
+      "handover_airport": "LEIB",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M031",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M032",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "LWSK",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M033",
+      "aircraft": "PHDWS",
+      "captain": "C02",
+      "fo": "F06",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M034",
+      "aircraft": "PHDWP",
+      "captain": "C10",
+      "fo": "F09",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M035",
+      "aircraft": "PHDWA",
+      "captain": "C03",
+      "fo": "F03",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M036",
+      "aircraft": "PHDWP",
+      "captain": "C08",
+      "fo": "F12",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M037",
+      "aircraft": "PHDWC",
+      "captain": "C01",
+      "fo": "F01",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M038",
+      "aircraft": "PHDWA",
+      "captain": "C07",
+      "fo": "F13",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M039",
+      "aircraft": "PHDWA",
+      "captain": "C07",
+      "fo": "F13",
+      "action": "CONTINUE",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M040",
+      "aircraft": "PHDWC",
+      "captain": "C01",
+      "fo": "F01",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M041",
+      "aircraft": "PHDWS",
+      "captain": "C03",
+      "fo": "F02",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M042",
+      "aircraft": "PHDWP",
+      "captain": "C02",
+      "fo": "F04",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M043",
+      "aircraft": "PHDWC",
+      "captain": "C01",
+      "fo": "F01",
+      "action": "CONTINUE",
+      "handover_airport": "LEIB",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M044",
+      "aircraft": "PHDWA",
+      "captain": "C04",
+      "fo": "F07",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M045",
+      "aircraft": "PHDWS",
+      "captain": "C07",
+      "fo": "F08",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 1200.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 2,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M046",
+      "aircraft": "PHDWA",
+      "captain": "C06",
+      "fo": "F03",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M047",
+      "aircraft": "PHDWC",
+      "captain": "C04",
+      "fo": "F02",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M048",
+      "aircraft": "PHDWP",
+      "captain": "C01",
+      "fo": "F07",
+      "action": "HANDOVER",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M049",
+      "aircraft": "PHDWA",
+      "captain": "C06",
+      "fo": "F03",
+      "action": "CONTINUE",
+      "handover_airport": "EKAH",
+      "transition_mode": "DIRECT",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M050",
+      "aircraft": "PHDWS",
+      "captain": "C08",
+      "fo": "F13",
+      "action": "HANDOVER",
+      "handover_airport": "EBLG",
+      "transition_mode": "IDLE_RETURN_EBLG",
+      "changed_pilots": 2,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    },
+    {
+      "mission": "M051",
+      "aircraft": "PHDWS",
+      "captain": "C08",
+      "fo": "F13",
+      "action": "CONTINUE",
+      "handover_airport": "EBAW",
+      "transition_mode": "IDLE_RETURN_EBAW",
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0,
+      "return_cost_eur": 0.0,
+      "inbound_deadhead_cost_eur": 0.0,
+      "return_pilots": 0,
+      "inbound_deadhead_pilots": 0
+    }
+  ],
+  "final_crew_decisions": [
+    {
+      "pilot_id": "C01",
+      "aircraft": "PHDWP",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "F07",
+      "aircraft": "PHDWP",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "C08",
+      "aircraft": "PHDWS",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "F13",
+      "aircraft": "PHDWS",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "C06",
+      "aircraft": "PHDWA",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "F03",
+      "aircraft": "PHDWA",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "C04",
+      "aircraft": "PHDWC",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    },
+    {
+      "pilot_id": "F02",
+      "aircraft": "PHDWC",
+      "decision": "RELEASE_AT_BASE",
+      "cost_eur": 0.0,
+      "extra_away_days": 0
+    }
+  ],
+  "validation": {
+    "aircraft_timeline_valid": true,
+    "location_continuity_valid": true,
+    "crew_on_every_movement": true,
+    "pilot_movement_overlap_valid": true,
+    "dataset_self_contained": true
+  },
+  "schedule_signature": "9f34098de522",
+  "pareto_index": 262
+}

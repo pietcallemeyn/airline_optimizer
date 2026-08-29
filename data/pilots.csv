@@ -1,0 +1,26 @@
+id,name,role,home_base,max_duty_min
+C01,Captain 01,CAPT,EBAW,600
+C02,Captain 02,CAPT,EBAW,600
+C03,Captain 03,CAPT,EBAW,600
+C04,Captain 04,CAPT,EBAW,600
+C05,Captain 05,CAPT,EBAW,600
+C06,Captain 06,CAPT,EBAW,600
+C07,Captain 07,CAPT,EBLG,600
+C08,Captain 08,CAPT,EBLG,600
+C09,Captain 09,CAPT,EBLG,600
+C10,Captain 10,CAPT,EBLG,600
+C11,Captain 11,CAPT,EBLG,600
+C12,Captain 12,CAPT,EBLG,600
+F01,First Officer 01,FO,EBAW,600
+F02,First Officer 02,FO,EBAW,600
+F03,First Officer 03,FO,EBAW,600
+F04,First Officer 04,FO,EBAW,600
+F05,First Officer 05,FO,EBAW,600
+F06,First Officer 06,FO,EBAW,600
+F07,First Officer 07,FO,EBAW,600
+F08,First Officer 08,FO,EBLG,600
+F09,First Officer 09,FO,EBLG,600
+F10,First Officer 10,FO,EBLG,600
+F11,First Officer 11,FO,EBLG,600
+F12,First Officer 12,FO,EBLG,600
+F13,First Officer 13,FO,EBLG,600

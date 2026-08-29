@@ -1,0 +1,6 @@
+registration,capacity,start_airport,return_airport,available_from,status
+PHDWA,43,FLEX,FLEX,2026-07-24T00:00:00,available
+PHDWC,31,FLEX,FLEX,2026-07-24T00:00:00,available
+PHDWP,38,FLEX,FLEX,2026-07-24T00:00:00,available
+PHDWS,31,FLEX,FLEX,2026-07-24T00:00:00,available
+PHJSK,50,FLEX,FLEX,2026-08-01T00:00:00,unavailable
