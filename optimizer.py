@@ -45,6 +45,12 @@ NONHOMEBASE_SWAP_COST_EUR = 600.0
 CREW_DEADHEAD_COST_EUR = 600.0
 AIRCRAFT_AWAY_PARKING_DAY_COST_EUR = 1000.0
 
+# Pilot planning is data-driven. These are populated by load_pilot_planning_data().
+PILOT_AVAILABILITY = {}
+PILOT_RULES = {}
+PILOT_MONTHLY_STATE = {}
+BLOCKING_AVAILABILITY_STATUSES = {"UNAVAILABLE", "LEAVE", "TRAINING"}
+
 # Complexity score
 COMPLEXITY_EMPTY_LEG = 1
 COMPLEXITY_INBOUND_DEADHEAD = 2
@@ -206,7 +212,178 @@ def load_data():
                 int(row["max_duty_min"]),
             )
 
+    load_pilot_planning_data(pilots)
     return airports, aircraft, missions, pilots
+
+
+def _float_or(value, default):
+    try:
+        text = str(value or "").strip()
+        return float(text) if text else float(default)
+    except Exception:
+        return float(default)
+
+
+def _int_or_none(value):
+    try:
+        text = str(value or "").strip()
+        return int(float(text)) if text else None
+    except Exception:
+        return None
+
+
+def load_pilot_planning_data(pilots):
+    """Load editable pilot availability, contract rules and monthly carry-in state."""
+    global PILOT_AVAILABILITY, PILOT_RULES, PILOT_MONTHLY_STATE
+    PILOT_AVAILABILITY = {}
+    PILOT_RULES = {}
+    PILOT_MONTHLY_STATE = {}
+
+    availability_path = DATA / "pilot_availability.csv"
+    if availability_path.exists():
+        with availability_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                pid = str(row.get("pilot_id", "")).strip()
+                day_text = str(row.get("date", "")).strip()
+                status = str(row.get("status", "AVAILABLE")).strip().upper() or "AVAILABLE"
+                if pid in pilots and day_text:
+                    try:
+                        day = datetime.fromisoformat(day_text).date()
+                    except Exception:
+                        continue
+                    PILOT_AVAILABILITY[(pid, day)] = {
+                        "status": status,
+                        "note": str(row.get("note", "")).strip(),
+                    }
+
+    rules_path = DATA / "pilot_rules.csv"
+    if rules_path.exists():
+        with rules_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                pid = str(row.get("pilot_id", "")).strip()
+                if pid not in pilots:
+                    continue
+                active = str(row.get("active", "true")).strip().lower() not in {"0", "false", "no", "off"}
+                PILOT_RULES[pid] = {
+                    "active": active,
+                    "daily_rate_eur": _float_or(row.get("daily_rate_eur"), PILOT_DAY_COST_EUR),
+                    "min_paid_days_per_month": _int_or_none(row.get("min_paid_days_per_month")) or 0,
+                    "max_planned_days_per_month": _int_or_none(row.get("max_planned_days_per_month")),
+                    "preferred_home_base": str(row.get("preferred_home_base", "")).strip().upper(),
+                    "note": str(row.get("note", "")).strip(),
+                }
+
+    state_path = DATA / "pilot_monthly_state.csv"
+    if state_path.exists():
+        with state_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                pid = str(row.get("pilot_id", "")).strip()
+                month = str(row.get("month", "")).strip()
+                if pid in pilots and month:
+                    PILOT_MONTHLY_STATE[(pid, month)] = {
+                        "days_already_used": _int_or_none(row.get("days_already_used")) or 0,
+                        "note": str(row.get("note", "")).strip(),
+                    }
+
+
+def pilot_rule(pid):
+    return PILOT_RULES.get(pid, {
+        "active": True,
+        "daily_rate_eur": PILOT_DAY_COST_EUR,
+        "min_paid_days_per_month": 0,
+        "max_planned_days_per_month": None,
+        "preferred_home_base": "",
+        "note": "",
+    })
+
+
+def pilot_available_on(pid, day):
+    rule = pilot_rule(pid)
+    if not rule.get("active", True):
+        return False
+    entry = PILOT_AVAILABILITY.get((pid, day))
+    if not entry:
+        return True
+    return entry.get("status", "AVAILABLE").upper() not in BLOCKING_AVAILABILITY_STATUSES
+
+
+def _pilot_month_key(day):
+    return day.strftime("%Y-%m")
+
+
+def pilot_planned_days_by_month(charged_days, pid):
+    counts = {}
+    for charged_pid, day in charged_days:
+        if charged_pid != pid:
+            continue
+        month = _pilot_month_key(day)
+        counts[month] = counts.get(month, 0) + 1
+    return counts
+
+
+def pilot_day_allowed(pid, day, charged_days):
+    if not pilot_available_on(pid, day):
+        return False
+    max_days = pilot_rule(pid).get("max_planned_days_per_month")
+    if max_days is None:
+        return True
+    if (pid, day) in charged_days:
+        return True
+    month = _pilot_month_key(day)
+    planned = pilot_planned_days_by_month(charged_days, pid).get(month, 0)
+    return planned < max_days
+
+
+def pilot_incremental_cost(charged_days):
+    """Marginal pilot cost inside the optimization horizon.
+
+    For a minimum-paid-days contract, days inside the guaranteed band have zero
+    marginal cost until carry-in + planned days exceed the monthly minimum.
+    """
+    by_pilot_month = {}
+    for pid, day in charged_days:
+        by_pilot_month.setdefault((pid, _pilot_month_key(day)), set()).add(day)
+
+    total = 0.0
+    detail = {}
+    all_keys = set(by_pilot_month) | set(PILOT_MONTHLY_STATE)
+    for pid, month in all_keys:
+        if pid not in {x[0] for x in charged_days} and (pid, month) not in by_pilot_month:
+            continue
+        rule = pilot_rule(pid)
+        rate = float(rule.get("daily_rate_eur", PILOT_DAY_COST_EUR))
+        minimum = int(rule.get("min_paid_days_per_month") or 0)
+        prior = int(PILOT_MONTHLY_STATE.get((pid, month), {}).get("days_already_used", 0))
+        planned = len(by_pilot_month.get((pid, month), set()))
+        before_extra = max(0, prior - minimum)
+        after_extra = max(0, prior + planned - minimum)
+        chargeable_planned_days = planned if minimum <= 0 else max(0, after_extra - before_extra)
+        cost = chargeable_planned_days * rate
+        total += cost
+        if planned:
+            detail[f"{pid}:{month}"] = {
+                "planned_days": planned,
+                "days_already_used": prior,
+                "minimum_paid_days": minimum,
+                "chargeable_planned_days": chargeable_planned_days,
+                "daily_rate_eur": rate,
+                "incremental_cost_eur": round(cost, 2),
+            }
+    return total, detail
+
+
+def pilot_contract_commitment_baseline(charged_days):
+    """Informational committed minimum cost for months touched by planned pilot days."""
+    touched = {(pid, _pilot_month_key(day)) for pid, day in charged_days}
+    total = 0.0
+    for pid, month in touched:
+        rule = pilot_rule(pid)
+        minimum = int(rule.get("min_paid_days_per_month") or 0)
+        rate = float(rule.get("daily_rate_eur", PILOT_DAY_COST_EUR))
+        prior = int(PILOT_MONTHLY_STATE.get((pid, month), {}).get("days_already_used", 0))
+        remaining_guarantee = max(0, minimum - prior)
+        total += remaining_guarantee * rate
+    return total
 
 
 def distance_nm(a: Airport, b: Airport) -> float:
@@ -1298,6 +1475,13 @@ def mission_duty_feasible(
     key = (pid, mission.departure.date())
     duty_start = crew_state["duty_start"].get(key, report)
 
+    if not pilot_day_allowed(
+        pid,
+        mission.departure.date(),
+        crew_state.get("charged_pilot_days", set()),
+    ):
+        return False
+
     return (
         (release - duty_start).total_seconds() / 60.0
         <= pilot.max_duty_min
@@ -1608,12 +1792,13 @@ def crew_candidates(
                     "fo_mode": "HANDOVER_IN",
                 })
 
+    current_pilot_cost, _ = pilot_incremental_cost(
+        crew_state["charged_pilot_days"]
+    )
+
     candidates.sort(
         key=lambda x: (
-            (
-                len(x["charged_days"])
-                - len(crew_state["charged_pilot_days"])
-            ) * PILOT_DAY_COST_EUR
+            (pilot_incremental_cost(x["charged_days"])[0] - current_pilot_cost)
             + x["return_cost_eur"]
             + x["inbound_cost_eur"]
             + x["nonhome_swap_event"]
@@ -2681,6 +2866,37 @@ def evaluate(
         individual["invalid_reason"] = final_crew_reason
         return
 
+    # HARD pilot planning checks. Availability is evaluated on every aircraft
+    # movement, including empty positioning. Monthly caps are evaluated on the
+    # charged/away pilot-day set used by the cost model.
+    for reg, movements in aircraft_state.get("movements", {}).items():
+        for movement in movements:
+            for pid in (movement.get("captain"), movement.get("fo")):
+                if not pid:
+                    continue
+                day = movement["start"].date()
+                end_day = movement["end"].date()
+                while day <= end_day:
+                    if not pilot_available_on(pid, day):
+                        individual["objectives"] = (1e12, 1e9, 1e9, 1e9, 1e9)
+                        individual["solution"] = None
+                        individual["invalid_reason"] = f"PILOT_UNAVAILABLE:{pid}:{day.isoformat()}"
+                        return
+                    day += timedelta(days=1)
+
+    for pid in pilots:
+        max_days = pilot_rule(pid).get("max_planned_days_per_month")
+        if max_days is None:
+            continue
+        for month, count in pilot_planned_days_by_month(
+            crew_state.get("charged_pilot_days", set()), pid
+        ).items():
+            if count > max_days:
+                individual["objectives"] = (1e12, 1e9, 1e9, 1e9, 1e9)
+                individual["solution"] = None
+                individual["invalid_reason"] = f"PILOT_MONTHLY_CAP:{pid}:{month}:{count}>{max_days}"
+                return
+
     crew_state = apply_final_crew_policy(
         individual,
         crew_state,
@@ -2701,13 +2917,11 @@ def evaluate(
         * FLIGHT_HOUR_COST_EUR
     )
 
-    pilot_cost = (
-        len(
-            crew_state[
-                "charged_pilot_days"
-            ]
-        )
-        * PILOT_DAY_COST_EUR
+    pilot_cost, pilot_contract_detail = pilot_incremental_cost(
+        crew_state["charged_pilot_days"]
+    )
+    pilot_contract_baseline = pilot_contract_commitment_baseline(
+        crew_state["charged_pilot_days"]
     )
 
     nonhome_swap_cost = (
@@ -2816,6 +3030,14 @@ def evaluate(
                 pilot_cost,
                 2,
             ),
+            "pilot_incremental_contract_cost_eur": round(
+                pilot_cost,
+                2,
+            ),
+            "pilot_remaining_guarantee_baseline_eur": round(
+                pilot_contract_baseline,
+                2,
+            ),
             "crew_deadhead_return_cost_eur": round(
                 crew_return_cost,
                 2,
@@ -2844,6 +3066,7 @@ def evaluate(
             ),
         },
         "metrics": {
+            "pilot_contract_months": pilot_contract_detail,
             "empty_nm": round(
                 aircraft_state[
                     "empty_nm"

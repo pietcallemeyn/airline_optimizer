@@ -9,13 +9,18 @@ import re
 import signal
 import subprocess
 import sys
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+try:
+    from streamlit_calendar import calendar as streamlit_calendar
+except ImportError:
+    streamlit_calendar = None
 import plotly.express as px
 import plotly.graph_objects as go
 import visualize as viz
@@ -25,10 +30,20 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 OUTPUT = ROOT / "output"
 
+# The planning calendar is a UTC-labelled wall-clock. FullCalendar renders in the
+# browser's local timezone and streamlit-calendar serializes clicked/dragged JS
+# Date objects as UTC instants. In Belgium this means a visible 15:00 click in
+# summer arrives in Python as 13:00Z. Convert callback instants back to the
+# Europe/Brussels wall-clock, then store that visible clock time as naive UTC.
+CALENDAR_WALL_TZ = ZoneInfo("Europe/Brussels")
+
 MISSIONS = DATA / "missions.csv"
 AIRPORTS = DATA / "airports.csv"
 AIRCRAFT = DATA / "aircraft.csv"
 PILOTS = DATA / "pilots.csv"
+PILOT_AVAILABILITY = DATA / "pilot_availability.csv"
+PILOT_RULES = DATA / "pilot_rules.csv"
+PILOT_MONTHLY_STATE = DATA / "pilot_monthly_state.csv"
 
 PID_FILE = OUTPUT / "gui_optimizer.pid"
 LOG_FILE = OUTPUT / "gui_optimizer.log"
@@ -632,118 +647,593 @@ def render_results():
     )
 
 
-def mission_editor():
-    st.subheader(
-        "Mission planning"
+
+def _parse_iso_datetime(value: str) -> datetime | None:
+    value = str(value or "").strip()
+    if not value:
+        return None
+    try:
+        # FullCalendar can return a trailing Z. Mission data is stored as
+        # timezone-naive UTC, so normalize callback values to naive UTC-like
+        # datetimes before writing missions.csv.
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is not None:
+            parsed = parsed.replace(tzinfo=None)
+        return parsed
+    except Exception:
+        return None
+
+
+def _parse_calendar_callback_datetime(value: str) -> datetime | None:
+    """Convert a FullCalendar callback instant to the visible calendar wall-clock.
+
+    Mission timestamps are deliberately stored as timezone-naive UTC planning
+    times. The calendar UI is also labelled UTC, so the hour the dispatcher sees
+    must be the hour we store. streamlit-calendar serializes browser-local JS
+    Dates as UTC (Z) instants; converting that instant to Europe/Brussels first
+    reconstructs the visible wall-clock, including DST automatically.
+    """
+    value = str(value or "").strip()
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            # Some component versions may already return a floating wall-clock.
+            return parsed
+        return parsed.astimezone(CALENDAR_WALL_TZ).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
+def _airport_coordinate_lookup() -> dict[str, tuple[float, float]]:
+    df = airports_df()
+    lookup = {}
+    if df.empty:
+        return lookup
+    for _, row in df.iterrows():
+        try:
+            lookup[str(row["icao"]).strip().upper()] = (
+                float(row["lat"]),
+                float(row["lon"]),
+            )
+        except Exception:
+            continue
+    return lookup
+
+
+def _distance_nm_coords(a: tuple[float, float], b: tuple[float, float]) -> float:
+    from math import atan2, cos, radians, sin, sqrt
+
+    r_nm = 3440.065
+    lat1, lon1 = a
+    lat2, lon2 = b
+    p1 = radians(lat1)
+    p2 = radians(lat2)
+    dp = radians(lat2 - lat1)
+    dl = radians(lon2 - lon1)
+    h = sin(dp / 2) ** 2 + cos(p1) * cos(p2) * sin(dl / 2) ** 2
+    return 2 * r_nm * atan2(sqrt(h), sqrt(max(0.0, 1 - h)))
+
+
+def estimated_mission_arrival(row: pd.Series | dict) -> datetime | None:
+    departure = _parse_iso_datetime(row.get("departure", ""))
+    if departure is None:
+        return None
+
+    explicit = _parse_iso_datetime(row.get("arrival", ""))
+    if explicit is not None:
+        return explicit
+
+    coords = _airport_coordinate_lookup()
+    origin = str(row.get("origin", "")).strip().upper()
+    destination = str(row.get("destination", "")).strip().upper()
+    if origin not in coords or destination not in coords:
+        return departure + pd.Timedelta(minutes=90)
+
+    nm = _distance_nm_coords(coords[origin], coords[destination])
+    minutes = 10.0 + 60.0 * nm / 410.0
+    return departure + pd.Timedelta(minutes=minutes)
+
+
+def mission_calendar_events(missions: pd.DataFrame) -> list[dict]:
+    events = []
+    for _, row in missions.iterrows():
+        departure = _parse_iso_datetime(row.get("departure", ""))
+        if departure is None:
+            continue
+        arrival = estimated_mission_arrival(row)
+        if arrival is None or arrival <= departure:
+            arrival = departure + pd.Timedelta(minutes=60)
+
+        events.append({
+            "id": str(row["id"]),
+            "title": (
+                f'{row["id"]} · {row["origin"]} → {row["destination"]} '
+                f'· {int(row["pax"])} pax'
+            ),
+            "start": departure.isoformat(),
+            "end": arrival.isoformat(),
+            "allDay": False,
+            "editable": True,
+            "extendedProps": {
+                "origin": str(row["origin"]),
+                "destination": str(row["destination"]),
+                "pax": int(row["pax"]),
+                "arrival_source": (
+                    "manual" if str(row.get("arrival", "")).strip() else "estimated"
+                ),
+            },
+        })
+    return events
+
+
+def optimizer_results_are_stale() -> bool:
+    if not MISSIONS.exists() or not OUTPUT.exists():
+        return False
+    output_files = list(OUTPUT.glob("pareto_*.json"))
+    for name in ("cheapest.json", "balanced.json", "diverse_solutions.json"):
+        p = OUTPUT / name
+        if p.exists():
+            output_files.append(p)
+    if not output_files:
+        return False
+    try:
+        newest_result = max(p.stat().st_mtime for p in output_files)
+        return MISSIONS.stat().st_mtime > newest_result
+    except OSError:
+        return False
+
+
+def _calendar_callback_signature(state: dict) -> str:
+    try:
+        return json.dumps(state, sort_keys=True, default=str)
+    except Exception:
+        return repr(state)
+
+
+def _remember_mission_calendar_position(state: dict) -> None:
+    """Remember the visible calendar date/view before Streamlit remounts it.
+
+    FullCalendar itself lives in the browser, so changing the component key clears
+    a temporary selection but would normally also send the user back to the
+    original initialDate. We keep the last interacted date and view in
+    session_state and feed them back as initialDate/initialView after the remount.
+    """
+    callback = str(state.get("callback", ""))
+    payload = state.get(callback, {}) or {}
+
+    # Prefer the actual item/date the dispatcher interacted with. This is more
+    # robust than using currentStart, which is the start of the whole week/month.
+    raw_date = ""
+    if callback == "dateClick":
+        raw_date = payload.get("date", "")
+    elif callback == "select":
+        raw_date = payload.get("start", "")
+    elif callback == "eventClick":
+        raw_date = (payload.get("event", {}) or {}).get("start", "")
+    elif callback == "eventChange":
+        raw_date = (payload.get("event", {}) or {}).get("start", "")
+
+    visible_dt = _parse_calendar_callback_datetime(raw_date)
+    if visible_dt is not None:
+        st.session_state["mission_calendar_focus_date"] = visible_dt.date().isoformat()
+
+    # All callback payloads used by streamlit-calendar can include a FullCalendar
+    # view object. Find it recursively so this also survives small wrapper changes.
+    def find_view(obj):
+        if isinstance(obj, dict):
+            if isinstance(obj.get("view"), dict):
+                return obj["view"]
+            for value in obj.values():
+                found = find_view(value)
+                if found is not None:
+                    return found
+        elif isinstance(obj, list):
+            for value in obj:
+                found = find_view(value)
+                if found is not None:
+                    return found
+        return None
+
+    view = find_view(payload)
+    if view:
+        view_type = str(view.get("type", "")).strip()
+        if view_type in {"timeGridDay", "timeGridWeek", "dayGridMonth"}:
+            st.session_state["mission_calendar_view"] = view_type
+
+        # Fallback when a callback has no directly usable interacted date.
+        if "mission_calendar_focus_date" not in st.session_state:
+            current_start = _parse_calendar_callback_datetime(view.get("currentStart", ""))
+            if current_start is not None:
+                st.session_state["mission_calendar_focus_date"] = current_start.date().isoformat()
+
+
+def _reset_mission_calendar_component() -> None:
+    """Remount FullCalendar to clear selection while preserving date/view."""
+    st.session_state["mission_calendar_revision"] = (
+        int(st.session_state.get("mission_calendar_revision", 0)) + 1
     )
+    st.session_state.pop("last_mission_calendar_callback", None)
+
+
+def _apply_calendar_event_change(missions: pd.DataFrame, payload: dict) -> tuple[pd.DataFrame, str | None]:
+    event = payload.get("event", {}) or {}
+    old_event = payload.get("oldEvent", {}) or {}
+    mid = str(event.get("id", "")).strip()
+    new_start = _parse_calendar_callback_datetime(event.get("start", ""))
+    old_start = _parse_calendar_callback_datetime(old_event.get("start", ""))
+
+    if not mid or new_start is None:
+        return missions, None
+
+    matches = missions.index[missions["id"].astype(str) == mid].tolist()
+    if not matches:
+        return missions, None
+
+    idx = matches[0]
+    previous_departure = _parse_iso_datetime(missions.at[idx, "departure"])
+    missions.at[idx, "departure"] = new_start.isoformat()
+
+    # Preserve the same manual block duration when a mission is dragged.
+    manual_arrival = _parse_iso_datetime(missions.at[idx, "arrival"])
+    reference_start = old_start or previous_departure
+    if manual_arrival is not None and reference_start is not None:
+        missions.at[idx, "arrival"] = (
+            manual_arrival + (new_start - reference_start)
+        ).isoformat()
+
+    save_csv(normalize_missions(missions), MISSIONS)
+    return missions, mid
+
+
+def _set_calendar_editor_for_existing(missions: pd.DataFrame, mid: str) -> None:
+    matches = missions[missions["id"].astype(str) == str(mid)]
+    if matches.empty:
+        return
+    row = matches.iloc[0]
+    st.session_state["mission_calendar_editor"] = {
+        "mode": "edit",
+        "id": str(row["id"]),
+    }
+
+
+def _set_calendar_editor_for_new(when: datetime) -> None:
+    st.session_state["mission_calendar_editor"] = {
+        "mode": "new",
+        "start": when.isoformat(),
+    }
+
+
+def render_calendar_mission_form(missions: pd.DataFrame, airports: list[str]) -> None:
+    editor = st.session_state.get("mission_calendar_editor")
+
+    st.markdown("#### Mission details")
+    if not editor:
+        st.caption(
+            "Click an empty calendar slot to add a mission, or click an existing "
+            "mission to edit it. Drag a mission to change its departure time."
+        )
+        return
+
+    mode = editor.get("mode")
+    existing = None
+    if mode == "edit":
+        matches = missions[missions["id"].astype(str) == str(editor.get("id", ""))]
+        if matches.empty:
+            st.session_state.pop("mission_calendar_editor", None)
+            st.warning("That mission no longer exists.")
+            return
+        existing = matches.iloc[0]
+        mid = str(existing["id"])
+        dep = _parse_iso_datetime(existing["departure"]) or datetime.now().replace(second=0, microsecond=0)
+        origin_default = str(existing["origin"])
+        destination_default = str(existing["destination"])
+        pax_default = int(existing["pax"])
+        manual_arrival_dt = _parse_iso_datetime(existing.get("arrival", ""))
+    else:
+        mid = next_mission_id(missions)
+        dep = _parse_iso_datetime(editor.get("start", "")) or datetime.now().replace(second=0, microsecond=0)
+        origin_default = airports[0] if airports else ""
+        destination_default = airports[1] if len(airports) > 1 else origin_default
+        pax_default = 10
+        manual_arrival_dt = None
+
+    def option_index(value: str, options: list[str], fallback: int = 0) -> int:
+        try:
+            return options.index(value)
+        except ValueError:
+            return min(fallback, max(0, len(options) - 1))
+
+    with st.form("calendar_mission_editor_form"):
+        st.caption(f"Mission ID: **{mid}**")
+        origin = st.selectbox(
+            "Origin",
+            airports,
+            index=option_index(origin_default, airports, 0) if airports else None,
+        )
+        destination = st.selectbox(
+            "Destination",
+            airports,
+            index=option_index(destination_default, airports, 1) if airports else None,
+        )
+        c1, c2 = st.columns(2)
+        mission_date = c1.date_input("Date", value=dep.date())
+        mission_time = c2.time_input(
+            "Departure UTC",
+            value=dep.time().replace(second=0, microsecond=0),
+            step=900,
+        )
+        pax = st.number_input(
+            "Passengers",
+            min_value=0,
+            max_value=100,
+            value=pax_default,
+            step=1,
+        )
+
+        manual_arrival = st.checkbox(
+            "Use manual arrival time",
+            value=manual_arrival_dt is not None,
+            help="Leave this off to let the optimizer estimate block time from route distance.",
+        )
+        if manual_arrival:
+            arrival_seed = manual_arrival_dt or (dep + pd.Timedelta(minutes=90))
+            a1, a2 = st.columns(2)
+            arrival_date = a1.date_input(
+                "Arrival date",
+                value=arrival_seed.date(),
+                key="calendar_arrival_date",
+            )
+            arrival_time = a2.time_input(
+                "Arrival UTC",
+                value=arrival_seed.time().replace(second=0, microsecond=0),
+                step=900,
+                key="calendar_arrival_time",
+            )
+        else:
+            arrival_date = None
+            arrival_time = None
+
+        b1, b2 = st.columns(2)
+        save_clicked = b1.form_submit_button("Save mission", type="primary")
+        delete_clicked = b2.form_submit_button(
+            "Delete mission" if mode == "edit" else "Cancel",
+        )
+
+    if save_clicked:
+        if not airports:
+            st.error("No airports are available in airports.csv.")
+            return
+        if origin == destination:
+            st.error("Origin and destination must differ.")
+            return
+
+        departure = datetime.combine(mission_date, mission_time)
+        arrival_value = ""
+        if manual_arrival:
+            manual_dt = datetime.combine(arrival_date, arrival_time)
+            if manual_dt <= departure:
+                st.error("Arrival must be after departure.")
+                return
+            arrival_value = manual_dt.isoformat()
+
+        row = {
+            "id": mid,
+            "origin": origin,
+            "destination": destination,
+            "departure": departure.isoformat(),
+            "arrival": arrival_value,
+            "pax": int(pax),
+        }
+
+        if mode == "edit":
+            idx = missions.index[missions["id"].astype(str) == mid][0]
+            for column, value in row.items():
+                missions.at[idx, column] = value
+        else:
+            missions = pd.concat([missions, pd.DataFrame([row])], ignore_index=True)
+
+        normalized = normalize_missions(missions)
+        errors = validate_missions(normalized)
+        if errors:
+            st.error("\n".join(errors[:10]))
+            return
+
+        save_csv(normalized, MISSIONS)
+        st.session_state.pop("mission_calendar_editor", None)
+        st.session_state["missions_changed_notice"] = True
+        _reset_mission_calendar_component()
+        st.rerun()
+
+    if delete_clicked:
+        if mode == "edit":
+            missions = missions[missions["id"].astype(str) != mid].reset_index(drop=True)
+            save_csv(normalize_missions(missions), MISSIONS)
+            st.session_state["missions_changed_notice"] = True
+        st.session_state.pop("mission_calendar_editor", None)
+        _reset_mission_calendar_component()
+        st.rerun()
+
+def mission_editor():
+    st.subheader("Mission planning")
 
     st.caption(
-        "Add missions one by one, paste a whole planning block, "
-        "or edit the table directly. Arrival may remain blank; "
-        "the optimizer estimates it automatically."
+        "Plan demand on a calendar before aircraft are assigned. Click an empty "
+        "time slot to create a mission, click a mission to edit it, or drag it "
+        "to another time. Aircraft assignment remains entirely up to the optimizer."
     )
 
-    missions = normalize_missions(
-        load_csv(MISSIONS)
-    )
-
+    missions = normalize_missions(load_csv(MISSIONS))
     airports = airport_codes()
 
-    add_tab, paste_tab, table_tab = st.tabs(
-        [
-            "Add mission",
-            "Paste planning",
-            "Edit all missions",
-        ]
+    if optimizer_results_are_stale():
+        st.warning(
+            "Planning changed — the current optimizer results are older than missions.csv. "
+            "Run the optimizer again before comparing schedules."
+        )
+    elif st.session_state.pop("missions_changed_notice", False):
+        st.info("Mission planning saved.")
+
+    calendar_tab, paste_tab, table_tab = st.tabs(
+        ["Calendar", "Bulk import", "Table"]
     )
 
-    with add_tab:
-        with st.form(
-            "add_mission_form",
-            clear_on_submit=False,
-        ):
-            row1 = st.columns(
-                [1.1, 1.1, 1, 1]
+    with calendar_tab:
+        if streamlit_calendar is None:
+            st.error(
+                "The interactive calendar component is not installed yet. Run "
+                "`python -m pip install streamlit-calendar` once in this virtual environment, "
+                "then restart Streamlit. The Table and Bulk import tabs still work."
+            )
+        else:
+            events = mission_calendar_events(missions)
+            valid_departures = [
+                _parse_iso_datetime(x)
+                for x in missions["departure"].tolist()
+            ] if not missions.empty else []
+            valid_departures = [x for x in valid_departures if x is not None]
+            default_initial_date = (
+                min(valid_departures).date().isoformat()
+                if valid_departures
+                else date.today().isoformat()
+            )
+            initial_date = st.session_state.get(
+                "mission_calendar_focus_date",
+                default_initial_date,
+            )
+            initial_view = st.session_state.get(
+                "mission_calendar_view",
+                "timeGridWeek",
             )
 
-            origin = row1[0].selectbox(
-                "Origin",
-                airports,
-                index=0 if airports else None,
-            )
+            options = {
+                "initialView": initial_view,
+                # Render floating mission times as browser wall-clock. The UI is
+                # labelled UTC; callback conversion below prevents browser TZ
+                # serialization from changing the stored mission hour.
+                "timeZone": "local",
+                "initialDate": initial_date,
+                "firstDay": 1,
+                "editable": True,
+                "eventStartEditable": True,
+                "eventDurationEditable": False,
+                "selectable": True,
+                "selectMirror": True,
+                "nowIndicator": True,
+                "allDaySlot": False,
+                "slotMinTime": "00:00:00",
+                "slotMaxTime": "24:00:00",
+                "slotDuration": "00:30:00",
+                "snapDuration": "00:15:00",
+                "scrollTime": "06:00:00",
+                "height": 760,
+                "eventTimeFormat": {
+                    "hour": "2-digit",
+                    "minute": "2-digit",
+                    "hour12": False,
+                },
+                "headerToolbar": {
+                    "left": "today prev,next",
+                    "center": "title",
+                    "right": "timeGridDay,timeGridWeek,dayGridMonth",
+                },
+                "buttonText": {
+                    "today": "Today",
+                    "day": "Day",
+                    "week": "Week",
+                    "month": "Month",
+                },
+            }
 
-            destination = row1[1].selectbox(
-                "Destination",
-                airports,
-                index=1 if len(airports) > 1 else 0,
-            )
+            custom_css = """
+            .fc { font-size: 0.88rem; }
+            .fc .fc-toolbar-title { font-size: 1.2rem; font-weight: 650; }
+            .fc .fc-timegrid-slot { height: 2.15em; }
+            .fc .fc-event { border-radius: 5px; padding: 1px 3px; cursor: pointer; }
+            .fc .fc-event-title { font-weight: 650; }
+            .fc .fc-event-time { font-weight: 600; }
+            .fc .fc-col-header-cell-cushion { padding: 6px 4px; }
+            """
 
-            flight_date = row1[2].date_input(
-                "Date",
-                value=date.today(),
-            )
-
-            flight_time = row1[3].time_input(
-                "Departure UTC",
-                value=time(9, 0),
-            )
-
-            pax = st.number_input(
-                "Passengers",
-                min_value=0,
-                max_value=100,
-                value=10,
-                step=1,
-            )
-
-            submitted = st.form_submit_button(
-                "Add mission",
-                type="primary",
-            )
-
-        if submitted:
-            if origin == destination:
-                st.error(
-                    "Origin and destination must differ."
+            left, right = st.columns([3.5, 1.25], gap="large")
+            with left:
+                calendar_revision = int(
+                    st.session_state.get("mission_calendar_revision", 0)
                 )
-            else:
-                departure = datetime.combine(
-                    flight_date,
-                    flight_time,
+                state = streamlit_calendar(
+                    events=events,
+                    options=options,
+                    custom_css=custom_css,
+                    callbacks=["dateClick", "eventClick", "eventChange", "select"],
+                    key=f"mission_planning_calendar_{calendar_revision}",
+                ) or {}
+
+                callback = state.get("callback")
+                if callback:
+                    # Save the browser-side date/view before any st.rerun() or
+                    # component remount. This keeps the dispatcher on the same
+                    # week/day/month after Save, Delete, Cancel or drag/drop.
+                    _remember_mission_calendar_position(state)
+                    signature = _calendar_callback_signature(state)
+                    if signature != st.session_state.get("last_mission_calendar_callback"):
+                        st.session_state["last_mission_calendar_callback"] = signature
+
+                        if callback == "eventClick":
+                            event = (state.get("eventClick") or {}).get("event", {})
+                            mid = str(event.get("id", "")).strip()
+                            if mid:
+                                _set_calendar_editor_for_existing(missions, mid)
+                                st.rerun()
+
+                        elif callback == "dateClick":
+                            clicked = _parse_calendar_callback_datetime(
+                                (state.get("dateClick") or {}).get("date", "")
+                            )
+                            if clicked is not None:
+                                _set_calendar_editor_for_new(clicked)
+                                st.rerun()
+
+                        elif callback == "select":
+                            clicked = _parse_calendar_callback_datetime(
+                                (state.get("select") or {}).get("start", "")
+                            )
+                            if clicked is not None:
+                                _set_calendar_editor_for_new(clicked)
+                                st.rerun()
+
+                        elif callback == "eventChange":
+                            missions, moved_mid = _apply_calendar_event_change(
+                                missions,
+                                state.get("eventChange") or {},
+                            )
+                            if moved_mid:
+                                st.session_state["missions_changed_notice"] = True
+                                st.session_state["mission_calendar_editor"] = {
+                                    "mode": "edit",
+                                    "id": moved_mid,
+                                }
+                                _reset_mission_calendar_component()
+                                st.rerun()
+
+                st.caption(
+                    f"{len(events)} missions · drag = move departure · "
+                    "15-minute snapping · times shown in UTC"
                 )
 
-                new = {
-                    "id": next_mission_id(
-                        missions
-                    ),
-                    "origin": origin,
-                    "destination": destination,
-                    "departure": departure.isoformat(),
-                    "arrival": "",
-                    "pax": int(pax),
-                }
-
-                missions = pd.concat(
-                    [
-                        missions,
-                        pd.DataFrame([new]),
-                    ],
-                    ignore_index=True,
-                )
-
-                save_csv(
-                    missions,
-                    MISSIONS,
-                )
-
-                st.success(
-                    f'Added {new["id"]}: '
-                    f'{origin} → {destination}.'
-                )
-
-                st.rerun()
+            with right:
+                render_calendar_mission_form(missions, airports)
 
     with paste_tab:
+        st.markdown("#### Bulk import")
+        st.caption(
+            "Keep the fast paste workflow for larger planning updates. New missions "
+            "appear in the calendar immediately after import."
+        )
         default_year = st.number_input(
             "Default year",
             min_value=2020,
@@ -751,7 +1241,6 @@ def mission_editor():
             value=2026,
             step=1,
         )
-
         bulk = st.text_area(
             "Paste missions",
             height=280,
@@ -762,136 +1251,592 @@ def mission_editor():
                 "EDDC-LDPL 1050 13"
             ),
         )
-
-        if st.button(
-            "Parse & append",
-            type="primary",
-        ):
-            rows, warnings = parse_bulk_missions(
-                bulk,
-                missions,
-                int(default_year),
-            )
-
+        if st.button("Parse & append", type="primary", key="bulk_append_missions"):
+            rows, warnings = parse_bulk_missions(bulk, missions, int(default_year))
             known = set(airports)
-
             unknown = sorted({
                 airport
                 for row in rows
-                for airport in (
-                    row["origin"],
-                    row["destination"],
-                )
+                for airport in (row["origin"], row["destination"])
                 if airport not in known
             })
-
             if warnings:
-                st.warning(
-                    "\n".join(warnings)
-                )
-
+                st.warning("\n".join(warnings))
             if unknown:
-                st.error(
-                    "These airports are not yet in airports.csv: "
-                    + ", ".join(unknown)
-                )
-
+                st.error("These airports are not yet in airports.csv: " + ", ".join(unknown))
             elif rows:
-                updated = pd.concat(
-                    [
-                        missions,
-                        pd.DataFrame(rows),
-                    ],
-                    ignore_index=True,
-                )
-
-                save_csv(
-                    updated,
-                    MISSIONS,
-                )
-
-                st.success(
-                    f"Added {len(rows)} missions."
-                )
-
+                updated = pd.concat([missions, pd.DataFrame(rows)], ignore_index=True)
+                save_csv(normalize_missions(updated), MISSIONS)
+                st.session_state["missions_changed_notice"] = True
+                st.success(f"Added {len(rows)} missions.")
                 st.rerun()
-
             else:
-                st.info(
-                    "No missions found."
-                )
+                st.info("No missions found.")
 
     with table_tab:
+        st.markdown("#### Table editor")
+        st.caption(
+            "Use this for exact data corrections or deleting/adding several rows. "
+            "Arrival may stay blank; the optimizer estimates it automatically."
+        )
         edited = st.data_editor(
             missions,
             width="stretch",
             hide_index=True,
             num_rows="dynamic",
             column_config={
-                "id": st.column_config.TextColumn(
-                    "Mission ID",
-                ),
-                "origin": st.column_config.SelectboxColumn(
-                    "Origin",
-                    options=airports,
-                ),
-                "destination": st.column_config.SelectboxColumn(
-                    "Destination",
-                    options=airports,
-                ),
+                "id": st.column_config.TextColumn("Mission ID"),
+                "origin": st.column_config.SelectboxColumn("Origin", options=airports),
+                "destination": st.column_config.SelectboxColumn("Destination", options=airports),
                 "departure": st.column_config.TextColumn(
-                    "Departure UTC",
-                    help="Example: 2026-08-07T06:50:00",
+                    "Departure UTC", help="Example: 2026-08-07T06:50:00"
                 ),
                 "arrival": st.column_config.TextColumn(
-                    "Arrival",
-                    help="Leave blank to estimate automatically.",
+                    "Arrival", help="Leave blank to estimate automatically."
                 ),
                 "pax": st.column_config.NumberColumn(
-                    "Pax",
-                    min_value=0,
-                    max_value=100,
-                    step=1,
+                    "Pax", min_value=0, max_value=100, step=1
                 ),
             },
             key="mission_table",
         )
-
-        c1, c2 = st.columns(
-            [1, 4]
-        )
-
-        if c1.button(
-            "Save missions",
-            type="primary",
-        ):
-            normalized = normalize_missions(
-                edited
-            )
-
-            errors = validate_missions(
-                normalized
-            )
-
+        c1, c2 = st.columns([1, 4])
+        if c1.button("Save missions", type="primary", key="save_mission_table"):
+            normalized = normalize_missions(edited)
+            errors = validate_missions(normalized)
             if errors:
-                st.error(
-                    "\n".join(
-                        errors[:15]
-                    )
-                )
+                st.error("\n".join(errors[:15]))
             else:
-                save_csv(
-                    normalized,
-                    MISSIONS,
-                )
+                save_csv(normalized, MISSIONS)
+                st.session_state["missions_changed_notice"] = True
+                st.success("missions.csv saved.")
+                st.rerun()
+        c2.caption(f"{len(edited)} missions currently in the table.")
 
-                st.success(
-                    "missions.csv saved."
-                )
 
-        c2.caption(
-            f"{len(edited)} missions currently in the table."
+def _ensure_pilot_planning_files() -> None:
+    pilots = load_csv(PILOTS)
+    pilot_ids = pilots["id"].astype(str).tolist() if not pilots.empty and "id" in pilots.columns else []
+
+    if not PILOT_AVAILABILITY.exists():
+        save_csv(pd.DataFrame(columns=["pilot_id", "date", "status", "note"]), PILOT_AVAILABILITY)
+
+    if not PILOT_MONTHLY_STATE.exists():
+        save_csv(pd.DataFrame(columns=["pilot_id", "month", "days_already_used", "note"]), PILOT_MONTHLY_STATE)
+
+    if not PILOT_RULES.exists():
+        rows = []
+        for _, pilot in pilots.iterrows():
+            rows.append({
+                "pilot_id": str(pilot.get("id", "")),
+                "active": "true",
+                "daily_rate_eur": 600,
+                "min_paid_days_per_month": 0,
+                "max_planned_days_per_month": "",
+                "preferred_home_base": str(pilot.get("home_base", "")),
+                "note": "",
+            })
+        save_csv(pd.DataFrame(rows), PILOT_RULES)
+    else:
+        rules = load_csv(PILOT_RULES)
+        existing = set(rules.get("pilot_id", pd.Series(dtype=str)).astype(str)) if not rules.empty else set()
+        missing = []
+        for _, pilot in pilots.iterrows():
+            pid = str(pilot.get("id", ""))
+            if pid and pid not in existing:
+                missing.append({
+                    "pilot_id": pid,
+                    "active": "true",
+                    "daily_rate_eur": 600,
+                    "min_paid_days_per_month": 0,
+                    "max_planned_days_per_month": "",
+                    "preferred_home_base": str(pilot.get("home_base", "")),
+                    "note": "",
+                })
+        if missing:
+            save_csv(pd.concat([rules, pd.DataFrame(missing)], ignore_index=True), PILOT_RULES)
+
+
+def _pilot_display_lookup() -> dict[str, str]:
+    pilots = load_csv(PILOTS)
+    result = {}
+    for _, row in pilots.iterrows():
+        pid = str(row.get("id", "")).strip()
+        name = str(row.get("name", "")).strip()
+        role = str(row.get("role", "")).strip()
+        base = str(row.get("home_base", "")).strip()
+        if pid:
+            result[pid] = f"{pid} · {name} · {role} · {base}"
+    return result
+
+
+PILOT_AVAILABILITY_COLORS = {
+    "AVAILABLE": {"bg": "#DCFCE7", "fg": "#166534"},
+    "UNAVAILABLE": {"bg": "#FEE2E2", "fg": "#991B1B"},
+    "LEAVE": {"bg": "#FFEDD5", "fg": "#9A3412"},
+    "TRAINING": {"bg": "#DBEAFE", "fg": "#1E40AF"},
+}
+
+
+def _pilot_calendar_date_range() -> tuple[date, date]:
+    """Return a generous year-based range so default AVAILABLE days are visible."""
+    mission_df = normalize_missions(load_csv(MISSIONS))
+    parsed = [_parse_iso_datetime(x) for x in mission_df.get("departure", pd.Series(dtype=str)).tolist()]
+    parsed = [x for x in parsed if x is not None]
+    if parsed:
+        first_year = min(x.year for x in parsed)
+        last_year = max(x.year for x in parsed)
+    else:
+        first_year = last_year = date.today().year
+    return date(first_year, 1, 1), date(last_year, 12, 31)
+
+
+def _pilot_availability_events(df: pd.DataFrame, pilot_id: str) -> list[dict]:
+    """Render every planning day with a state color.
+
+    AVAILABLE remains the data-model default (no CSV row required), but it is
+    rendered explicitly as a green background so the planner can see the state.
+    Exceptions override the default and also get a small labelled foreground pill.
+    """
+    work = df[df["pilot_id"].astype(str) == str(pilot_id)].copy() if not df.empty else pd.DataFrame()
+    exceptions: dict[str, tuple[str, str]] = {}
+    for _, row in work.iterrows():
+        day = str(row.get("date", "")).strip()
+        if not day:
+            continue
+        status = str(row.get("status", "AVAILABLE")).strip().upper() or "AVAILABLE"
+        if status not in PILOT_AVAILABILITY_COLORS:
+            status = "AVAILABLE"
+        note = str(row.get("note", "")).strip()
+        exceptions[day] = (status, note)
+
+    start_day, end_day = _pilot_calendar_date_range()
+    events: list[dict] = []
+    for stamp in pd.date_range(start_day, end_day, freq="D"):
+        day = stamp.date().isoformat()
+        status, note = exceptions.get(day, ("AVAILABLE", ""))
+        palette = PILOT_AVAILABILITY_COLORS[status]
+        events.append({
+            "id": f"{pilot_id}:{day}:background",
+            "start": day,
+            "allDay": True,
+            "display": "background",
+            "backgroundColor": palette["bg"],
+            "extendedProps": {"pilot_id": pilot_id, "status": status, "note": note},
+        })
+        if status != "AVAILABLE":
+            events.append({
+                "id": f"{pilot_id}:{day}:label",
+                "title": status if not note else f"{status} · {note}",
+                "start": day,
+                "allDay": True,
+                "editable": False,
+                "backgroundColor": palette["fg"],
+                "borderColor": palette["fg"],
+                "textColor": "#FFFFFF",
+                "extendedProps": {"pilot_id": pilot_id, "status": status, "note": note},
+            })
+    return events
+
+
+def _remember_pilot_calendar_position(state: dict, clicked_day: date | None = None) -> None:
+    """Preserve visible month when the calendar is remounted after Save."""
+    if clicked_day is not None:
+        st.session_state["pilot_availability_calendar_focus_date"] = clicked_day.isoformat()
+
+    callback = str(state.get("callback", ""))
+    payload = state.get(callback, {}) or {}
+
+    def find_view(obj):
+        if isinstance(obj, dict):
+            if isinstance(obj.get("view"), dict):
+                return obj["view"]
+            for value in obj.values():
+                found = find_view(value)
+                if found is not None:
+                    return found
+        elif isinstance(obj, list):
+            for value in obj:
+                found = find_view(value)
+                if found is not None:
+                    return found
+        return None
+
+    view = find_view(payload)
+    if view:
+        current_start = str(view.get("currentStart", "")).strip()
+        if current_start:
+            try:
+                st.session_state["pilot_availability_calendar_focus_date"] = current_start[:10]
+            except Exception:
+                pass
+
+
+def _reset_pilot_availability_calendar() -> None:
+    """Force FullCalendar to refresh its events while keeping the current month."""
+    st.session_state["pilot_availability_calendar_revision"] = (
+        int(st.session_state.get("pilot_availability_calendar_revision", 0)) + 1
+    )
+    st.session_state.pop("last_pilot_availability_callback", None)
+
+
+def _calendar_callback_date(payload: dict) -> date | None:
+    """Return the calendar day the planner actually clicked.
+
+    streamlit-calendar may serialize an all-day/dateClick value as a UTC JS
+    instant. Around Europe/Brussels this can therefore be the previous UTC
+    date (for example visible 21 Aug -> 20 Aug 22:00Z). Convert timestamp
+    callbacks back to the visible Brussels wall-clock before taking .date().
+    Plain YYYY-MM-DD values are already calendar dates and need no conversion.
+    """
+    if not payload:
+        return None
+    raw = str(payload.get("dateStr") or payload.get("date") or "").strip()
+    if not raw:
+        return None
+    try:
+        # FullCalendar all-day event starts are often already plain dates.
+        if len(raw) >= 10 and len(raw) == 10:
+            return date.fromisoformat(raw)
+
+        visible_dt = _parse_calendar_callback_datetime(raw)
+        if visible_dt is not None:
+            return visible_dt.date()
+
+        # Defensive fallback for component versions that return date-like text.
+        return date.fromisoformat(raw[:10])
+    except Exception:
+        return None
+
+
+def _save_availability_day(pilot_id: str, day: date, status: str, note: str) -> None:
+    df = load_csv(PILOT_AVAILABILITY)
+    for col in ["pilot_id", "date", "status", "note"]:
+        if col not in df.columns:
+            df[col] = ""
+    day_text = day.isoformat()
+    mask = (df["pilot_id"].astype(str) == str(pilot_id)) & (df["date"].astype(str) == day_text)
+    df = df.loc[~mask].copy()
+    status = str(status).strip().upper()
+    if status != "AVAILABLE":
+        df = pd.concat([df, pd.DataFrame([{
+            "pilot_id": pilot_id,
+            "date": day_text,
+            "status": status,
+            "note": note.strip(),
+        }])], ignore_index=True)
+    if not df.empty:
+        df = df.sort_values(["pilot_id", "date"]).reset_index(drop=True)
+    save_csv(df, PILOT_AVAILABILITY)
+
+
+def _get_rule_row(rules: pd.DataFrame, pilot_id: str, pilots: pd.DataFrame) -> dict:
+    if not rules.empty and "pilot_id" in rules.columns:
+        rows = rules[rules["pilot_id"].astype(str) == str(pilot_id)]
+        if not rows.empty:
+            return rows.iloc[0].to_dict()
+    home = ""
+    if not pilots.empty:
+        rows = pilots[pilots["id"].astype(str) == str(pilot_id)]
+        if not rows.empty:
+            home = str(rows.iloc[0].get("home_base", ""))
+    return {
+        "pilot_id": pilot_id,
+        "active": "true",
+        "daily_rate_eur": 600,
+        "min_paid_days_per_month": 0,
+        "max_planned_days_per_month": "",
+        "preferred_home_base": home,
+        "note": "",
+    }
+
+
+def _truthy(value) -> bool:
+    return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
+
+
+def pilot_planning_page():
+    _ensure_pilot_planning_files()
+    st.subheader("Pilot planning")
+    st.caption(
+        "Availability and individual contract rules are stored as data, not hard-coded in optimizer.py. "
+        "Unavailable / Leave / Training are hard planning blocks. Contract minima change the marginal pilot-day cost."
+    )
+
+    pilots = load_csv(PILOTS)
+    if pilots.empty:
+        st.warning("No pilots found in data/pilots.csv.")
+        return
+
+    display = _pilot_display_lookup()
+    pilot_ids = [pid for pid in pilots["id"].astype(str).tolist() if pid]
+    selected = st.selectbox(
+        "Pilot",
+        pilot_ids,
+        format_func=lambda pid: display.get(pid, pid),
+        key="pilot_planning_selected",
+    )
+
+    availability_tab, rules_tab, carry_tab, table_tab = st.tabs([
+        "Availability calendar",
+        "Contract rules",
+        "Monthly carry-in",
+        "All data",
+    ])
+
+    with availability_tab:
+        availability = load_csv(PILOT_AVAILABILITY)
+        events = _pilot_availability_events(availability, selected)
+
+        st.caption(
+            "Click any day to edit it. Every day has a visible state: green = Available, "
+            "red = Unavailable, orange = Leave, blue = Training. "
+            "Actual assigned work days still come from the optimizer result."
         )
+        st.markdown(
+            "<div style='display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 10px 0'>"
+            "<span>🟩 Available</span><span>🟥 Unavailable</span>"
+            "<span>🟧 Leave</span><span>🟦 Training</span></div>",
+            unsafe_allow_html=True,
+        )
+
+        cal_left, editor_right = st.columns([3.2, 1.2], gap="large")
+        with cal_left:
+            if streamlit_calendar is None:
+                st.error("Install `streamlit-calendar` to use the availability calendar.")
+                state = {}
+            else:
+                mission_df = normalize_missions(load_csv(MISSIONS))
+                mission_dates = [_parse_iso_datetime(x) for x in mission_df.get("departure", pd.Series(dtype=str)).tolist()]
+                mission_dates = [x for x in mission_dates if x is not None]
+                default_initial_date = min(mission_dates).date().isoformat() if mission_dates else date.today().isoformat()
+                initial_date = st.session_state.get(
+                    "pilot_availability_calendar_focus_date", default_initial_date
+                )
+                options = {
+                    "initialView": "dayGridMonth",
+                    "initialDate": initial_date,
+                    "firstDay": 1,
+                    "selectable": True,
+                    "editable": False,
+                    "height": 690,
+                    "headerToolbar": {
+                        "left": "today prev,next",
+                        "center": "title",
+                        "right": "dayGridMonth",
+                    },
+                }
+                calendar_revision = int(
+                    st.session_state.get("pilot_availability_calendar_revision", 0)
+                )
+                state = streamlit_calendar(
+                    events=events,
+                    options=options,
+                    custom_css="""
+                    .fc { font-size: 0.9rem; }
+                    .fc .fc-daygrid-day { cursor: pointer; }
+                    .fc .fc-bg-event { opacity: 1.0; }
+                    .fc .fc-event { border-radius: 5px; padding: 2px 4px; }
+                    """,
+                    callbacks=["dateClick", "eventClick"],
+                    key=f"pilot_availability_calendar_{selected}_{calendar_revision}",
+                ) or {}
+
+                callback = state.get("callback")
+                signature = _calendar_callback_signature(state) if callback else None
+                if callback and signature != st.session_state.get("last_pilot_availability_callback"):
+                    st.session_state["last_pilot_availability_callback"] = signature
+                    clicked_day = None
+                    if callback == "dateClick":
+                        clicked_day = _calendar_callback_date(state.get("dateClick") or {})
+                    elif callback == "eventClick":
+                        event = (state.get("eventClick") or {}).get("event", {}) or {}
+                        clicked_day = _calendar_callback_date({"dateStr": event.get("start", "")})
+                    if clicked_day:
+                        _remember_pilot_calendar_position(state, clicked_day)
+                        st.session_state["pilot_availability_edit_date"] = clicked_day.isoformat()
+                        # The editor date widget uses the clicked date as part of its key,
+                        # so it cannot stay stuck on the previously selected day.
+                        st.rerun()
+
+        with editor_right:
+            st.markdown("#### Day status")
+            edit_day_text = st.session_state.get("pilot_availability_edit_date")
+            if edit_day_text:
+                edit_day = date.fromisoformat(edit_day_text)
+            else:
+                edit_day = date.today()
+            edit_day = st.date_input(
+                "Date",
+                value=edit_day,
+                key=f"pilot_availability_date_{selected}_{edit_day.isoformat()}",
+            )
+
+            existing = availability[
+                (availability.get("pilot_id", pd.Series(dtype=str)).astype(str) == selected)
+                & (availability.get("date", pd.Series(dtype=str)).astype(str) == edit_day.isoformat())
+            ] if not availability.empty else pd.DataFrame()
+            existing_status = str(existing.iloc[0].get("status", "AVAILABLE")).upper() if not existing.empty else "AVAILABLE"
+            existing_note = str(existing.iloc[0].get("note", "")) if not existing.empty else ""
+            statuses = ["AVAILABLE", "UNAVAILABLE", "LEAVE", "TRAINING"]
+            status = st.selectbox(
+                "Status",
+                statuses,
+                index=statuses.index(existing_status) if existing_status in statuses else 0,
+                key=f"pilot_availability_status_{selected}_{edit_day.isoformat()}",
+            )
+            note = st.text_input(
+                "Note",
+                value=existing_note,
+                key=f"pilot_availability_note_{selected}_{edit_day.isoformat()}",
+            )
+            if st.button("Save day", type="primary", key="save_pilot_availability_day"):
+                _save_availability_day(selected, edit_day, status, note)
+                st.session_state["pilot_availability_edit_date"] = edit_day.isoformat()
+                st.session_state["pilot_availability_calendar_focus_date"] = edit_day.isoformat()
+                st.session_state["pilot_availability_save_message"] = (
+                    f"{selected} · {edit_day.isoformat()} saved as {status}."
+                )
+                _reset_pilot_availability_calendar()
+                st.rerun()
+
+            save_message = st.session_state.pop("pilot_availability_save_message", None)
+            if save_message:
+                st.success(save_message)
+
+            if status in {"UNAVAILABLE", "LEAVE", "TRAINING"}:
+                st.warning("This day is a HARD block for this pilot.")
+            else:
+                st.info("Available is the default and creates no explicit block row.")
+
+    with rules_tab:
+        rules = load_csv(PILOT_RULES)
+        rule = _get_rule_row(rules, selected, pilots)
+        st.markdown("#### Individual optimizer rules")
+        st.caption(
+            "Example: minimum paid days = 15 means the first guaranteed days have zero marginal cost "
+            "until carry-in + planned days exceed 15. This makes the optimizer naturally prefer using already-paid capacity."
+        )
+        c1, c2 = st.columns(2)
+        active = c1.checkbox("Active for planning", value=_truthy(rule.get("active", "true")), key=f"rule_active_{selected}")
+        daily_rate = c2.number_input(
+            "Daily rate (€)", min_value=0.0, value=float(rule.get("daily_rate_eur") or 600), step=50.0, key=f"rule_rate_{selected}"
+        )
+        c3, c4 = st.columns(2)
+        min_paid = c3.number_input(
+            "Minimum paid days / month", min_value=0, max_value=31,
+            value=int(float(rule.get("min_paid_days_per_month") or 0)), step=1, key=f"rule_min_{selected}"
+        )
+        max_raw = str(rule.get("max_planned_days_per_month", "") or "").strip()
+        max_days_text = c4.text_input(
+            "Maximum planned days / month (blank = none)", value=max_raw, key=f"rule_max_{selected}"
+        )
+        bases = ["", "EBAW", "EBLG"]
+        preferred = str(rule.get("preferred_home_base", "") or "").upper()
+        preferred_base = st.selectbox(
+            "Preferred homebase", bases,
+            index=bases.index(preferred) if preferred in bases else 0,
+            key=f"rule_base_{selected}",
+            help="Stored as a preference field for future scoring; personal home_base in pilots.csv remains the physical reference for current crew cost logic.",
+        )
+        rule_note = st.text_area("Rule note", value=str(rule.get("note", "")), key=f"rule_note_{selected}")
+
+        if st.button("Save contract rules", type="primary", key="save_pilot_rules"):
+            max_days = ""
+            if max_days_text.strip():
+                try:
+                    parsed = int(max_days_text)
+                    if parsed < 0 or parsed > 31:
+                        raise ValueError
+                    max_days = parsed
+                except Exception:
+                    st.error("Maximum planned days must be blank or an integer from 0 to 31.")
+                    st.stop()
+            for col in ["pilot_id", "active", "daily_rate_eur", "min_paid_days_per_month", "max_planned_days_per_month", "preferred_home_base", "note"]:
+                if col not in rules.columns:
+                    rules[col] = ""
+            mask = rules["pilot_id"].astype(str) == selected
+            new_row = {
+                "pilot_id": selected,
+                "active": "true" if active else "false",
+                "daily_rate_eur": float(daily_rate),
+                "min_paid_days_per_month": int(min_paid),
+                "max_planned_days_per_month": max_days,
+                "preferred_home_base": preferred_base,
+                "note": rule_note.strip(),
+            }
+            if mask.any():
+                idx = rules.index[mask][0]
+                for col, value in new_row.items():
+                    rules.at[idx, col] = value
+            else:
+                rules = pd.concat([rules, pd.DataFrame([new_row])], ignore_index=True)
+            save_csv(rules, PILOT_RULES)
+            st.success("Contract rules saved. They will be loaded on the next optimizer run.")
+
+    with carry_tab:
+        state_df = load_csv(PILOT_MONTHLY_STATE)
+        st.markdown("#### Monthly carry-in")
+        st.caption(
+            "Use this for days already used before the optimization horizon. Example: if the pilot has already worked 11 days in July "
+            "and has a 15-day minimum, enter 11 for 2026-07."
+        )
+        default_month = "2026-07"
+        mission_df = normalize_missions(load_csv(MISSIONS))
+        if not mission_df.empty:
+            first_dep = _parse_iso_datetime(mission_df.iloc[0].get("departure", ""))
+            if first_dep:
+                default_month = first_dep.strftime("%Y-%m")
+        month = st.text_input("Month (YYYY-MM)", value=default_month, key=f"carry_month_{selected}")
+        existing = state_df[
+            (state_df.get("pilot_id", pd.Series(dtype=str)).astype(str) == selected)
+            & (state_df.get("month", pd.Series(dtype=str)).astype(str) == month)
+        ] if not state_df.empty else pd.DataFrame()
+        current_days = int(float(existing.iloc[0].get("days_already_used", 0) or 0)) if not existing.empty else 0
+        current_note = str(existing.iloc[0].get("note", "")) if not existing.empty else ""
+        days_already = st.number_input("Days already used", min_value=0, max_value=31, value=current_days, step=1, key=f"carry_days_{selected}_{month}")
+        carry_note = st.text_input("Note", value=current_note, key=f"carry_note_{selected}_{month}")
+        if st.button("Save monthly carry-in", type="primary", key="save_monthly_carry"):
+            try:
+                datetime.strptime(month + "-01", "%Y-%m-%d")
+            except Exception:
+                st.error("Month must use YYYY-MM, for example 2026-07.")
+            else:
+                for col in ["pilot_id", "month", "days_already_used", "note"]:
+                    if col not in state_df.columns:
+                        state_df[col] = ""
+                mask = (state_df["pilot_id"].astype(str) == selected) & (state_df["month"].astype(str) == month)
+                state_df = state_df.loc[~mask].copy()
+                state_df = pd.concat([state_df, pd.DataFrame([{
+                    "pilot_id": selected,
+                    "month": month,
+                    "days_already_used": int(days_already),
+                    "note": carry_note.strip(),
+                }])], ignore_index=True)
+                save_csv(state_df.sort_values(["pilot_id", "month"]), PILOT_MONTHLY_STATE)
+                st.success("Monthly carry-in saved.")
+
+    with table_tab:
+        st.markdown("#### Availability rows")
+        av = load_csv(PILOT_AVAILABILITY)
+        av_edit = st.data_editor(av, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_availability_table")
+        if st.button("Save availability table", key="save_pilot_availability_table"):
+            save_csv(av_edit, PILOT_AVAILABILITY)
+            st.success("pilot_availability.csv saved.")
+
+        st.markdown("#### Contract rules")
+        rule_df = load_csv(PILOT_RULES)
+        rule_edit = st.data_editor(rule_df, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_rules_table")
+        if st.button("Save rules table", key="save_pilot_rules_table"):
+            save_csv(rule_edit, PILOT_RULES)
+            st.success("pilot_rules.csv saved.")
+
+        st.markdown("#### Monthly carry-in")
+        carry_df = load_csv(PILOT_MONTHLY_STATE)
+        carry_edit = st.data_editor(carry_df, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_carry_table")
+        if st.button("Save carry-in table", key="save_pilot_carry_table"):
+            save_csv(carry_edit, PILOT_MONTHLY_STATE)
+            st.success("pilot_monthly_state.csv saved.")
 
 
 def data_editor_page():
@@ -3543,6 +4488,7 @@ page = st.sidebar.radio(
     "Navigation",
     [
         "Missions",
+        "Pilot planning",
         "Fleet & crew",
         "Optimizer",
         "Results",
@@ -3551,6 +4497,9 @@ page = st.sidebar.radio(
 
 if page == "Missions":
     mission_editor()
+
+elif page == "Pilot planning":
+    pilot_planning_page()
 
 elif page == "Fleet & crew":
     data_editor_page()
