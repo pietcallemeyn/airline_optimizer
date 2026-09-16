@@ -379,6 +379,8 @@ def start_optimizer(
     seed: int,
     live: bool,
     live_every: int,
+    verbose: bool,
+    debug: bool,
 ):
     OUTPUT.mkdir(exist_ok=True)
 
@@ -414,6 +416,11 @@ def start_optimizer(
                 str(live_every),
             ]
         )
+
+    if debug:
+        command.append("--debug")
+    elif verbose:
+        command.append("--verbose")
 
     log = LOG_FILE.open(
         "w",
@@ -1555,6 +1562,212 @@ def _truthy(value) -> bool:
     return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
 
 
+def _pilot_solution_choices() -> dict[str, dict | None]:
+    """Return selectable optimizer solutions for the pilot calendar overlay.
+
+    Named Pareto views come first. Additional gallery schedules are included
+    only when their schedule signature is not already represented.
+    """
+    choices: dict[str, dict | None] = {"Availability only": None}
+    try:
+        pareto = viz.load_pareto()
+    except Exception:
+        return choices
+
+    try:
+        named = viz.named_solutions(pareto)
+    except Exception:
+        named = {}
+
+    seen = set()
+    preferred = [
+        "CHEAPEST",
+        "BALANCED",
+        "MIN EMPTY LEGS",
+        "MIN PILOT DAYS",
+        "MIN AIRCRAFT PARKING",
+        "MIN COMPLEXITY",
+    ]
+    for label in preferred:
+        solution = named.get(label)
+        if not solution:
+            continue
+        signature = str(solution.get("schedule_signature", ""))
+        seen.add(signature or f"named:{label}")
+        cost = float(solution.get("objectives", {}).get("total_operational_cost_eur", 0) or 0)
+        choices[f"{label} · €{cost:,.0f}"] = solution
+
+    try:
+        gallery = viz.load_gallery()
+    except Exception:
+        gallery = []
+    alt_number = 0
+    for solution in gallery:
+        signature = str(solution.get("schedule_signature", ""))
+        marker = signature or repr(solution.get("crew_assignments", {}))
+        if marker in seen:
+            continue
+        seen.add(marker)
+        alt_number += 1
+        cost = float(solution.get("objectives", {}).get("total_operational_cost_eur", 0) or 0)
+        empty = int(solution.get("metrics", {}).get("empty_legs", solution.get("objectives", {}).get("empty_legs", 0)) or 0)
+        choices[f"Alternative {alt_number:02d} · €{cost:,.0f} · {empty} empty"] = solution
+    return choices
+
+
+def _solution_pilot_days(solution: dict, pilot_id: str) -> set[str]:
+    """Exact charged/active pilot days, with a legacy movement fallback."""
+    explicit = solution.get("pilot_days_by_pilot", {}) or {}
+    days = {str(day)[:10] for day in explicit.get(str(pilot_id), []) if str(day).strip()}
+    if days:
+        return days
+
+    # Older result files pre-date pilot_days_by_pilot. Their movement days can
+    # still be visualised, although pure away/parking days cannot be recovered.
+    for movements in (solution.get("aircraft_movements", {}) or {}).values():
+        for movement in movements:
+            if str(pilot_id) not in {str(movement.get("captain", "")), str(movement.get("fo", ""))}:
+                continue
+            try:
+                start = pd.to_datetime(movement.get("start"))
+                end = pd.to_datetime(movement.get("end"))
+                for stamp in pd.date_range(start.normalize(), end.normalize(), freq="D"):
+                    days.add(stamp.date().isoformat())
+            except Exception:
+                continue
+    return days
+
+
+def _pilot_solution_events(solution: dict | None, pilot_id: str, availability: pd.DataFrame) -> list[dict]:
+    """Overlay a selected optimizer solution on one pilot's availability calendar.
+
+    Purple pills are charged/planned pilot days. Movement days include aircraft
+    and route information; charged days without a movement are shown as AWAY /
+    ATTACHED because the pilot remains chargeable in the optimizer cost model.
+    """
+    if not solution:
+        return []
+
+    planned_days = _solution_pilot_days(solution, pilot_id)
+    movements_by_day: dict[str, list[str]] = {}
+    for reg, movements in (solution.get("aircraft_movements", {}) or {}).items():
+        for movement in movements:
+            if str(pilot_id) not in {str(movement.get("captain", "")), str(movement.get("fo", ""))}:
+                continue
+            try:
+                start = pd.to_datetime(movement.get("start"))
+                end = pd.to_datetime(movement.get("end"))
+            except Exception:
+                continue
+            route = f"{movement.get('from', '?')}→{movement.get('to', '?')}"
+            mission = str(movement.get("mission") or movement.get("target_mission") or "").strip()
+            kind = "MISSION" if str(movement.get("type", "")).upper() == "MISSION" else "EMPTY"
+            detail = f"{reg} {kind} {route}" + (f" {mission}" if mission else "")
+            for stamp in pd.date_range(start.normalize(), end.normalize(), freq="D"):
+                movements_by_day.setdefault(stamp.date().isoformat(), []).append(detail)
+
+    exceptions = {}
+    if not availability.empty:
+        work = availability[availability.get("pilot_id", pd.Series(dtype=str)).astype(str) == str(pilot_id)]
+        for _, row in work.iterrows():
+            exceptions[str(row.get("date", ""))[:10]] = str(row.get("status", "AVAILABLE")).upper()
+
+    events = []
+    for day in sorted(planned_days):
+        details = movements_by_day.get(day, [])
+        conflict = exceptions.get(day) in {"UNAVAILABLE", "LEAVE", "TRAINING"}
+        if details:
+            regs = sorted({item.split()[0] for item in details if item})
+            title = f"{'⚠ ' if conflict else ''}PLANNED · {'/'.join(regs)}"
+            if len(details) == 1:
+                title += f" · {details[0].split(' ', 1)[1]}"
+            elif len(details) > 1:
+                title += f" · {len(details)} movements"
+        else:
+            title = f"{'⚠ ' if conflict else ''}PLANNED · AWAY / ATTACHED"
+
+        color = "#B91C1C" if conflict else "#6D28D9"
+        events.append({
+            "id": f"solution:{pilot_id}:{day}",
+            "title": title,
+            "start": day,
+            "allDay": True,
+            "editable": False,
+            "backgroundColor": color,
+            "borderColor": color,
+            "textColor": "#FFFFFF",
+            "extendedProps": {
+                "pilot_id": pilot_id,
+                "solution_overlay": True,
+                "movement_details": details,
+                "availability_conflict": conflict,
+            },
+        })
+    return events
+
+
+
+def _pilot_solution_day_details(solution: dict | None, pilot_id: str, day: date) -> dict:
+    """Return display-ready details for one pilot/day in a selected solution.
+
+    A planned/charged day can exist without a flight movement (for example an
+    away/attached day). Movement details are returned separately so the GUI can
+    explain exactly why the day is charged.
+    """
+    result = {
+        "planned": False,
+        "movements": [],
+        "away_or_attached": False,
+    }
+    if not solution:
+        return result
+
+    day_text = day.isoformat()
+    planned_days = _solution_pilot_days(solution, pilot_id)
+    if day_text not in planned_days:
+        return result
+
+    result["planned"] = True
+    day_start = pd.Timestamp(day_text)
+    day_end = day_start + pd.Timedelta(days=1)
+
+    movements = []
+    for reg, aircraft_movements in (solution.get("aircraft_movements", {}) or {}).items():
+        for movement in aircraft_movements:
+            captain = str(movement.get("captain", ""))
+            fo = str(movement.get("fo", ""))
+            if str(pilot_id) not in {captain, fo}:
+                continue
+            try:
+                start = pd.to_datetime(movement.get("start"))
+                end = pd.to_datetime(movement.get("end"))
+            except Exception:
+                continue
+            # Include any movement touching the selected UTC planning day.
+            if not (start < day_end and end >= day_start):
+                continue
+
+            role = "CAPT" if captain == str(pilot_id) else "FO"
+            movement_type = str(movement.get("type", "")).upper() or "MOVEMENT"
+            purpose = str(movement.get("purpose", "")).strip().upper()
+            mission = str(movement.get("mission") or movement.get("target_mission") or "").strip()
+            movements.append({
+                "aircraft": str(reg),
+                "role": role,
+                "type": movement_type,
+                "purpose": purpose,
+                "mission": mission,
+                "from": str(movement.get("from", "?")),
+                "to": str(movement.get("to", "?")),
+                "start": start,
+                "end": end,
+            })
+
+    movements.sort(key=lambda item: item["start"])
+    result["movements"] = movements
+    result["away_or_attached"] = not bool(movements)
+    return result
+
 def pilot_planning_page():
     _ensure_pilot_planning_files()
     st.subheader("Pilot planning")
@@ -1586,17 +1799,34 @@ def pilot_planning_page():
 
     with availability_tab:
         availability = load_csv(PILOT_AVAILABILITY)
+
+        solution_choices = _pilot_solution_choices()
+        solution_labels = list(solution_choices.keys())
+        default_solution_index = 1 if len(solution_labels) > 1 else 0
+        selected_solution_label = st.selectbox(
+            "Optimizer solution overlay",
+            solution_labels,
+            index=default_solution_index,
+            key="pilot_calendar_solution_overlay",
+            help=(
+                "Choose a discovered optimizer solution to show this pilot's planned/charged days "
+                "on top of the availability calendar. Choose Availability only to hide the overlay."
+            ),
+        )
+        selected_solution = solution_choices.get(selected_solution_label)
+
         events = _pilot_availability_events(availability, selected)
+        events.extend(_pilot_solution_events(selected_solution, selected, availability))
 
         st.caption(
             "Click any day to edit it. Every day has a visible state: green = Available, "
-            "red = Unavailable, orange = Leave, blue = Training. "
-            "Actual assigned work days still come from the optimizer result."
+            "red = Unavailable, orange = Leave, blue = Training. Purple = planned/charged in the selected optimizer solution."
         )
         st.markdown(
             "<div style='display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 10px 0'>"
             "<span>🟩 Available</span><span>🟥 Unavailable</span>"
-            "<span>🟧 Leave</span><span>🟦 Training</span></div>",
+            "<span>🟧 Leave</span><span>🟦 Training</span>"
+            "<span>🟪 Planned / charged</span></div>",
             unsafe_allow_html=True,
         )
 
@@ -1639,7 +1869,7 @@ def pilot_planning_page():
                     .fc .fc-event { border-radius: 5px; padding: 2px 4px; }
                     """,
                     callbacks=["dateClick", "eventClick"],
-                    key=f"pilot_availability_calendar_{selected}_{calendar_revision}",
+                    key=f"pilot_availability_calendar_{selected}_{calendar_revision}_{selected_solution_label}",
                 ) or {}
 
                 callback = state.get("callback")
@@ -1708,6 +1938,58 @@ def pilot_planning_page():
                 st.warning("This day is a HARD block for this pilot.")
             else:
                 st.info("Available is the default and creates no explicit block row.")
+
+            # Optimizer overlay details for the selected pilot/day. This is
+            # derived from the selected solution rather than only from the
+            # clicked event, so both clicking the purple PLANNED pill and
+            # clicking the day cell itself show the same information.
+            if selected_solution:
+                plan = _pilot_solution_day_details(selected_solution, selected, edit_day)
+                st.markdown("#### Optimizer plan")
+                if plan["planned"]:
+                    conflict = status in {"UNAVAILABLE", "LEAVE", "TRAINING"}
+                    if conflict:
+                        st.error(
+                            f"⚠ This pilot is planned/charged on {edit_day.isoformat()} "
+                            f"but availability is {status}."
+                        )
+                    else:
+                        st.success(
+                            f"Planned / charged on {edit_day.isoformat()} in "
+                            f"{selected_solution_label}."
+                        )
+
+                    movements = plan["movements"]
+                    if movements:
+                        for i, movement in enumerate(movements, start=1):
+                            start_txt = movement["start"].strftime("%H:%M")
+                            end_txt = movement["end"].strftime("%H:%M")
+                            kind = movement["type"]
+                            purpose = movement["purpose"]
+                            mission = movement["mission"]
+                            heading = (
+                                f"{start_txt}–{end_txt} · {movement['aircraft']} · "
+                                f"{movement['role']} · {kind}"
+                            )
+                            st.markdown(f"**{heading}**")
+                            st.write(f"{movement['from']} → {movement['to']}")
+                            meta = []
+                            if mission:
+                                meta.append(f"Mission: {mission}")
+                            if purpose:
+                                meta.append(f"Purpose: {purpose.replace('_', ' ')}")
+                            if meta:
+                                st.caption(" · ".join(meta))
+                    else:
+                        st.info(
+                            "No aircraft movement is recorded for this pilot on this day. "
+                            "The optimizer still charges the day because the pilot remains "
+                            "away / attached to an aircraft or crew rotation."
+                        )
+                else:
+                    st.caption(
+                        f"Not planned or charged on {edit_day.isoformat()} in the selected solution."
+                    )
 
     with rules_tab:
         rules = load_csv(PILOT_RULES)
@@ -1972,7 +2254,7 @@ def optimizer_page():
         "Independent runs",
         min_value=1,
         max_value=50,
-        value=5,
+        value=2,
         step=1,
     )
 
@@ -1980,7 +2262,7 @@ def optimizer_page():
         "Population",
         min_value=10,
         max_value=2000,
-        value=200,
+        value=120,
         step=10,
     )
 
@@ -1988,7 +2270,7 @@ def optimizer_page():
         "Generations",
         min_value=1,
         max_value=5000,
-        value=180,
+        value=80,
         step=10,
     )
 
@@ -2013,6 +2295,20 @@ def optimizer_page():
         step=1,
         disabled=not live,
     )
+
+    log_cols = st.columns(2)
+    verbose = log_cols[0].checkbox(
+        "Verbose progress logging",
+        value=True,
+        help="Show every generation, feasibility rate, rejection categories, best KPIs and timings in the live terminal.",
+    )
+    debug = log_cols[1].checkbox(
+        "Debug rejection examples",
+        value=False,
+        help="Also show a few concrete invalid-reason examples per generation. This automatically enables verbose logging.",
+    )
+    if debug:
+        verbose = True
 
     running, pid = optimizer_status()
 
@@ -2042,6 +2338,8 @@ def optimizer_page():
                 int(seed),
                 bool(live),
                 int(live_every),
+                bool(verbose),
+                bool(debug),
             )
 
             st.success(

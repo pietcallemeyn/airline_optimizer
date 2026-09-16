@@ -1,10 +1,10 @@
 {
   "runs": 2,
   "population": 120,
-  "generations": 10,
-  "total_evaluations": 2640,
+  "generations": 4,
+  "total_evaluations": 1200,
   "seed": 42,
-  "unique_aircraft_schedules": 0,
-  "pareto_solutions": 0,
-  "pareto_unique_aircraft_schedules": 0
+  "unique_aircraft_schedules": 110,
+  "pareto_solutions": 38,
+  "pareto_unique_aircraft_schedules": 38
 }

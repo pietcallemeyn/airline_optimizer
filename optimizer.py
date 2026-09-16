@@ -2023,8 +2023,115 @@ def assign_crew(
                 ),
             )
 
+        # DIRECT positioning normally keeps the currently attached crew on the
+        # empty leg and allows a handover at the next mission origin. When that
+        # crew is unavailable on the positioning day, a physically valid
+        # alternative is to hand over at the aircraft's current location BEFORE
+        # the empty leg. Add those alternatives explicitly instead of rejecting
+        # the complete aircraft schedule at the end.
+        if (
+            old_pair is not None
+            and transition_detail.get("mode") == "DIRECT"
+            and empty_before_mission
+        ):
+            pre_position_airport = transition_detail.get(
+                "gap_location",
+                empty_before_mission[0]["from"],
+            )
+            pre_position_deadline = empty_before_mission[0]["start"]
+            pre_position_candidates = crew_candidates(
+                crew_state,
+                mission,
+                reg,
+                pre_position_airport,
+                pilots,
+                airports,
+                gap_location=pre_position_airport,
+                handover_airport=pre_position_airport,
+                handover_deadline=pre_position_deadline,
+            )
+            for candidate in pre_position_candidates:
+                if not candidate.get("handover"):
+                    continue
+                candidate = dict(candidate)
+                candidate["_handover_airport_override"] = pre_position_airport
+                candidate["_handover_deadline_override"] = pre_position_deadline
+                candidate["_pre_handover_empty_count_override"] = 0
+                candidates.append(candidate)
+
+        # Filter crew alternatives against the exact days on which that
+        # alternative would operate an empty or customer movement. This gives
+        # availability constraints useful signal during schedule construction
+        # instead of killing an otherwise complete solution only at the end.
+        availability_safe_candidates = []
+        default_pre_handover_count = int(
+            transition_detail.get("pre_handover_empty_count", 0)
+        )
+
+        for candidate in candidates:
+            candidate_pair = (candidate["captain"], candidate["fo"])
+            candidate_pre_handover_count = int(
+                candidate.get(
+                    "_pre_handover_empty_count_override",
+                    default_pre_handover_count,
+                )
+            )
+            safe = True
+            for idx, movement in enumerate(empty_before_mission):
+                if old_pair is None:
+                    pair_for_leg = candidate_pair
+                elif idx < candidate_pre_handover_count:
+                    pair_for_leg = old_pair
+                else:
+                    pair_for_leg = candidate_pair
+
+                day = movement["start"].date()
+                end_day = movement["end"].date()
+                while day <= end_day:
+                    if any(not pilot_available_on(pid, day) for pid in pair_for_leg):
+                        safe = False
+                        break
+                    day += timedelta(days=1)
+                if not safe:
+                    break
+
+            if safe:
+                day = mission_movement["start"].date()
+                end_day = mission_movement["end"].date()
+                while day <= end_day:
+                    if any(not pilot_available_on(pid, day) for pid in candidate_pair):
+                        safe = False
+                        break
+                    day += timedelta(days=1)
+
+            if safe:
+                availability_safe_candidates.append(candidate)
+
+        candidates = availability_safe_candidates
         if not candidates:
             return None
+
+        # CREW CONTINUITY RULE
+        # --------------------
+        # If the crew already attached to this aircraft can operate the exact
+        # transition movements and customer mission, do not expose opportunistic
+        # replacement crews to the GA. Previously crew_choice could select any
+        # economically attractive handover candidate (including pilots with
+        # guaranteed paid days), which caused unnecessary same-day / next-day
+        # swaps even though the incumbent crew was fully feasible.
+        #
+        # A replacement is therefore only considered when continuation has been
+        # removed by the hard feasibility/availability filters above. Initial
+        # attachment is unaffected because there is no incumbent crew yet.
+        if old_pair is not None:
+            continuing = [
+                candidate
+                for candidate in candidates
+                if not candidate.get("handover", False)
+                and (candidate.get("captain"), candidate.get("fo")) == old_pair
+            ]
+            if continuing:
+                candidates = continuing
 
         chosen = candidates[
             individual[
@@ -2050,9 +2157,12 @@ def assign_crew(
         #   optional handover at homebase;
         #   new/current crew operates homebase -> next origin.
         pre_handover_empty_count = int(
-            transition_detail.get(
-                "pre_handover_empty_count",
-                0,
+            chosen.get(
+                "_pre_handover_empty_count_override",
+                transition_detail.get(
+                    "pre_handover_empty_count",
+                    0,
+                ),
             )
         )
 
@@ -2070,16 +2180,14 @@ def assign_crew(
             movement["fo"] = pair_for_leg[1]
 
         actual_handover_airport = (
-            transition_detail.get(
-                "handover_airport"
-            )
+            chosen.get("_handover_airport_override")
+            or transition_detail.get("handover_airport")
             or mission.origin
         )
 
         actual_handover_time = (
-            transition_detail.get(
-                "handover_deadline"
-            )
+            chosen.get("_handover_deadline_override")
+            or transition_detail.get("handover_deadline")
             or mission.departure
         )
 
@@ -2426,6 +2534,20 @@ def apply_final_aircraft_policy(
             )
 
             if not captain or not fo:
+                continue
+
+            return_day = start.date()
+            return_end_day = end.date()
+            crew_available_for_return = True
+            while return_day <= return_end_day:
+                if (
+                    not pilot_available_on(captain, return_day)
+                    or not pilot_available_on(fo, return_day)
+                ):
+                    crew_available_for_return = False
+                    break
+                return_day += timedelta(days=1)
+            if not crew_available_for_return:
                 continue
 
             options.append({
@@ -2992,7 +3114,15 @@ def evaluate(
         )
     )
 
+    pilot_days_by_pilot = {}
+    for pid, day in sorted(
+        crew_state.get("charged_pilot_days", set()),
+        key=lambda item: (str(item[0]), item[1]),
+    ):
+        pilot_days_by_pilot.setdefault(str(pid), []).append(day.isoformat())
+
     solution = {
+        "pilot_days_by_pilot": pilot_days_by_pilot,
         "objectives": {
             "total_operational_cost_eur": round(
                 total_operational_cost,
@@ -4126,6 +4256,85 @@ def save_results(
     print("=" * 84)
 
 
+
+def _invalid_reason_counts(population):
+    counts = {}
+    examples = {}
+    for individual in population:
+        if individual.get("solution") is not None:
+            continue
+        reason = str(individual.get("invalid_reason", "UNKNOWN") or "UNKNOWN")
+        category = reason.split(":", 1)[0]
+        counts[category] = counts.get(category, 0) + 1
+        examples.setdefault(category, [])
+        if reason not in examples[category] and len(examples[category]) < 3:
+            examples[category].append(reason)
+    return counts, examples
+
+
+def _best_valid_summary(population):
+    valid = [p for p in population if p.get("solution") is not None]
+    if not valid:
+        return None
+    best = min(valid, key=lambda p: p["objectives"][0])
+    sol = best["solution"]
+    metrics = sol.get("metrics", {})
+    objectives = sol.get("objectives", {})
+    return {
+        "valid": len(valid),
+        "cost": float(best["objectives"][0]),
+        "empty_legs": int(metrics.get("empty_legs", 0)),
+        "pilot_days": int(metrics.get("charged_pilot_days", 0)),
+        "parking_days": int(metrics.get("aircraft_parking_days", 0)),
+        "complexity": int(objectives.get("complexity_score", best["objectives"][1] if len(best["objectives"]) > 1 else 0)),
+    }
+
+
+def _print_progress_block(run_index, runs, generation, generations, population, archive, generation_seconds, elapsed_seconds, previous_best=None, debug=False):
+    summary = _best_valid_summary(population)
+    counts, examples = _invalid_reason_counts(population)
+    valid_count = summary["valid"] if summary else 0
+    total = len(population)
+    feasible_pct = (100.0 * valid_count / total) if total else 0.0
+    print("-" * 76, flush=True)
+    print(
+        f"RUN {run_index + 1}/{runs} · GEN {generation + 1}/{generations} · "
+        f"feasible {valid_count}/{total} ({feasible_pct:.1f}%) · archive {len(archive)}",
+        flush=True,
+    )
+    print(
+        f"generation time {generation_seconds:.2f}s · elapsed {elapsed_seconds:.1f}s",
+        flush=True,
+    )
+    if summary:
+        delta = ""
+        if previous_best is not None:
+            improvement = previous_best - summary["cost"]
+            delta = f" · improvement €{improvement:,.0f}" if abs(improvement) >= 0.5 else " · no cost improvement"
+        print(
+            f"best €{summary['cost']:,.0f}{delta} · empty {summary['empty_legs']} · "
+            f"pilot-days {summary['pilot_days']} · parking {summary['parking_days']} · "
+            f"complexity {summary['complexity']}",
+            flush=True,
+        )
+    else:
+        print("best: no feasible schedule yet", flush=True)
+    if counts:
+        ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        print("rejections: " + " · ".join(f"{name}={count}" for name, count in ranked[:6]), flush=True)
+        if debug:
+            print("debug rejection examples:", flush=True)
+            shown = 0
+            for category, _ in ranked:
+                for reason in examples.get(category, []):
+                    print(f"  - {reason}", flush=True)
+                    shown += 1
+                    if shown >= 6:
+                        break
+                if shown >= 6:
+                    break
+    return summary["cost"] if summary else previous_best
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -4177,9 +4386,44 @@ def main():
         ),
     )
 
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help=(
+            "Print detailed per-generation progress, feasibility rates, "
+            "rejection categories and timing."
+        ),
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help=(
+            "Like --verbose, plus a few concrete invalid-reason examples "
+            "for each generation."
+        ),
+    )
+
     args = parser.parse_args()
+    if args.debug:
+        args.verbose = True
 
     airports, aircraft, missions, pilots = load_data()
+
+    if args.verbose:
+        blocked = len(PILOT_AVAILABILITY)
+        print("=" * 84, flush=True)
+        print("OPTIMIZER START", flush=True)
+        print(
+            f"missions={len(missions)} · aircraft={len(aircraft)} · pilots={len(pilots)} · "
+            f"pilot availability blocks={blocked}",
+            flush=True,
+        )
+        print(
+            f"runs={args.runs} · population={args.population} · generations={args.generations} · seed={args.seed}",
+            flush=True,
+        )
+        print("=" * 84, flush=True)
 
     mission_order = sorted(
         missions.values(),
@@ -4231,9 +4475,16 @@ def main():
         # Give the separate GUI process time to initialize before first snapshot.
         time.sleep(0.25)
 
+    optimization_started_at = time.perf_counter()
+
     for run_index in range(
         args.runs
     ):
+        run_started_at = time.perf_counter()
+        previous_best_cost = None
+        if args.verbose:
+            print(f"\nRUN {run_index + 1}/{args.runs} · seed={args.seed + run_index * 10007}", flush=True)
+            print(f"creating and evaluating initial population ({args.population})...", flush=True)
         rng = random.Random(
             args.seed
             + run_index * 10007
@@ -4251,7 +4502,8 @@ def main():
             )
         ]
 
-        for individual in population:
+        initial_eval_started = time.perf_counter()
+        for eval_index, individual in enumerate(population, start=1):
             evaluate(
                 individual,
                 mission_order,
@@ -4261,6 +4513,11 @@ def main():
                 commercial_hours,
                 horizon_end,
             )
+            if args.verbose and (eval_index % 50 == 0 or eval_index == len(population)):
+                print(
+                    f"initial population evaluating: {eval_index}/{len(population)}",
+                    flush=True,
+                )
 
         total_evaluations += len(
             population
@@ -4270,6 +4527,14 @@ def main():
             archive,
             population,
         )
+
+        if args.verbose:
+            initial_seconds = time.perf_counter() - initial_eval_started
+            previous_best_cost = _print_progress_block(
+                run_index, args.runs, -1, args.generations, population, archive,
+                initial_seconds, time.perf_counter() - optimization_started_at,
+                previous_best=None, debug=args.debug,
+            )
 
         if args.live:
             write_live_progress(
@@ -4285,6 +4550,12 @@ def main():
         for generation in range(
             args.generations
         ):
+            generation_started_at = time.perf_counter()
+            if args.verbose:
+                print(
+                    f"GEN {generation + 1}/{args.generations}: breeding/evaluating {args.population} children...",
+                    flush=True,
+                )
             rank_population(
                 population
             )
@@ -4328,6 +4599,11 @@ def main():
                 children.append(
                     child
                 )
+                if args.verbose and (len(children) % 50 == 0 or len(children) == args.population):
+                    print(
+                        f"GEN {generation + 1} evaluating: {len(children)}/{args.population} children",
+                        flush=True,
+                    )
 
             total_evaluations += len(
                 children
@@ -4361,42 +4637,40 @@ def main():
                     status="running",
                 )
 
-            if (
-                generation % 10 == 0
-                or generation
-                == args.generations - 1
-            ):
-                valid = [
-                    p
-                    for p in population
-                    if p["solution"]
-                    is not None
-                ]
+            generation_seconds = time.perf_counter() - generation_started_at
+            elapsed_seconds = time.perf_counter() - optimization_started_at
 
+            if args.verbose:
+                previous_best_cost = _print_progress_block(
+                    run_index, args.runs, generation, args.generations, population, archive,
+                    generation_seconds, elapsed_seconds, previous_best_cost, debug=args.debug,
+                )
+            elif (generation % 10 == 0 or generation == args.generations - 1):
+                valid = [p for p in population if p["solution"] is not None]
                 if valid:
-                    cheapest = min(
-                        p[
-                            "objectives"
-                        ][0]
-                        for p in valid
-                    )
-
-                    signatures = len({
-                        p[
-                            "solution"
-                        ][
-                            "schedule_signature"
-                        ]
-                        for p in valid
-                    })
-
+                    cheapest = min(p["objectives"][0] for p in valid)
+                    signatures = len({p["solution"]["schedule_signature"] for p in valid})
                     print(
-                        f'run={run_index + 1}/{args.runs} '
-                        f'gen={generation:3d} '
-                        f'population_schedules={signatures:3d} '
-                        f'archive={len(archive):4d} '
-                        f'best=€{cheapest:,.0f}'
+                        f'run={run_index + 1}/{args.runs} gen={generation:3d} '
+                        f'valid={len(valid)}/{len(population)} population_schedules={signatures:3d} '
+                        f'archive={len(archive):4d} best=€{cheapest:,.0f}',
+                        flush=True,
                     )
+                else:
+                    reasons, _ = _invalid_reason_counts(population)
+                    top_reason = max(reasons, key=reasons.get) if reasons else "UNKNOWN"
+                    print(
+                        f'run={run_index + 1}/{args.runs} gen={generation:3d} '
+                        f'valid=0/{len(population)} archive={len(archive):4d} '
+                        f'most_common_invalid={top_reason}({reasons.get(top_reason, 0)})',
+                        flush=True,
+                    )
+
+        if args.verbose:
+            print(
+                f"RUN {run_index + 1} finished in {time.perf_counter() - run_started_at:.1f}s",
+                flush=True,
+            )
 
     pareto = pareto_from_archive(
         archive
