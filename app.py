@@ -38,6 +38,8 @@ OUTPUT = ROOT / "output"
 CALENDAR_WALL_TZ = ZoneInfo("Europe/Brussels")
 
 MISSIONS = DATA / "missions.csv"
+DEFAULT_MISSIONS_CSV = DATA / "missions_default.csv"
+MISSION_SOURCE_INFO = DATA / "missions_source.json"
 AIRPORTS = DATA / "airports.csv"
 AIRCRAFT = DATA / "aircraft.csv"
 PILOTS = DATA / "pilots.csv"
@@ -53,6 +55,7 @@ st.set_page_config(
     page_title="Airline Scheduling Optimizer",
     page_icon="✈️",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 
@@ -123,7 +126,13 @@ def normalize_missions(df: pd.DataFrame) -> pd.DataFrame:
         if column not in df.columns:
             df[column] = ""
 
-    df = df[required].copy()
+    optional = ["fixed_aircraft"] if "fixed_aircraft" in df.columns else []
+    df = df[required + optional].copy()
+    if "fixed_aircraft" in df.columns:
+        df["fixed_aircraft"] = (
+            df["fixed_aircraft"].astype(str).replace({"nan": "", "None": ""})
+            .str.strip().str.upper().str.replace("-", "", regex=False)
+        )
 
     df["id"] = df["id"].astype(str).str.strip()
     df["origin"] = df["origin"].astype(str).str.strip().str.upper()
@@ -145,6 +154,78 @@ def normalize_missions(df: pd.DataFrame) -> pd.DataFrame:
     df["pax"] = df["pax"].map(pax_value)
 
     return df
+
+
+
+def save_missions(df: pd.DataFrame, source_name: str | None = None) -> None:
+    """Save the active mission set in the application's standard CSV format."""
+    normalized = normalize_missions(df)
+    save_csv(normalized, MISSIONS)
+
+    # Force widgets that keep their own Streamlit state (especially the
+    # mission table editor) to remount with the newly saved dataset. Without
+    # this, activating another CSV updates data/missions.csv correctly but the
+    # Table tab can continue displaying its previous widget state.
+    st.session_state["mission_table_revision"] = int(
+        st.session_state.get("mission_table_revision", 0)
+    ) + 1
+
+    if source_name is not None:
+        MISSION_SOURCE_INFO.write_text(
+            json.dumps({"source": source_name}, indent=2),
+            encoding="utf-8",
+        )
+
+
+def mission_source_name() -> str:
+    try:
+        payload = json.loads(MISSION_SOURCE_INFO.read_text(encoding="utf-8"))
+        return str(payload.get("source") or "Working mission set")
+    except Exception:
+        return "Standard mission set"
+
+
+def load_missions_csv_bytes(raw: bytes) -> pd.DataFrame:
+    from io import BytesIO
+    df = pd.read_csv(BytesIO(raw), keep_default_na=False)
+    required = {"id", "origin", "destination", "departure", "arrival", "pax"}
+    missing = sorted(required - set(df.columns))
+    if missing:
+        raise ValueError("Missing required column(s): " + ", ".join(missing))
+    if df.empty:
+        raise ValueError("Mission CSV contains no missions.")
+    return normalize_missions(df)
+
+
+def unknown_airport_codes(df: pd.DataFrame) -> list[str]:
+    known = set(airport_codes())
+    used = set(df["origin"].astype(str).str.upper()) | set(df["destination"].astype(str).str.upper())
+    return sorted(code for code in used if code and code not in known)
+
+
+def resolve_airports_from_ourairports(codes: list[str]) -> tuple[list[str], list[str]]:
+    """Add missing ICAO airports from the public OurAirports dataset. Returns (added, unresolved)."""
+    if not codes:
+        return [], []
+    url = "https://davidmegginson.github.io/ourairports-data/airports.csv"
+    ref = pd.read_csv(url, low_memory=False)
+    ref["gps_code"] = ref["gps_code"].fillna("").astype(str).str.upper().str.strip()
+    wanted = ref[ref["gps_code"].isin(codes)].copy()
+    wanted = wanted.dropna(subset=["latitude_deg", "longitude_deg"]).drop_duplicates("gps_code")
+    current = airports_df()
+    rows = pd.DataFrame({
+        "icao": wanted["gps_code"],
+        "name": wanted["name"].fillna(wanted["gps_code"]),
+        "lat": wanted["latitude_deg"],
+        "lon": wanted["longitude_deg"],
+    })
+    if not rows.empty:
+        combined = pd.concat([current, rows], ignore_index=True)
+        combined["icao"] = combined["icao"].astype(str).str.upper().str.strip()
+        combined = combined.drop_duplicates("icao", keep="first").sort_values("icao")
+        save_csv(combined, AIRPORTS)
+    added = sorted(set(rows["icao"].astype(str))) if not rows.empty else []
+    return added, sorted(set(codes) - set(added))
 
 
 def validate_missions(df: pd.DataFrame) -> list[str]:
@@ -381,6 +462,7 @@ def start_optimizer(
     live_every: int,
     verbose: bool,
     debug: bool,
+    respect_fixed_aircraft: bool = False,
 ):
     OUTPUT.mkdir(exist_ok=True)
 
@@ -407,6 +489,9 @@ def start_optimizer(
         "--seed",
         str(seed),
     ]
+
+    if respect_fixed_aircraft:
+        command.append("--respect-fixed-aircraft")
 
     if live:
         command.extend(
@@ -894,7 +979,7 @@ def _apply_calendar_event_change(missions: pd.DataFrame, payload: dict) -> tuple
             manual_arrival + (new_start - reference_start)
         ).isoformat()
 
-    save_csv(normalize_missions(missions), MISSIONS)
+    save_missions(normalize_missions(missions))
     return missions, mid
 
 
@@ -1051,7 +1136,7 @@ def render_calendar_mission_form(missions: pd.DataFrame, airports: list[str]) ->
             st.error("\n".join(errors[:10]))
             return
 
-        save_csv(normalized, MISSIONS)
+        save_missions(normalized)
         st.session_state.pop("mission_calendar_editor", None)
         st.session_state["missions_changed_notice"] = True
         _reset_mission_calendar_component()
@@ -1060,11 +1145,176 @@ def render_calendar_mission_form(missions: pd.DataFrame, airports: list[str]) ->
     if delete_clicked:
         if mode == "edit":
             missions = missions[missions["id"].astype(str) != mid].reset_index(drop=True)
-            save_csv(normalize_missions(missions), MISSIONS)
+            save_missions(normalize_missions(missions))
             st.session_state["missions_changed_notice"] = True
         st.session_state.pop("mission_calendar_editor", None)
         _reset_mission_calendar_component()
         st.rerun()
+
+
+def _latest_mission_crew_lookup() -> dict[str, dict]:
+    """Crew per mission from the newest available optimizer result.
+
+    The mission page itself is demand data, so crew only exists after an optimizer
+    run.  Keep this deliberately best-effort: stale/missing result files simply
+    produce an empty lookup and the hover card says that crew is not assigned yet.
+    """
+    candidates = [OUTPUT / "balanced.json", OUTPUT / "cheapest.json"]
+    candidates.extend(sorted(OUTPUT.glob("pareto_*.json"), key=lambda x: x.stat().st_mtime if x.exists() else 0, reverse=True))
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            solution = json.loads(path.read_text(encoding="utf-8"))
+            lookup = {}
+            for reg, movements in (solution.get("aircraft_movements", {}) or {}).items():
+                for movement in movements or []:
+                    if str(movement.get("type", "")).upper() != "MISSION":
+                        continue
+                    mid = str(movement.get("mission", "")).strip()
+                    if not mid:
+                        continue
+                    lookup[mid] = {
+                        "captain": str(movement.get("captain", "") or "").strip(),
+                        "fo": str(movement.get("fo", "") or "").strip(),
+                        "aircraft": str(reg),
+                    }
+            if lookup:
+                return lookup
+        except Exception:
+            continue
+    return {}
+
+
+def render_mission_demand_timeline(missions: pd.DataFrame, solution: dict | None = None) -> None:
+    """Aircraft-style UTC planning board for mission demand.
+
+    Missions with a pre-assigned aircraft are shown on that aircraft row, exactly
+    like the optimizer aircraft board. Missions without an assignment are shown
+    in an UNASSIGNED row. This is deliberately not an artificial Lane 1/Lane 2
+    packing view: the left-hand axis represents operational resources/status.
+    """
+    if solution is not None:
+        crew_lookup = solution.get("crew_assignments", {}) or {}
+    else:
+        crew_lookup = _latest_mission_crew_lookup()
+    items = []
+    for _, row in missions.iterrows():
+        dep = _parse_iso_datetime(row.get("departure", ""))
+        if dep is None:
+            continue
+        arr = estimated_mission_arrival(row)
+        if arr is None or arr <= dep:
+            arr = dep + pd.Timedelta(minutes=60)
+        fixed = str(row.get("fixed_aircraft", "")).strip()
+        crew = crew_lookup.get(str(row.get("id", "")), {})
+        items.append({
+            "id": str(row.get("id", "")),
+            "origin": str(row.get("origin", "")),
+            "destination": str(row.get("destination", "")),
+            "pax": int(row.get("pax", 0) or 0),
+            "fixed_aircraft": fixed,
+            "row": fixed if fixed else "UNASSIGNED",
+            "start": dep.isoformat(),
+            "end": arr.isoformat(),
+            "arrival_source": "manual" if str(row.get("arrival", "")).strip() else "estimated",
+            "captain": crew.get("captain", ""),
+            "fo": crew.get("fo", ""),
+            "crew_aircraft": crew.get("aircraft", ""),
+        })
+    if not items:
+        st.info("No missions available for the timeline.")
+        return
+
+    items.sort(key=lambda x: (x["start"], x["end"], x["id"]))
+    first = min(datetime.fromisoformat(x["start"]) for x in items).date()
+    last = max(datetime.fromisoformat(x["end"]) for x in items).date()
+    dates = [d.date().isoformat() for d in pd.date_range(first, last, freq="D")]
+
+    # Preserve known aircraft order where possible, then show UNASSIGNED last.
+    known = []
+    try:
+        ac = load_csv(AIRCRAFT)
+        for col in ("registration", "aircraft", "tail", "id"):
+            if col in ac.columns:
+                known = [str(x).strip() for x in ac[col].tolist() if str(x).strip()]
+                break
+    except Exception:
+        known = []
+    assigned = list(dict.fromkeys(x["row"] for x in items if x["row"] != "UNASSIGNED"))
+    row_order = [x for x in known if x in assigned] + [x for x in assigned if x not in known]
+    if any(x["row"] == "UNASSIGNED" for x in items):
+        row_order.append("UNASSIGNED")
+
+    payload = {"missions": items, "dates": dates, "rows": row_order}
+    data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+
+    component_html = f"""
+<div id="mission-demand-root">
+<style>
+*{{box-sizing:border-box}} :root{{--label-w:175px;--day-w:185px;--row-h:100px;--head-h:64px}}
+body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202124;background:transparent;overflow:hidden}}
+.toolbar{{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:0;border-top:5px solid #7d7d7d;padding:6px 8px;background:#fff;flex-wrap:wrap}}
+.toolbar-left{{display:flex;gap:10px;align-items:baseline}} .title{{font-size:18px;font-weight:750}} .hint{{color:#777;font-size:11px}}
+.controls{{display:flex;gap:4px;align-items:center}} button.ctrl{{border:1px solid #c7c7c7;background:#f7f7f7;padding:5px 9px;border-radius:2px;cursor:pointer;color:#444}}
+.layout{{display:block}}
+.viewport{{height:650px;overflow:auto;border:1px solid #d2d2d2;border-radius:0;background:#fff;scrollbar-gutter:stable}}
+.board{{position:relative;width:calc(var(--label-w) + var(--days) * var(--day-w));min-width:max-content}}
+.header{{position:sticky;top:0;z-index:30;height:var(--head-h);margin-left:var(--label-w);background:#f3f3f3;border-bottom:1px solid #d2d2d2}}
+.day-head{{position:absolute;top:0;height:var(--head-h);display:flex;align-items:center;justify-content:center;border-left:1px solid #dedede;color:#333;font-size:18px;white-space:nowrap}}
+.corner{{position:sticky;left:0;top:0;z-index:50;width:var(--label-w);height:var(--head-h);margin-top:calc(-1 * var(--head-h));padding:20px 11px;background:#fff;border-right:1px solid #ccc;border-bottom:1px solid #d2d2d2;font-size:14px;font-weight:400}}
+.row{{position:relative;height:var(--row-h);margin-left:var(--label-w);border-bottom:1px solid #cfcfcf;background:#fff}}
+.label-cell{{position:sticky;left:0;z-index:20;width:var(--label-w);height:var(--row-h);margin-left:calc(-1 * var(--label-w));padding:25px 11px 8px;background:#fff;border-right:1px solid #ccc}}
+.label-cell b{{display:block;font-size:20px;font-weight:400;color:#2d6d9d}} .label-cell span{{display:block;margin-top:8px;font-size:13px;color:#666}}
+.gridline{{position:absolute;top:0;bottom:0;border-left:1px solid #d4d4d4;pointer-events:none}} .noon{{position:absolute;top:0;bottom:0;border-left:1px solid #eeeeee;pointer-events:none}}
+.block{{position:absolute;min-width:48px;height:72px;top:14px;border:1px solid #555;border-radius:0;padding:3px 4px;overflow:hidden;cursor:pointer;text-align:left;color:#fff;background:#7da3ef;box-shadow:none}}
+.block:hover{{z-index:50!important;box-shadow:0 3px 9px rgba(0,0,0,.18)}} .block.selected{{outline:2px solid #2878ff;outline-offset:1px;z-index:51!important}}
+.block.unassigned{{background:#f2cb5c;border-color:#555;color:#111}}
+.location-band{{position:absolute;height:28px;top:0;border-radius:0;background:#8499bd;color:#fff;font-size:14px;line-height:28px;padding:0 6px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none;z-index:2}}
+.location-band.conflict{{background:#a8bdea;color:#fff;border:0;line-height:28px}}
+.destination{{font-size:10px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:visible;text-overflow:clip}} .route{{display:none}} .meta{{margin-top:3px;font-size:9px;font-weight:600;line-height:1.15;color:inherit;white-space:nowrap;overflow:visible;text-overflow:clip}}
+.tooltip{{position:fixed;display:none;z-index:9999;max-width:380px;background:#111;color:#fff;border-radius:7px;padding:10px 12px;font-size:11px;line-height:1.5;box-shadow:0 5px 18px rgba(0,0,0,.30);pointer-events:none}} .tooltip b{{font-size:12px}} .tooltip .crew{{color:#52bfff;font-weight:650}}
+.detail{{display:none}} .detail h3{{margin:0 0 12px;font-size:18px}}
+.detail-block{{border-bottom:1px solid #eee;padding:9px 0}} .detail-block:last-child{{border:0}} .dlabel{{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}} .dvalue{{font-size:13px;font-weight:600;overflow-wrap:anywhere}}
+.legend{{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;color:#666;font-size:11px}} .swatch{{display:inline-block;width:12px;height:12px;border:1px solid #aaa;border-radius:3px;vertical-align:-2px;margin-right:4px}} .fixed-s{{background:#e7f3e8}} .unassigned-s{{background:#eef3fb}}
+@media(max-width:950px){{.layout{{grid-template-columns:1fr}}.detail{{position:static;max-height:none;order:-1}}.viewport{{height:560px}}}}
+</style>
+<div class="toolbar"><div class="toolbar-left"><div class="title">Mission overview</div><div class="hint">UTC · dispatch planning board</div></div><div class="controls"><button class="ctrl" id="startBtn">Start</button><button class="ctrl" id="minus">−</button><span id="zoomTxt">100%</span><button class="ctrl" id="plus">+</button><button class="ctrl" id="fit">Fit</button></div></div>
+<div id="missionTooltip" class="tooltip"></div><div class="layout"><div><div class="viewport" id="viewport"><div class="board" id="board"></div></div><div class="legend"><span><i class="swatch fixed-s"></i>Pre-assigned mission</span><span><i class="swatch unassigned-s"></i>Unassigned mission</span><span>🔒 fixed aircraft</span><span><i class="swatch" style="background:#dbe6f7;border-color:#b8c9df"></i>Known aircraft location</span><span><i class="swatch" style="background:#fff0d9;border-color:#d4a14b"></i>Location discontinuity</span></div></div>
+<aside class="detail"><h3 id="dTitle">Select a mission</h3><div class="detail-block"><div class="dlabel">Route</div><div class="dvalue" id="dRoute">Click a mission block.</div></div><div class="detail-block"><div class="dlabel">Timing</div><div class="dvalue" id="dTime">—</div></div><div class="detail-block"><div class="dlabel">Passengers</div><div class="dvalue" id="dPax">—</div></div><div class="detail-block"><div class="dlabel">Aircraft</div><div class="dvalue" id="dFixed">—</div></div><div class="detail-block"><div class="dlabel">Arrival</div><div class="dvalue" id="dArrival">—</div></div></aside></div>
+<script>(()=>{{
+ const data={data_json},board=document.getElementById('board'),viewport=document.getElementById('viewport'),dayMs=86400000,baseDayW=190;let zoom=1;
+ const first=new Date(data.dates[0]+'T00:00:00Z'),lastEnd=new Date(data.dates[data.dates.length-1]+'T00:00:00Z').getTime()+dayMs;
+ const pct=(iso)=>((new Date(iso+'Z').getTime()-first.getTime())/(lastEnd-first.getTime()))*100; const widthPct=(a,b)=>Math.max(.12,((new Date(b+'Z')-new Date(a+'Z'))/(lastEnd-first.getTime()))*100);
+ const pretty=(d)=>new Date(d+'T00:00:00Z').toLocaleDateString('en-GB',{{weekday:'short',day:'2-digit',month:'short',timeZone:'UTC'}}); const time=(iso)=>new Date(iso+'Z').toLocaleString('en-GB',{{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'UTC'}});
+ const tip=document.getElementById('missionTooltip'); const esc=(v)=>String(v??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m])); function showTip(c,e){{const crew=(c.captain||c.fo)?`<span class=\"crew\">CAPT ${{esc(c.captain||'?')}} &nbsp;·&nbsp; FO ${{esc(c.fo||'?')}}</span>`:'Crew not assigned in latest optimizer result';tip.innerHTML=`<b>${{esc(c.id)}} · ${{esc(c.origin)}} → ${{esc(c.destination)}}</b><br>${{time(c.start)}} → ${{time(c.end)}} UTC<br>${{esc(c.pax)}} pax · aircraft ${{esc(c.fixed_aircraft||c.crew_aircraft||'unassigned')}}<br>${{crew}}`;tip.style.display='block';moveTip(e)}} function moveTip(e){{const pad=14,w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.min(window.innerWidth-w-pad,e.clientX+14)+'px';tip.style.top=Math.min(window.innerHeight-h-pad,e.clientY+14)+'px'}} function hideTip(){{tip.style.display='none'}}
+ function detail(c,el){{document.querySelectorAll('.block.selected').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');document.getElementById('dTitle').textContent=(c.fixed_aircraft?'🔒 ':'')+c.id;document.getElementById('dRoute').textContent=c.origin+' → '+c.destination;document.getElementById('dTime').textContent=time(c.start)+' → '+time(c.end)+' UTC';document.getElementById('dPax').textContent=c.pax+' pax';document.getElementById('dFixed').textContent=c.fixed_aircraft||'UNASSIGNED — optimizer may choose aircraft';document.getElementById('dArrival').textContent=c.arrival_source==='manual'?'Manual arrival time':'Estimated from route distance';}}
+ function render(){{board.innerHTML='';board.style.setProperty('--days',data.dates.length);const head=document.createElement('div');head.className='header';data.dates.forEach((d,i)=>{{const h=document.createElement('div');h.className='day-head';h.style.left=`calc(${{i}} * var(--day-w))`;h.style.width='var(--day-w)';h.textContent=pretty(d);head.appendChild(h)}});board.appendChild(head);const corner=document.createElement('div');corner.className='corner';corner.textContent='Aircraft';board.appendChild(corner);
+ data.rows.forEach(reg=>{{const line=document.createElement('div');line.className='row';const lab=document.createElement('div');lab.className='label-cell';const count=data.missions.filter(c=>c.row===reg).length;lab.innerHTML=`<b>${{reg}}</b><span>${{count}} mission${{count===1?'':'s'}}</span>`;line.appendChild(lab);data.dates.forEach((d,i)=>{{const g=document.createElement('div');g.className='gridline';g.style.left=`calc(${{i}} * var(--day-w))`;line.appendChild(g);const n=document.createElement('div');n.className='noon';n.style.left=`calc(${{i}} * var(--day-w) + var(--day-w)/2)`;line.appendChild(n)}});
+ const rowMissions=data.missions.filter(c=>c.row===reg).sort((a,b)=>new Date(a.start+'Z')-new Date(b.start+'Z'));
+ rowMissions.forEach((c,j)=>{{
+   const el=document.createElement('button');el.type='button';el.className='block'+(reg==='UNASSIGNED'?' unassigned':'');el.style.left=pct(c.start)+'%';el.style.width=`max(48px, ${{widthPct(c.start,c.end)}}%)`;el.style.zIndex=5+(j%10);el.innerHTML=`<div class="destination">${{c.destination}}</div><div class="meta">${{c.id}}</div>`;el.onclick=()=>detail(c,el);el.onmouseenter=(e)=>showTip(c,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);
+   if(reg!=='UNASSIGNED'){{
+     const next=rowMissions[j+1];
+     const bandStart=c.end;
+     const bandEnd=next?next.start:null;
+     if(bandEnd && new Date(bandEnd+'Z')>new Date(bandStart+'Z')){{
+       const band=document.createElement('div');
+       const continuous=(c.destination===next.origin);
+       band.className='location-band'+(continuous?'':' conflict');
+       band.style.left=pct(bandStart)+'%';
+       band.style.width=`max(32px, ${{widthPct(bandStart,bandEnd)}}%)`;
+       band.textContent=continuous?c.destination:`${{c.destination}} → ${{next.origin}} ?`;
+       band.title=continuous?`Aircraft remains at ${{c.destination}} until next mission`:`Aircraft ends at ${{c.destination}}, but next fixed mission starts at ${{next.origin}}. Positioning is not yet planned.`;
+       line.appendChild(band);
+     }}
+   }}
+ }});board.appendChild(line)}})}}
+ function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=Math.round(zoom*100)+'%'}}
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
+}})();</script>
+"""
+    components.html(component_html, height=760, scrolling=False)
 
 def mission_editor():
     st.subheader("Mission planning")
@@ -1086,9 +1336,37 @@ def mission_editor():
     elif st.session_state.pop("missions_changed_notice", False):
         st.info("Mission planning saved.")
 
-    calendar_tab, paste_tab, table_tab = st.tabs(
-        ["Calendar", "Bulk import", "Table"]
+    timeline_tab, calendar_tab, json_tab, paste_tab, table_tab = st.tabs(
+        ["Timeline", "Calendar", "Load CSV", "Bulk import", "Table"]
     )
+
+    with timeline_tab:
+        mission_solution = None
+        try:
+            mission_gallery = viz.load_gallery()
+            mission_named = _four_solution_choices(mission_gallery)
+        except Exception:
+            mission_gallery = []
+            mission_named = {}
+
+        if mission_named:
+            mission_solution_name = st.segmented_control(
+                "Solution",
+                options=list(mission_named.keys()),
+                default="CHEAPEST",
+                selection_mode="single",
+                key="mission_timeline_solution_selector",
+            )
+            mission_solution = mission_named.get(
+                mission_solution_name or "CHEAPEST"
+            )
+        else:
+            st.caption(
+                "No optimizer solutions available yet; showing mission data "
+                "without a selected crew solution."
+            )
+
+        render_mission_demand_timeline(missions, mission_solution)
 
     with calendar_tab:
         if streamlit_calendar is None:
@@ -1235,6 +1513,86 @@ def mission_editor():
             with right:
                 render_calendar_mission_form(missions, airports)
 
+    with json_tab:
+        st.markdown("#### Load mission CSV")
+        st.caption(
+            "Replace the active mission set with another mission CSV. The file is validated first. "
+            "If it contains airports that are not yet in data/airports.csv, the app can fetch their "
+            "name and coordinates from the public OurAirports reference dataset and add them automatically."
+        )
+        st.info(f"Current mission source: **{mission_source_name()}** · {len(missions)} missions")
+
+        uploaded = st.file_uploader(
+            "Mission CSV file",
+            type=["csv"],
+            key="mission_csv_upload",
+            help="Expected columns: id, origin, destination, departure, arrival, pax. Optional: fixed_aircraft.",
+        )
+        preview = None
+        preview_errors = []
+        missing_airports = []
+        if uploaded is not None:
+            try:
+                preview = load_missions_csv_bytes(uploaded.getvalue())
+                missing_airports = unknown_airport_codes(preview)
+                if missing_airports:
+                    st.warning(
+                        f"This mission file uses {len(missing_airports)} airport(s) not yet in the local "
+                        f"airport database: {', '.join(missing_airports)}"
+                    )
+                    if st.button("Add missing airports automatically", key="resolve_missing_airports"):
+                        try:
+                            added, unresolved = resolve_airports_from_ourairports(missing_airports)
+                            if added:
+                                st.success(f"Added {len(added)} airport(s) to data/airports.csv.")
+                            if unresolved:
+                                st.error("Could not resolve: " + ", ".join(unresolved))
+                            else:
+                                st.rerun()
+                        except Exception as exc:
+                            st.error(
+                                "Automatic airport lookup failed. Check the server's internet connection. "
+                                f"No mission data was changed. Details: {exc}"
+                            )
+                preview_errors = validate_missions(preview)
+                if preview_errors:
+                    non_airport_errors = [e for e in preview_errors if "unknown origin" not in e and "unknown destination" not in e]
+                    if non_airport_errors:
+                        st.error("This file cannot be activated yet:\n" + "\n".join(non_airport_errors[:20]))
+                if not preview_errors:
+                    st.success(f"Valid mission file: {len(preview)} missions.")
+                st.dataframe(preview.head(12), hide_index=True, width="stretch")
+            except Exception as exc:
+                st.error(f"Could not read mission CSV: {exc}")
+
+        c_load, c_default = st.columns(2)
+        if c_load.button(
+            "Use uploaded CSV",
+            type="primary",
+            disabled=(preview is None or bool(preview_errors)),
+            key="activate_mission_csv",
+        ):
+            save_missions(preview, source_name=uploaded.name)
+            st.session_state["missions_changed_notice"] = True
+            st.session_state.pop("mission_calendar_editor", None)
+            _reset_mission_calendar_component()
+            st.rerun()
+
+        if c_default.button("Restore standard missions", key="restore_default_missions"):
+            try:
+                default_df = normalize_missions(load_csv(DEFAULT_MISSIONS_CSV))
+                errors = validate_missions(default_df)
+                if errors:
+                    st.error("Default mission CSV is invalid:\n" + "\n".join(errors[:20]))
+                else:
+                    save_missions(default_df, source_name=DEFAULT_MISSIONS_CSV.name)
+                    st.session_state["missions_changed_notice"] = True
+                    st.session_state.pop("mission_calendar_editor", None)
+                    _reset_mission_calendar_component()
+                    st.rerun()
+            except Exception as exc:
+                st.error(f"Could not restore the standard mission CSV: {exc}")
+
     with paste_tab:
         st.markdown("#### Bulk import")
         st.caption(
@@ -1273,7 +1631,7 @@ def mission_editor():
                 st.error("These airports are not yet in airports.csv: " + ", ".join(unknown))
             elif rows:
                 updated = pd.concat([missions, pd.DataFrame(rows)], ignore_index=True)
-                save_csv(normalize_missions(updated), MISSIONS)
+                save_missions(normalize_missions(updated))
                 st.session_state["missions_changed_notice"] = True
                 st.success(f"Added {len(rows)} missions.")
                 st.rerun()
@@ -1305,7 +1663,7 @@ def mission_editor():
                     "Pax", min_value=0, max_value=100, step=1
                 ),
             },
-            key="mission_table",
+            key=f"mission_table_{int(st.session_state.get('mission_table_revision', 0))}",
         )
         c1, c2 = st.columns([1, 4])
         if c1.button("Save missions", type="primary", key="save_mission_table"):
@@ -1314,7 +1672,7 @@ def mission_editor():
             if errors:
                 st.error("\n".join(errors[:15]))
             else:
-                save_csv(normalized, MISSIONS)
+                save_missions(normalized)
                 st.session_state["missions_changed_notice"] = True
                 st.success("missions.csv saved.")
                 st.rerun()
@@ -1562,6 +1920,56 @@ def _truthy(value) -> bool:
     return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
 
 
+def _four_solution_choices(gallery: list[dict]) -> dict[str, dict]:
+    """The four operational solution shortcuts used in Missions and Results."""
+    if not gallery:
+        return {}
+
+    def obj(sol, key, default=float("inf")):
+        try:
+            return float(sol.get("objectives", {}).get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    def metric(sol, key, default=float("inf")):
+        try:
+            return float(sol.get("metrics", {}).get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    return {
+        "CHEAPEST": min(
+            gallery,
+            key=lambda s: (
+                obj(s, "total_operational_cost_eur"),
+                obj(s, "complexity_score"),
+            ),
+        ),
+        "MIN COMPLEXITY": min(
+            gallery,
+            key=lambda s: (
+                obj(s, "complexity_score"),
+                obj(s, "total_operational_cost_eur"),
+            ),
+        ),
+        "MIN OUTSTATION SWAPS": min(
+            gallery,
+            key=lambda s: (
+                len(actual_outstation_swap_events(s)),
+                obj(s, "complexity_score"),
+                metric(s, "charged_pilot_days"),
+            ),
+        ),
+        "MIN PILOT DAYS": min(
+            gallery,
+            key=lambda s: (
+                metric(s, "charged_pilot_days"),
+                obj(s, "complexity_score"),
+            ),
+        ),
+    }
+
+
 def _pilot_solution_choices() -> dict[str, dict | None]:
     """Return selectable optimizer solutions for the pilot calendar overlay.
 
@@ -1798,6 +2206,84 @@ def pilot_planning_page():
     ])
 
     with availability_tab:
+        availability = load_csv(PILOT_AVAILABILITY)
+
+        with st.expander("Load availability CSV", expanded=False):
+            st.caption(
+                "Replace the active pilot availability calendar with another CSV. "
+                "Expected columns: pilot_id, date, status, note. Missing rows mean AVAILABLE."
+            )
+            uploaded_availability = st.file_uploader(
+                "Pilot availability CSV",
+                type=["csv"],
+                key="pilot_availability_csv_upload",
+            )
+            if uploaded_availability is not None:
+                try:
+                    uploaded_df = pd.read_csv(uploaded_availability, keep_default_na=False)
+                    required = ["pilot_id", "date", "status", "note"]
+                    missing_cols = [c for c in required if c not in uploaded_df.columns]
+                    errors = []
+                    if missing_cols:
+                        errors.append("Missing columns: " + ", ".join(missing_cols))
+                    else:
+                        uploaded_df = uploaded_df[required].copy()
+                        uploaded_df["pilot_id"] = uploaded_df["pilot_id"].astype(str).str.strip()
+                        uploaded_df["date"] = uploaded_df["date"].astype(str).str.strip()
+                        uploaded_df["status"] = uploaded_df["status"].astype(str).str.strip().str.upper()
+                        uploaded_df["note"] = uploaded_df["note"].astype(str)
+
+                        known_pilots = set(pilot_ids)
+                        unknown_pilots = sorted(set(uploaded_df["pilot_id"]) - known_pilots - {""})
+                        if unknown_pilots:
+                            errors.append("Unknown pilot IDs: " + ", ".join(unknown_pilots))
+
+                        allowed_statuses = {"AVAILABLE", "UNAVAILABLE", "LEAVE", "TRAINING"}
+                        bad_statuses = sorted(set(uploaded_df["status"]) - allowed_statuses)
+                        if bad_statuses:
+                            errors.append("Unknown statuses: " + ", ".join(bad_statuses))
+
+                        parsed_dates = pd.to_datetime(uploaded_df["date"], format="%Y-%m-%d", errors="coerce")
+                        bad_dates = uploaded_df.loc[parsed_dates.isna(), "date"].drop_duplicates().tolist()
+                        if bad_dates:
+                            errors.append("Invalid dates (use YYYY-MM-DD): " + ", ".join(map(str, bad_dates[:10])))
+
+                        duplicate_mask = uploaded_df.duplicated(["pilot_id", "date"], keep=False)
+                        if duplicate_mask.any():
+                            examples = uploaded_df.loc[duplicate_mask, ["pilot_id", "date"]].drop_duplicates().head(10)
+                            errors.append(
+                                "Duplicate pilot/date rows: "
+                                + ", ".join(f"{r.pilot_id} {r.date}" for r in examples.itertuples())
+                            )
+
+                    if errors:
+                        st.error("This availability file cannot be activated yet:\n\n" + "\n\n".join(errors))
+                    else:
+                        # AVAILABLE is the model default, so keep the stored file compact.
+                        active_upload = uploaded_df[uploaded_df["status"] != "AVAILABLE"].copy()
+                        st.success(
+                            f"Valid availability file: {len(active_upload)} blocked pilot-days "
+                            f"for {active_upload['pilot_id'].nunique()} pilots."
+                        )
+                        st.dataframe(active_upload.head(30), width="stretch", hide_index=True)
+                        if st.button("Use uploaded availability CSV", type="primary", key="activate_pilot_availability_csv"):
+                            save_csv(active_upload, PILOT_AVAILABILITY)
+                            st.session_state["pilot_availability_table_revision"] = (
+                                int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
+                            )
+                            _reset_pilot_availability_calendar()
+                            st.session_state["pilot_availability_upload_notice"] = (
+                                f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}."
+                            )
+                            st.rerun()
+                except Exception as exc:
+                    st.error(f"Could not read this CSV: {exc}")
+
+        upload_notice = st.session_state.pop("pilot_availability_upload_notice", None)
+        if upload_notice:
+            st.success(upload_notice)
+
+        # Reload after a CSV replacement so calendar and editor always use the active file.
         availability = load_csv(PILOT_AVAILABILITY)
 
         solution_choices = _pilot_solution_choices()
@@ -2101,7 +2587,11 @@ def pilot_planning_page():
     with table_tab:
         st.markdown("#### Availability rows")
         av = load_csv(PILOT_AVAILABILITY)
-        av_edit = st.data_editor(av, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_availability_table")
+        av_revision = int(st.session_state.get("pilot_availability_table_revision", 0))
+        av_edit = st.data_editor(
+            av, width="stretch", hide_index=True, num_rows="dynamic",
+            key=f"pilot_availability_table_{av_revision}"
+        )
         if st.button("Save availability table", key="save_pilot_availability_table"):
             save_csv(av_edit, PILOT_AVAILABILITY)
             st.success("pilot_availability.csv saved.")
@@ -2254,7 +2744,7 @@ def optimizer_page():
         "Independent runs",
         min_value=1,
         max_value=50,
-        value=2,
+        value=5,
         step=1,
     )
 
@@ -2262,7 +2752,7 @@ def optimizer_page():
         "Population",
         min_value=10,
         max_value=2000,
-        value=120,
+        value=200,
         step=10,
     )
 
@@ -2270,7 +2760,7 @@ def optimizer_page():
         "Generations",
         min_value=1,
         max_value=5000,
-        value=80,
+        value=180,
         step=10,
     )
 
@@ -2310,6 +2800,32 @@ def optimizer_page():
     if debug:
         verbose = True
 
+    # Aircraft assignment mode must be defined before the Start optimization
+    # button uses it. Keep this outside live_optimizer_terminal(), because that
+    # fragment has its own execution scope.
+    fixed_count = 0
+    if "fixed_aircraft" in missions.columns:
+        fixed_values = missions["fixed_aircraft"].fillna("").astype(str).str.strip()
+        fixed_count = int((fixed_values != "").sum())
+
+    respect_fixed_aircraft = st.checkbox(
+        "Respect pre-assigned aircraft from mission CSV",
+        value=False,
+        disabled=(fixed_count == 0),
+        help=(
+            "ON: missions with fixed_aircraft stay on that registration. "
+            "OFF: fixed_aircraft is ignored and the optimizer assigns aircraft freely."
+        ),
+        key="optimizer_respect_fixed_aircraft",
+    )
+    if fixed_count:
+        st.caption(f"{fixed_count} mission(s) currently contain a fixed_aircraft assignment.")
+    else:
+        st.caption(
+            "The active mission CSV contains no fixed_aircraft assignments; "
+            "aircraft will be optimized freely."
+        )
+
     running, pid = optimizer_status()
 
     status_cols = st.columns(
@@ -2340,6 +2856,7 @@ def optimizer_page():
                 int(live_every),
                 bool(verbose),
                 bool(debug),
+                bool(respect_fixed_aircraft),
             )
 
             st.success(
@@ -2358,7 +2875,7 @@ def optimizer_page():
     ):
         stop_optimizer()
         st.warning(
-            "Stop signal sent."
+            "Graceful stop requested. The optimizer will save the best solutions found so far before exiting."
         )
         st.rerun()
 
@@ -2839,6 +3356,60 @@ def actual_timeline_dataframe(
 
 
 
+
+def actual_outstation_swap_events(solution, home_bases=("EBAW", "EBLG")):
+    """Count real crew-change events occurring away from a home base.
+
+    One event = the crew attached to an aircraft changes between two consecutive
+    movements at the same physical handover airport.  Changing both CAPT and FO
+    still counts as one swap event.
+    """
+    events = []
+    bases = {str(x).strip().upper() for x in home_bases}
+
+    for reg, raw_movements in solution.get("aircraft_movements", {}).items():
+        movements = sorted(
+            raw_movements,
+            key=lambda x: pd.to_datetime(x.get("start")),
+        )
+        previous = None
+
+        for movement in movements:
+            if previous is not None:
+                prev_to = str(previous.get("to", "")).strip().upper()
+                cur_from = str(movement.get("from", "")).strip().upper()
+                prev_crew = (
+                    str(previous.get("captain", "")).strip(),
+                    str(previous.get("fo", "")).strip(),
+                )
+                cur_crew = (
+                    str(movement.get("captain", "")).strip(),
+                    str(movement.get("fo", "")).strip(),
+                )
+
+                # Only count a genuine physical handover: same aircraft,
+                # continuous airport, known crews, and crew actually changed.
+                continuous_location = bool(prev_to and prev_to == cur_from)
+                known_crews = all(prev_crew) and all(cur_crew)
+                crew_changed = prev_crew != cur_crew
+                outstation = cur_from not in bases
+
+                if continuous_location and known_crews and crew_changed and outstation:
+                    events.append({
+                        "aircraft": reg,
+                        "airport": cur_from,
+                        "previous_crew": prev_crew,
+                        "new_crew": cur_crew,
+                        "previous_mission": previous.get("mission"),
+                        "next_mission": movement.get("mission"),
+                        "time": movement.get("start"),
+                    })
+
+            previous = movement
+
+    return events
+
+
 def operations_board_payload(
     solution,
     missions,
@@ -2950,10 +3521,13 @@ def operations_board_payload(
                     "end": end.strftime(
                         "%H:%M"
                     ),
+                    "start_iso": start.isoformat(),
+                    "end_iso": end.isoformat(),
                     "crew": crew,
                     "extra": (
                         f'{int(mission["pax"])} pax'
                     ),
+                    "fixed": bool(str(mission.get("fixed_aircraft", "")).strip()),
                     "swap": swap,
                     "swap_type": (
                         "Outstation swap"
@@ -3022,10 +3596,13 @@ def operations_board_payload(
                     "end": end.strftime(
                         "%H:%M"
                     ),
+                    "start_iso": start.isoformat(),
+                    "end_iso": end.isoformat(),
                     "crew": crew,
                     "extra": (
                         f'{float(movement.get("nm",0)):.0f} NM'
                     ),
+                    "fixed": False,
                     "swap": bool(
                         home_swap
                     ),
@@ -3201,7 +3778,10 @@ def operations_board_payload(
                     ),
                     "start": "",
                     "end": "",
+                    "start_iso": park_day + "T00:00:00",
+                    "end_iso": park_day + "T23:59:59",
                     "crew": parking_crew,
+                    "fixed": False,
                     "extra": (
                         "Aircraft + attached crew away"
                     ),
@@ -3221,11 +3801,83 @@ def operations_board_payload(
             ]
         )
 
+    sorted_dates = sorted(all_dates)
+    if sorted_dates:
+        first_day = pd.Timestamp(sorted_dates[0]).date()
+        last_day = pd.Timestamp(sorted_dates[-1]).date()
+        continuous_dates = [
+            stamp.date().isoformat()
+            for stamp in pd.date_range(first_day, last_day, freq="D")
+        ]
+    else:
+        continuous_dates = []
+
+    # Crew rows for the same operations board. Assigned missions are shown as
+    # grey timed blocks; availability exceptions are full-day coloured blocks.
+    pilot_rows = []
+    try:
+        pilots_df = load_csv(PILOTS)
+        availability_df = load_csv(PILOT_AVAILABILITY)
+    except Exception:
+        pilots_df = pd.DataFrame()
+        availability_df = pd.DataFrame()
+
+    assignment_cards = {}
+    for reg, movements in explicit.items():
+        for movement in movements or []:
+            if str(movement.get("type", "")).upper() != "MISSION":
+                continue
+            start = pd.to_datetime(movement.get("start"))
+            end = pd.to_datetime(movement.get("end"))
+            mid = str(movement.get("mission", ""))
+            route = f'{movement.get("from", "")} → {movement.get("to", "")}'
+            for role_key, role_label in (("captain", "CAPT"), ("fo", "FO")):
+                pid = str(movement.get(role_key, "") or "").strip()
+                if not pid or pid == "?":
+                    continue
+                assignment_cards.setdefault(pid, []).append({
+                    "kind": "crewmission", "label": mid, "route": route,
+                    "start_iso": start.isoformat(), "end_iso": end.isoformat(),
+                    "day": start.strftime("%Y-%m-%d"), "start": start.strftime("%H:%M"),
+                    "end": end.strftime("%H:%M"), "aircraft": reg, "role": role_label,
+                })
+
+    if not pilots_df.empty and "id" in pilots_df.columns:
+        for _, prow in pilots_df.iterrows():
+            pid = str(prow.get("id", "")).strip()
+            if not pid:
+                continue
+            role = str(prow.get("role", "")).strip().upper()
+            name = str(prow.get("name", "")).strip()
+            cards = list(assignment_cards.get(pid, []))
+            if not availability_df.empty and "pilot_id" in availability_df.columns:
+                work = availability_df[availability_df["pilot_id"].astype(str) == pid]
+                for _, arow in work.iterrows():
+                    status = str(arow.get("status", "AVAILABLE")).strip().upper() or "AVAILABLE"
+                    if status == "AVAILABLE":
+                        continue
+                    day = str(arow.get("date", "")).strip()
+                    try:
+                        start = pd.Timestamp(day)
+                    except Exception:
+                        continue
+                    cards.append({
+                        "kind": "availability", "status": status,
+                        "label": status.title(), "note": str(arow.get("note", "") or "").strip(),
+                        "start_iso": start.isoformat(),
+                        "end_iso": (start + pd.Timedelta(days=1)).isoformat(),
+                        "day": day,
+                    })
+            cards.sort(key=lambda x: x.get("start_iso", ""))
+            pilot_rows.append({"id": pid, "name": name, "role": role, "cards": cards})
+
+    role_order = {"CAPT": 0, "CAPTAIN": 0, "FO": 1, "F/O": 1, "FIRST OFFICER": 1}
+    pilot_rows.sort(key=lambda r: (role_order.get(r["role"], 9), r["name"] or r["id"]))
+
     return {
         "aircraft": aircraft_rows,
-        "dates": sorted(
-            all_dates
-        ),
+        "pilots": pilot_rows,
+        "dates": continuous_dates,
     }
 
 
@@ -3234,1060 +3886,137 @@ def render_operations_board_component(
     missions,
     title,
 ):
-    payload = operations_board_payload(
-        solution,
-        missions,
-    )
+    """Render a continuous UTC aircraft timeline, one horizontal lane per aircraft."""
+    payload = operations_board_payload(solution, missions)
 
     if not payload["dates"]:
-        st.info(
-            "No aircraft movements available."
-        )
+        st.info("No aircraft movements available.")
         return
 
     import json as _json
 
-    data_json = _json.dumps(
-        payload,
-        ensure_ascii=False,
-    ).replace(
-        "</",
-        "<\\/",
-    )
-
-    objectives = solution.get(
-        "objectives",
-        {},
-    )
-    metrics = solution.get(
-        "metrics",
-        {},
-    )
-
+    data_json = _json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+    objectives = solution.get("objectives", {})
+    metrics = solution.get("metrics", {})
     header = {
         "title": title,
-        "cost": (
-            f'€{objectives.get("total_operational_cost_eur",0):,.0f}'
-        ),
-        "complexity": int(
-            objectives.get(
-                "complexity_score",
-                0,
-            )
-        ),
-        "empty": int(
-            metrics.get(
-                "empty_legs",
-                0,
-            )
-        ),
-        "pilot_days": int(
-            metrics.get(
-                "charged_pilot_days",
-                0,
-            )
-        ),
-        "swaps": int(
-            metrics.get(
-                "nonhomebase_swap_events",
-                0,
-            )
-        ),
+        "cost": f'€{objectives.get("total_operational_cost_eur",0):,.0f}',
+        "complexity": int(objectives.get("complexity_score", 0)),
+        "empty": int(metrics.get("empty_legs", 0)),
+        "pilot_days": int(metrics.get("charged_pilot_days", 0)),
+        "swaps": len(actual_outstation_swap_events(solution)),
     }
-
-    header_json = _json.dumps(
-        header,
-        ensure_ascii=False,
-    )
+    header_json = _json.dumps(header, ensure_ascii=False)
 
     component_html = f"""
-<div id="ops-board-root">
+<div id="aircraft-timeline-root">
 <style>
 * {{ box-sizing:border-box; }}
-
-:root {{
-  --row-label-width: 138px;
-  --day-width: 190px;
-  --row-height: 118px;
-  --header-height: 48px;
-}}
-
-body {{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  color:#161616;
-  background:transparent;
-  overflow:hidden;
-}}
-
-.board-shell {{
-  width:100%;
-}}
-
-.kpis {{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-  margin:0 0 12px 0;
-}}
-
-.kpi {{
-  border:1px solid #ddd;
-  border-radius:16px;
-  padding:8px 13px;
-  background:#fff;
-  min-width:105px;
-}}
-
-.kpi b {{
-  display:block;
-  font-size:17px;
-}}
-
-.kpi span {{
-  font-size:11px;
-  color:#666;
-}}
-
-.toolbar {{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:9px;
-  flex-wrap:wrap;
-}}
-
-.toolbar-left {{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-width:0;
-}}
-
-.toolbar .title {{
-  font-size:18px;
-  font-weight:750;
-}}
-
-.toolbar .hint {{
-  font-size:11px;
-  color:#777;
-}}
-
-.toolbar-controls {{
-  display:flex;
-  gap:6px;
-  align-items:center;
-  flex-wrap:wrap;
-}}
-
-.toolbar button {{
-  appearance:none;
-  border:1px solid #d5d5d5;
-  background:#fff;
-  padding:7px 10px;
-  border-radius:9px;
-  cursor:pointer;
-  font-size:12px;
-}}
-
-.toolbar button:hover {{
-  background:#f7f7f7;
-}}
-
-.toolbar button:disabled {{
-  opacity:.35;
-  cursor:not-allowed;
-}}
-
-.zoom-readout {{
-  min-width:52px;
-  text-align:center;
-  font-size:12px;
-  color:#555;
-}}
-
-.layout {{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 275px;
-  gap:12px;
-  align-items:start;
-}}
-
-.canvas-wrap {{
-  border:1px solid #ddd;
-  border-radius:14px;
-  background:#fff;
-  overflow:hidden;
-}}
-
-.canvas-scroll {{
-  width:100%;
-  height:640px;
-  overflow:auto;
-  position:relative;
-  overscroll-behavior:contain;
-  scrollbar-gutter:stable both-edges;
-  background:#fff;
-}}
-
-.board {{
-  position:relative;
-  min-width:max-content;
-  width:max-content;
-}}
-
-.header-row,
-.aircraft-row {{
-  display:grid;
-  grid-template-columns:
-    var(--row-label-width)
-    repeat(var(--day-count), var(--day-width));
-}}
-
-.header-row {{
-  position:sticky;
-  top:0;
-  z-index:30;
-  background:#fafafa;
-  border-bottom:1px solid #ddd;
-  min-height:var(--header-height);
-}}
-
-.header-cell {{
-  min-height:var(--header-height);
-  padding:13px 10px;
-  border-left:1px solid #e3e3e3;
-  color:#5f5f5f;
-  font-size:13px;
-  white-space:nowrap;
-}}
-
-.header-cell:first-child {{
-  position:sticky;
-  left:0;
-  z-index:40;
-  border-left:0;
-  background:#fafafa;
-  border-right:1px solid #ddd;
-}}
-
-.aircraft-row {{
-  min-height:var(--row-height);
-  border-bottom:1px solid #e3e3e3;
-}}
-
-.aircraft-row:last-child {{
-  border-bottom:0;
-}}
-
-.aircraft-label {{
-  position:sticky;
-  left:0;
-  z-index:20;
-  min-height:var(--row-height);
-  padding:18px 12px;
-  background:#fbfbfb;
-  border-right:1px solid #ddd;
-}}
-
-.aircraft-label b {{
-  display:block;
-  font-size:16px;
-  margin-bottom:5px;
-}}
-
-.aircraft-label span {{
-  display:block;
-  font-size:12px;
-  color:#666;
-}}
-
-.day-cell {{
-  position:relative;
-  min-width:0;
-  min-height:var(--row-height);
-  padding:8px 7px;
-  border-left:1px solid #ededed;
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  align-content:center;
-}}
-
-.day-cell:nth-child(even) {{
-  background:#fcfcfc;
-}}
-
-.card {{
-  border:1px solid #aaa;
-  border-radius:9px;
-  padding:7px 8px;
-  cursor:pointer;
-  min-width:94px;
-  max-width:100%;
-  flex:1 1 94px;
-  text-align:left;
-  color:#1b1b1b;
-  transition:
-    transform .08s ease,
-    box-shadow .08s ease,
-    border-color .08s ease;
-}}
-
-.card:hover {{
-  transform:translateY(-1px);
-  box-shadow:0 2px 7px rgba(0,0,0,.08);
-}}
-
-.card:focus {{
-  outline:2px solid #2878ff;
-  outline-offset:1px;
-}}
-
-.card.selected {{
-  border-color:#2878ff;
-  box-shadow:0 0 0 2px rgba(40,120,255,.16);
-}}
-
-.card.mission {{
-  background:#e7f3e8;
-  border-color:#a8bea9;
-}}
-
-.card.empty {{
-  background:#fafafa;
-  border-style:dashed;
-  color:#555;
-}}
-
-.card.returnhome {{
-  background:#eef4fb;
-  border-color:#9eb5cf;
-  color:#334a62;
-}}
-
-.card.parking {{
-  background:#f0e9f8;
-  border-color:#cab9db;
-  color:#5d5366;
-}}
-
-.card .route {{
-  font-size:13px;
-  font-weight:720;
-  line-height:1.25;
-}}
-
-.card .meta {{
-  margin-top:4px;
-  font-size:11px;
-  color:#666;
-  line-height:1.25;
-}}
-
-.swap-dot {{
-  display:inline-block;
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#2878ff;
-  margin-right:5px;
-  vertical-align:1px;
-}}
-
-.detail {{
-  position:sticky;
-  top:0;
-  border:1px solid #ddd;
-  border-radius:14px;
-  background:#fff;
-  padding:15px;
-  max-height:640px;
-  overflow:auto;
-}}
-
-.detail h3 {{
-  margin:0 0 14px;
-  font-size:18px;
-}}
-
-.detail-block {{
-  padding:10px 0;
-  border-bottom:1px solid #e5e5e5;
-}}
-
-.detail-block:last-child {{
-  border-bottom:0;
-}}
-
-.label {{
-  font-size:10px;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  color:#777;
-  margin-bottom:5px;
-}}
-
-.value {{
-  font-size:14px;
-  font-weight:600;
-  overflow-wrap:anywhere;
-}}
-
-.legend {{
-  display:flex;
-  flex-wrap:wrap;
-  gap:14px;
-  margin-top:9px;
-  color:#666;
-  font-size:11px;
-}}
-
-.legend i {{
-  display:inline-block;
-  width:12px;
-  height:12px;
-  border-radius:3px;
-  border:1px solid #aaa;
-  vertical-align:-2px;
-  margin-right:4px;
-}}
-
-.legend .m {{
-  background:#e7f3e8;
-}}
-
-.legend .e {{
-  background:#fafafa;
-  border-style:dashed;
-}}
-
-.legend .p {{
-  background:#f0e9f8;
-}}
-
-.empty-state {{
-  font-size:12px;
-  color:#aaa;
-  padding:12px 4px;
-}}
-
-@media(max-width:950px) {{
-  .layout {{
-    grid-template-columns:1fr;
-  }}
-
-  .detail {{
-    position:static;
-    max-height:none;
-    order:-1;
-  }}
-
-  .canvas-scroll {{
-    height:560px;
-  }}
-}}
+:root {{ --label-w:145px; --day-w:190px; --row-h:36px; --crew-row-h:28px; --head-h:36px; }}
+body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#202124; background:transparent; overflow:hidden; }}
+.kpis {{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }}
+.kpi {{ border:1px solid #ddd; border-radius:12px; padding:7px 11px; background:#fff; min-width:100px; }}
+.kpi b {{ display:block; font-size:16px; }} .kpi span {{ font-size:10px; color:#70757a; }}
+.toolbar {{ display:flex; justify-content:space-between; gap:10px; align-items:center; margin:0 0 9px; flex-wrap:wrap; }}
+.toolbar-left {{ display:flex; gap:10px; align-items:baseline; }} .title {{ font-size:18px; font-weight:750; }} .hint {{ color:#777; font-size:11px; }}
+.controls {{ display:flex; gap:5px; align-items:center; }}
+button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; border-radius:8px; cursor:pointer; }}
+.layout {{ display:block; }}
+.viewport {{ height:760px; overflow:auto; border:1px solid #d2d2d2; border-radius:0; background:#fff; scrollbar-gutter:stable; }}
+.board {{ position:relative; width:calc(var(--label-w) + var(--days) * var(--day-w)); min-width:max-content; }}
+.header {{ position:sticky; top:0; z-index:30; height:var(--head-h); margin-left:var(--label-w); background:#f3f3f3; border-bottom:1px solid #d2d2d2; }}
+.day-head {{ position:absolute; top:0; height:var(--head-h); display:flex; align-items:center; justify-content:center; border-left:1px solid #dedede; color:#333; font-size:12px; white-space:nowrap; }}
+.corner {{ position:sticky; left:0; top:0; z-index:50; width:var(--label-w); height:var(--head-h); margin-top:calc(-1 * var(--head-h)); padding:5px 6px; background:#fafafa; border-right:1px solid #ddd; border-bottom:1px solid #ddd; font-size:10px; font-weight:700; }}
+.row {{ position:relative; height:var(--row-h); margin-left:var(--label-w); border-bottom:1px solid #e2e2e2; background:#fff; }}
+.row:nth-of-type(even) {{ background:#fcfcfc; }}
+.label-cell {{ position:sticky; left:0; z-index:20; width:var(--label-w); height:var(--row-h); margin-left:calc(-1 * var(--label-w)); padding:3px 6px; background:#fbfbfb; border-right:1px solid #ddd; }}
+.label-cell b {{ display:block; font-size:12px; line-height:1.05; }} .label-cell span {{ display:block; margin-top:2px; font-size:9px; line-height:1; color:#777; }}
+.gridline {{ position:absolute; top:0; bottom:0; border-left:1px solid #ededed; pointer-events:none; }}
+.noon {{ position:absolute; top:0; bottom:0; border-left:1px dotted #f0f0f0; pointer-events:none; }}
+.block {{ position:absolute; min-width:48px; height:28px; top:4px; border:1px solid #555; border-radius:0; padding:3px 4px; overflow:hidden; cursor:pointer; text-align:left; color:#fff; background:#7da3ef; box-shadow:none; }}
+.block:hover {{ z-index:12!important; box-shadow:0 3px 9px rgba(0,0,0,.15); }} .block.selected {{ outline:2px solid #2878ff; outline-offset:1px; z-index:13!important; }}
+.block.empty {{ background:#fafafa; border-style:dashed; border-color:#999; color:#555; top:4px; height:26px; }}
+.block.returnhome {{ background:#eef4fb; border-color:#9eb5cf; color:#334a62; }}
+.block.parking {{ top:29px; height:6px; padding:2px 6px; border-radius:5px; background:#f0e9f8; border-color:#cab9db; color:#5d5366; font-size:10px; }}
+.route {{ font-size:8px; font-weight:700; line-height:1.15; white-space:nowrap; overflow:visible; text-overflow:clip; }}
+.meta {{ margin-top:1px; font-size:7px; font-weight:600; color:inherit; white-space:nowrap; overflow:visible; text-overflow:clip; }}
+.swap {{ color:#2878ff; font-weight:900; margin-right:4px; }} .fixed {{ margin-right:4px; }}
+.detail {{ position:sticky; top:0; border:1px solid #ddd; border-radius:12px; padding:14px; background:#fff; max-height:650px; overflow:auto; }}
+.detail h3 {{ margin:0 0 12px; font-size:18px; }} .detail-block {{ border-bottom:1px solid #eee; padding:9px 0; }} .detail-block:last-child {{ border:0; }}
+.dlabel {{ font-size:10px; color:#777; text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }} .dvalue {{ font-size:13px; font-weight:600; overflow-wrap:anywhere; }}
+.legend {{ display:none; gap:14px; flex-wrap:wrap; margin-top:8px; color:#666; font-size:11px; }}
+.swatch {{ display:inline-block; width:12px; height:12px; border:1px solid #aaa; border-radius:3px; vertical-align:-2px; margin-right:4px; }}
+.mission-s {{ background:#e7f3e8; }} .empty-s {{ background:#fafafa; border-style:dashed; }} .park-s {{ background:#f0e9f8; }}
+.section-row {{ position:relative; height:24px; margin-left:var(--label-w); background:#ededed; border-top:2px solid #999; border-bottom:1px solid #ccc; }}
+.section-label {{ position:sticky; left:0; z-index:21; width:var(--label-w); height:22px; margin-left:calc(-1 * var(--label-w)); padding:3px 6px; background:#e6e6e6; border-right:1px solid #ccc; font-size:12px; font-weight:750; }}
+.crew-row {{ height:var(--crew-row-h); }} .crew-row .label-cell {{ height:var(--crew-row-h); padding:3px 6px; }}
+.crew-row .label-cell b {{ font-size:10px; color:#2d6d9d; }} .crew-row .label-cell span {{ margin-top:1px; font-size:8px; }}
+.crew-block {{ position:absolute; top:2px; height:23px; min-width:7px; border:1px solid #555; border-radius:0; padding:2px 3px; overflow:hidden; color:#fff; font-size:7px; line-height:1.05; z-index:6; }}
+.crew-block.mission {{ background:#777; }} .crew-block.unavailable {{ background:#ff3030; }} .crew-block.leave {{ background:#f59e42; }} .crew-block.training {{ background:#3b93d1; }} .crew-block.other {{ background:#d9a4ef; color:#111; }}
+.crew-block .cb-title {{ font-size:7px; font-weight:700; white-space:nowrap; }} .crew-block .cb-meta {{ font-size:6px; margin-top:1px; white-space:nowrap; }}
+.tooltip {{ position:fixed; display:none; z-index:9999; max-width:380px; background:#111; color:#fff; border-radius:7px; padding:10px 12px; font-size:11px; line-height:1.5; box-shadow:0 5px 18px rgba(0,0,0,.30); pointer-events:none; }}
+@media(max-width:950px) {{ .viewport {{ height:720px; }} }}
 </style>
-
-<div class="board-shell">
-
-  <div class="kpis" id="kpis"></div>
-
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <div class="title" id="boardTitle"></div>
-      <div class="hint">
-        Scroll/trackpad to move · Shift+wheel for horizontal · Cmd/Ctrl+wheel to zoom
-      </div>
-    </div>
-
-    <div class="toolbar-controls">
-      <button type="button" id="jumpStart">Start</button>
-      <button type="button" id="jumpToday">Fit start</button>
-      <button type="button" id="zoomOut">−</button>
-      <div class="zoom-readout" id="zoomReadout">100%</div>
-      <button type="button" id="zoomIn">+</button>
-      <button type="button" id="zoomReset">100%</button>
-      <button type="button" id="zoomFit">Fit</button>
-    </div>
-  </div>
-
-  <div class="layout">
-    <div>
-      <div class="canvas-wrap">
-        <div class="canvas-scroll" id="canvasScroll">
-          <div class="board" id="board"></div>
-        </div>
-      </div>
-
-      <div class="legend">
-        <span><i class="m"></i>Customer mission</span>
-        <span><i class="e"></i>Empty positioning</span>
-        <span>↩ Return homebase</span>
-        <span><i class="p"></i>Away parking</span>
-        <span>● Crew handover</span>
-      </div>
-    </div>
-
-    <aside class="detail" aria-live="polite">
-      <h3 id="detailTitle">Select a movement</h3>
-
-      <div class="detail-block">
-        <div class="label">Route</div>
-        <div class="value" id="detailRoute">Click any card.</div>
-      </div>
-
-      <div class="detail-block">
-        <div class="label">Timing</div>
-        <div class="value" id="detailTiming">—</div>
-      </div>
-
-      <div class="detail-block">
-        <div class="label">Aircraft</div>
-        <div class="value" id="detailAircraft">—</div>
-      </div>
-
-      <div class="detail-block">
-        <div class="label">Attached crew</div>
-        <div class="value" id="detailCrew">—</div>
-      </div>
-
-      <div class="detail-block">
-        <div class="label">Operational detail</div>
-        <div class="value" id="detailExtra">—</div>
-      </div>
-    </aside>
-  </div>
-
+<div class="kpis" id="kpis"></div>
+<div class="toolbar">
+  <div class="toolbar-left"><div class="title" id="title"></div><div class="hint">UTC · one row per aircraft · horizontal position = actual time</div></div>
+  <div class="controls"><button class="ctrl" id="startBtn">Start</button><button class="ctrl" id="minus">−</button><span id="zoomTxt">100%</span><button class="ctrl" id="plus">+</button><button class="ctrl" id="fit">Fit</button></div>
 </div>
-
+<div id="resultTooltip" class="tooltip"></div>
+<div class="layout">
+ <div>
+  <div class="viewport" id="viewport"><div class="board" id="board"></div></div>
+  <div class="legend"><span><i class="swatch mission-s"></i>Mission</span><span><i class="swatch empty-s"></i>Empty leg</span><span><i class="swatch park-s"></i>Parking</span><span>🔒 fixed aircraft</span><span><i class="swatch" style="background:#dbe6f7;border-color:#b8c9df"></i>Known aircraft location</span><span><i class="swatch" style="background:#fff0d9;border-color:#d4a14b"></i>Location discontinuity</span><span><b style="color:#2878ff">●</b> crew handover</span></div>
+ </div>
+ <div style="display:none"><span id="dTitle"></span><span id="dRoute"></span><span id="dTime"></span><span id="dAircraft"></span><span id="dCrew"></span><span id="dExtra"></span></div>
+</div>
 <script>
 (() => {{
-  const data = {data_json};
-  const header = {header_json};
-
-  const board = document.getElementById("board");
-  const scroll = document.getElementById("canvasScroll");
-  const title = document.getElementById("boardTitle");
-  const kpis = document.getElementById("kpis");
-
-  const zoomOut = document.getElementById("zoomOut");
-  const zoomIn = document.getElementById("zoomIn");
-  const zoomReset = document.getElementById("zoomReset");
-  const zoomFit = document.getElementById("zoomFit");
-  const zoomReadout = document.getElementById("zoomReadout");
-  const jumpStart = document.getElementById("jumpStart");
-  const jumpToday = document.getElementById("jumpToday");
-
-  const dTitle = document.getElementById("detailTitle");
-  const dRoute = document.getElementById("detailRoute");
-  const dTiming = document.getElementById("detailTiming");
-  const dAircraft = document.getElementById("detailAircraft");
-  const dCrew = document.getElementById("detailCrew");
-  const dExtra = document.getElementById("detailExtra");
-
-  let zoom = 1.0;
-  const minZoom = 0.55;
-  const maxZoom = 2.2;
-  const baseDayWidth = 190;
-
-  title.textContent = header.title;
-
-  [
-    [header.cost, "Total cost"],
-    [header.complexity, "Complexity"],
-    [header.empty, "Empty legs"],
-    [header.pilot_days, "Pilot-days"],
-    [header.swaps, "Outstation swaps"]
-  ].forEach(([v,l]) => {{
-    const el = document.createElement("div");
-    el.className = "kpi";
-    el.innerHTML = `<b>${{v}}</b><span>${{l}}</span>`;
-    kpis.appendChild(el);
+ const data={data_json}, header={header_json};
+ const board=document.getElementById('board'), viewport=document.getElementById('viewport');
+ const dayMs=86400000, baseDayW=112; let zoom=1;
+ const first=new Date(data.dates[0]+'T00:00:00Z');
+ const lastEnd=new Date(data.dates[data.dates.length-1]+'T00:00:00Z').getTime()+dayMs;
+ document.getElementById('title').textContent=header.title;
+ [[header.cost,'Total cost'],[header.complexity,'Complexity'],[header.empty,'Empty legs'],[header.pilot_days,'Pilot-days'],[header.swaps,'Outstation swaps']].forEach(([v,l])=>{{const e=document.createElement('div');e.className='kpi';e.innerHTML=`<b>${{v}}</b><span>${{l}}</span>`;document.getElementById('kpis').appendChild(e);}});
+ const pct=(iso)=>((new Date(iso+'Z').getTime()-first.getTime())/(lastEnd-first.getTime()))*100;
+ const widthPct=(a,b)=>Math.max(.12,((new Date(b+'Z')-new Date(a+'Z'))/(lastEnd-first.getTime()))*100);
+ function pretty(d){{return new Date(d+'T00:00:00Z').toLocaleDateString('en-GB',{{weekday:'short',day:'2-digit',month:'short',timeZone:'UTC'}})}}
+ function detail(c,reg,el){{document.querySelectorAll('.block.selected').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');document.getElementById('dTitle').textContent=(c.fixed?'🔒 ':'')+(c.kind==='mission'?c.label:c.label);document.getElementById('dRoute').textContent=c.route||'—';document.getElementById('dTime').textContent=c.start&&c.end?`${{c.day}} · ${{c.start}} → ${{c.end}} UTC`:c.day;document.getElementById('dAircraft').textContent=reg;document.getElementById('dCrew').textContent=c.crew||'—';document.getElementById('dExtra').textContent=(c.extra||'—')+(c.swap?` · ${{c.swap_type}}`: '')+(c.fixed?' · pre-assigned aircraft':'');}}
+ function esc(v){{return String(v??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));}}
+ const tip=document.getElementById('resultTooltip');
+ function moveTip(e){{const pad=14,w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.min(window.innerWidth-w-pad,e.clientX+14)+'px';tip.style.top=Math.min(window.innerHeight-h-pad,e.clientY+14)+'px';}}
+ function showTip(html,e){{tip.innerHTML=html;tip.style.display='block';moveTip(e);}} function hideTip(){{tip.style.display='none';}}
+ function addGrid(line){{data.dates.forEach((d,i)=>{{const g=document.createElement('div');g.className='gridline';g.style.left=`calc(${{i}} * var(--day-w))`;line.appendChild(g);const n=document.createElement('div');n.className='noon';n.style.left=`calc(${{i}} * var(--day-w) + var(--day-w)/2)`;line.appendChild(n);}});}}
+ function render(){{
+  board.innerHTML=''; board.style.setProperty('--days',data.dates.length);
+  const head=document.createElement('div');head.className='header';
+  data.dates.forEach((d,i)=>{{const h=document.createElement('div');h.className='day-head';h.style.left=`calc(${{i}} * var(--day-w))`;h.style.width='var(--day-w)';h.textContent=pretty(d);head.appendChild(h);}});board.appendChild(head);
+  const corner=document.createElement('div');corner.className='corner';corner.textContent='Aircraft';board.appendChild(corner);
+  data.aircraft.forEach(row=>{{
+   const line=document.createElement('div');line.className='row';
+   const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{row.registration}}</b><span>${{row.crew||'—'}}</span>`;line.appendChild(lab);addGrid(line);
+   row.cards.forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('button');el.type='button';el.className=`block ${{c.kind}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=`max(48px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;el.style.zIndex=c.kind==='parking'?2:5;
+     const destination=(c.route||'').split('→').pop().trim(); el.innerHTML=c.kind==='mission'?`<div class="route">${{esc(destination)}}</div><div class="meta">${{esc(c.label)}}</div>`:`<div class="route">${{esc(c.label)}}</div><div class="meta">${{esc(c.route||'')}}</div>`;
+     el.addEventListener('click',()=>detail(c,row.registration,el)); el.onmouseenter=(e)=>showTip(`<b>${{esc(c.label)}} · ${{esc(c.route||'')}}</b><br>${{esc(c.day)}} · ${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(row.registration)}}<br><span style="color:#52bfff">Crew ${{esc(c.crew||'—')}}</span><br>${{esc(c.extra||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});
+   board.appendChild(line);
   }});
-
-  function prettyDay(iso) {{
-    const d = new Date(iso + "T00:00:00Z");
-    return d.toLocaleDateString(
-      "en-GB",
-      {{
-        weekday:"short",
-        day:"2-digit",
-        month:"short",
-        timeZone:"UTC"
-      }}
-    );
+  if((data.pilots||[]).length){{
+    const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep);
+    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.name||p.id)}}</b><span>${{esc(p.role)}} · ${{esc(p.id)}}</span>`;line.appendChild(lab);addGrid(line);
+      (p.cards||[]).forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('div');let cls='other';if(c.kind==='crewmission')cls='mission';else if(c.status==='UNAVAILABLE')cls='unavailable';else if(c.status==='LEAVE')cls='leave';else if(c.status==='TRAINING')cls='training';el.className=`crew-block ${{cls}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=c.kind==='availability'?`${{widthPct(c.start_iso,c.end_iso)}}%`:`max(7px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;
+        if(c.kind==='crewmission')el.innerHTML=`<div class="cb-title">${{esc(c.label)}} · ${{esc(c.aircraft)}}</div><div class="cb-meta">${{esc(c.route)}}</div>`;else el.innerHTML=`<div class="cb-title">${{esc(c.label)}}</div><div class="cb-meta">${{esc(c.note||'')}}</div>`;
+        el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.name||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}}`:`<b>${{esc(p.name||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
   }}
-
-  function setZoom(nextZoom, anchorClientX=null) {{
-    const oldZoom = zoom;
-    zoom = Math.max(
-      minZoom,
-      Math.min(
-        maxZoom,
-        nextZoom
-      )
-    );
-
-    const oldWidth = baseDayWidth * oldZoom;
-    const newWidth = baseDayWidth * zoom;
-
-    const scrollRect = scroll.getBoundingClientRect();
-    const anchorX =
-      anchorClientX == null
-        ? scrollRect.width / 2
-        : anchorClientX - scrollRect.left;
-
-    const contentX = scroll.scrollLeft + anchorX;
-    const ratio = newWidth / oldWidth;
-
-    document.documentElement.style.setProperty(
-      "--day-width",
-      `${{newWidth}}px`
-    );
-
-    scroll.scrollLeft =
-      contentX * ratio - anchorX;
-
-    zoomReadout.textContent =
-      `${{Math.round(zoom * 100)}}%`;
-  }}
-
-  function fitZoom() {{
-    const available = Math.max(
-      300,
-      scroll.clientWidth - 138
-    );
-
-    const fit =
-      available /
-      Math.max(
-        1,
-        data.dates.length
-      ) /
-      baseDayWidth;
-
-    setZoom(
-      Math.max(
-        minZoom,
-        Math.min(
-          1.15,
-          fit
-        )
-      )
-    );
-
-    scroll.scrollLeft = 0;
-  }}
-
-  function showDetail(card, reg, el) {{
-    document
-      .querySelectorAll(".card.selected")
-      .forEach(x => x.classList.remove("selected"));
-
-    if (el) {{
-      el.classList.add("selected");
-    }}
-
-    dTitle.textContent =
-      card.kind === "mission"
-        ? "Customer mission"
-        : card.kind === "empty"
-        ? "Empty positioning"
-        : card.kind === "returnhome"
-        ? "Return to homebase"
-        : "Away parking";
-
-    dRoute.textContent =
-      card.route || "—";
-
-    dTiming.textContent =
-      card.start && card.end
-        ? `${{card.start}} → ${{card.end}} UTC`
-        : "Calendar day";
-
-    dAircraft.textContent =
-      reg;
-
-    dCrew.textContent =
-      card.crew || "—";
-
-    let extra =
-      card.extra || "—";
-
-    if (card.swap) {{
-      extra +=
-        ` · ${{card.swap_type}}`;
-    }}
-
-    dExtra.textContent =
-      extra;
-  }}
-
-  function makeCard(card, reg) {{
-    const el =
-      document.createElement("button");
-
-    el.type = "button";
-    el.className =
-      `card ${{card.kind}}`;
-
-    const swap =
-      card.swap
-        ? `<span class="swap-dot"></span>`
-        : "";
-
-    el.innerHTML = `
-      <div class="route">
-        ${{swap}}${{card.route}}
-      </div>
-
-      <div class="meta">
-        ${{card.label}}
-        ${{card.extra ? " · " + card.extra : ""}}
-      </div>
-
-      <div class="meta">
-        ${{card.crew || ""}}
-      </div>
-    `;
-
-    el.addEventListener(
-      "click",
-      () => {{
-        showDetail(
-          card,
-          reg,
-          el
-        );
-      }}
-    );
-
-    return el;
-  }}
-
-  function render() {{
-    board.innerHTML = "";
-
-    board.style.setProperty(
-      "--day-count",
-      data.dates.length
-    );
-
-    const headerRow =
-      document.createElement("div");
-
-    headerRow.className =
-      "header-row";
-
-    const blank =
-      document.createElement("div");
-
-    blank.className =
-      "header-cell";
-
-    blank.textContent =
-      "Aircraft";
-
-    headerRow.appendChild(
-      blank
-    );
-
-    data.dates.forEach(
-      day => {{
-        const cell =
-          document.createElement("div");
-
-        cell.className =
-          "header-cell";
-
-        cell.textContent =
-          prettyDay(day);
-
-        headerRow.appendChild(
-          cell
-        );
-      }}
-    );
-
-    board.appendChild(
-      headerRow
-    );
-
-    data.aircraft.forEach(
-      row => {{
-        const line =
-          document.createElement("div");
-
-        line.className =
-          "aircraft-row";
-
-        const label =
-          document.createElement("div");
-
-        label.className =
-          "aircraft-label";
-
-        label.innerHTML = `
-          <b>${{row.registration}}</b>
-          <span>${{row.crew || "—"}}</span>
-        `;
-
-        line.appendChild(
-          label
-        );
-
-        data.dates.forEach(
-          day => {{
-            const cell =
-              document.createElement("div");
-
-            cell.className =
-              "day-cell";
-
-            const cards =
-              row.cards.filter(
-                card =>
-                  card.day === day
-              );
-
-            if (cards.length) {{
-              cards.forEach(
-                card => {{
-                  cell.appendChild(
-                    makeCard(
-                      card,
-                      row.registration
-                    )
-                  );
-                }}
-              );
-            }} else {{
-              const empty =
-                document.createElement("div");
-
-              empty.className =
-                "empty-state";
-
-              empty.textContent =
-                "—";
-
-              cell.appendChild(
-                empty
-              );
-            }}
-
-            line.appendChild(
-              cell
-            );
-          }}
-        );
-
-        board.appendChild(
-          line
-        );
-      }}
-    );
-  }}
-
-  // Trackpad / mouse UX:
-  // - regular wheel: natural vertical scrolling
-  // - Shift+wheel: horizontal scrolling
-  // - Cmd/Ctrl+wheel: zoom around pointer
-  scroll.addEventListener(
-    "wheel",
-    (event) => {{
-      if (
-        event.ctrlKey
-        || event.metaKey
-      ) {{
-        event.preventDefault();
-
-        const direction =
-          event.deltaY < 0
-            ? 1.10
-            : 0.90;
-
-        setZoom(
-          zoom * direction,
-          event.clientX
-        );
-
-        return;
-      }}
-
-      if (event.shiftKey) {{
-        event.preventDefault();
-
-        scroll.scrollLeft +=
-          event.deltaY
-          + event.deltaX;
-
-        return;
-      }}
-
-      // On trackpads, horizontal deltaX should naturally move the canvas.
-      if (
-        Math.abs(event.deltaX)
-        > Math.abs(event.deltaY)
-      ) {{
-        scroll.scrollLeft +=
-          event.deltaX;
-      }}
-    }},
-    {{
-      passive:false
-    }}
-  );
-
-  // Drag-to-pan with middle mouse / Space+left click.
-  let dragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let startScrollLeft = 0;
-  let startScrollTop = 0;
-  let spacePressed = false;
-
-  window.addEventListener(
-    "keydown",
-    e => {{
-      if (e.code === "Space") {{
-        spacePressed = true;
-      }}
-    }}
-  );
-
-  window.addEventListener(
-    "keyup",
-    e => {{
-      if (e.code === "Space") {{
-        spacePressed = false;
-      }}
-    }}
-  );
-
-  scroll.addEventListener(
-    "mousedown",
-    e => {{
-      if (
-        e.button === 1
-        || (
-          e.button === 0
-          && spacePressed
-        )
-      ) {{
-        dragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        startScrollLeft =
-          scroll.scrollLeft;
-        startScrollTop =
-          scroll.scrollTop;
-
-        scroll.style.cursor =
-          "grabbing";
-
-        e.preventDefault();
-      }}
-    }}
-  );
-
-  window.addEventListener(
-    "mousemove",
-    e => {{
-      if (!dragging) return;
-
-      scroll.scrollLeft =
-        startScrollLeft
-        - (
-          e.clientX
-          - dragStartX
-        );
-
-      scroll.scrollTop =
-        startScrollTop
-        - (
-          e.clientY
-          - dragStartY
-        );
-    }}
-  );
-
-  window.addEventListener(
-    "mouseup",
-    () => {{
-      dragging = false;
-      scroll.style.cursor = "";
-    }}
-  );
-
-  zoomOut.addEventListener(
-    "click",
-    () => setZoom(
-      zoom / 1.15
-    )
-  );
-
-  zoomIn.addEventListener(
-    "click",
-    () => setZoom(
-      zoom * 1.15
-    )
-  );
-
-  zoomReset.addEventListener(
-    "click",
-    () => {{
-      setZoom(1.0);
-    }}
-  );
-
-  zoomFit.addEventListener(
-    "click",
-    fitZoom
-  );
-
-  jumpStart.addEventListener(
-    "click",
-    () => {{
-      scroll.scrollTo(
-        {{
-          left:0,
-          behavior:"smooth"
-        }}
-      );
-    }}
-  );
-
-  jumpToday.addEventListener(
-    "click",
-    () => {{
-      fitZoom();
-      scroll.scrollTo(
-        {{
-          left:0,
-          behavior:"smooth"
-        }}
-      );
-    }}
-  );
-
-  render();
-  setZoom(1.0);
+ }}
+ function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;}}
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0;}};
+ viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9));}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;}}}},{{passive:false}});
+ render();setZoom(1);
 }})();
 </script>
 """
-
-    # Keep the component itself at a stable viewport height. The planning
-    # canvas scrolls internally in both directions.
-    components.html(
-        component_html,
-        height=820,
-        scrolling=False,
-    )
+    components.html(component_html, height=980, scrolling=False)
 
 
 
@@ -4456,77 +4185,27 @@ def render_native_timeline_chart(
     )
 
 
-def render_solution_metrics(
-    solution,
-):
-    c = solution.get(
-        "cost_breakdown",
-        {},
-    )
-    m = solution.get(
-        "metrics",
-        {},
-    )
-    o = solution.get(
-        "objectives",
-        {},
-    )
+def render_solution_metrics(solution):
+    m = solution.get("metrics", {})
+    o = solution.get("objectives", {})
 
-    cols = st.columns(6)
+    cols = st.columns(4)
 
     cols[0].metric(
-        "Operational cost",
+        "Total cost",
         f'€{o.get("total_operational_cost_eur", 0):,.0f}',
     )
-
     cols[1].metric(
         "Complexity",
-        int(
-            o.get(
-                "complexity_score",
-                0,
-            )
-        ),
+        int(o.get("complexity_score", 0)),
     )
-
     cols[2].metric(
-        "Empty legs",
-        int(
-            m.get(
-                "empty_legs",
-                0,
-            )
-        ),
-    )
-
-    cols[3].metric(
         "Pilot-days",
-        int(
-            m.get(
-                "charged_pilot_days",
-                0,
-            )
-        ),
+        int(m.get("charged_pilot_days", 0)),
     )
-
-    cols[4].metric(
-        "Parking-days",
-        int(
-            m.get(
-                "aircraft_parking_days",
-                0,
-            )
-        ),
-    )
-
-    cols[5].metric(
-        "Non-home swaps",
-        int(
-            m.get(
-                "nonhomebase_swap_events",
-                0,
-            )
-        ),
+    cols[3].metric(
+        "Outstation swaps",
+        len(actual_outstation_swap_events(solution)),
     )
 
 def render_timeline_browser():
@@ -4565,52 +4244,54 @@ def render_timeline_browser():
     if "timeline_browsing_gallery" not in st.session_state:
         st.session_state.timeline_browsing_gallery = False
 
+    # Results deliberately exposes only the four operational shortcuts.
+    # Recompute them from the gallery so MIN OUTSTATION SWAPS uses the corrected
+    # physical handover count rather than the legacy stored metric.
+    named = _four_solution_choices(gallery)
     named_options = [
         "CHEAPEST",
-        "BALANCED",
-        "MIN EMPTY LEGS",
-        "MIN PILOT DAYS",
-        "MIN AIRCRAFT PARKING",
         "MIN COMPLEXITY",
+        "MIN OUTSTATION SWAPS",
+        "MIN PILOT DAYS",
     ]
 
+    # Keep the named-strategy selector independent from gallery browsing.
+    # The segmented control retains its last named value while timeline_mode is
+    # "ALTERNATIVE"; comparing those two values directly used to reset gallery
+    # browsing on the next Streamlit rerun.
     selected_named = st.segmented_control(
         "Solution",
-        options=(
-            named_options
-            + ["ACTUAL"]
-        ),
+        options=named_options,
         default=(
             st.session_state.timeline_mode
             if st.session_state.timeline_mode
-            in named_options + ["ACTUAL"]
+            in named_options
             else "CHEAPEST"
         ),
         selection_mode="single",
         key="timeline_strategy_selector",
     )
 
-    if (
+    if "timeline_last_named_selector" not in st.session_state:
+        st.session_state.timeline_last_named_selector = selected_named
+
+    named_selection_changed = (
         selected_named
-        and selected_named
-        != st.session_state.timeline_mode
-    ):
+        and selected_named != st.session_state.timeline_last_named_selector
+    )
+
+    if named_selection_changed:
+        st.session_state.timeline_last_named_selector = selected_named
         st.session_state.timeline_mode = selected_named
         st.session_state.timeline_browsing_gallery = False
 
         if selected_named in named:
-            target = named[
-                selected_named
-            ]
+            target = named[selected_named]
 
             for i, candidate in enumerate(gallery):
                 if (
-                    candidate.get(
-                        "schedule_signature"
-                    )
-                    == target.get(
-                        "schedule_signature"
-                    )
+                    candidate.get("schedule_signature")
+                    == target.get("schedule_signature")
                 ):
                     st.session_state.timeline_gallery_index = i
                     break
@@ -4647,31 +4328,41 @@ def render_timeline_browser():
         ) % len(gallery)
 
     if gallery:
+        # Keep the numeric selector and the rendered alternative on one source
+        # of truth. A keyed number_input otherwise keeps its own widget state
+        # across reruns, which can overwrite Previous/Next changes.
+        desired_alt = min(
+            len(gallery),
+            max(1, st.session_state.timeline_gallery_index + 1),
+        )
+        if st.session_state.get("timeline_gallery_jump") != desired_alt:
+            st.session_state["timeline_gallery_jump"] = desired_alt
+
         jump_to = navigation[2].number_input(
             "Alternative",
             min_value=1,
             max_value=len(gallery),
-            value=min(
-                len(gallery),
-                st.session_state.timeline_gallery_index + 1,
-            ),
             step=1,
+            key="timeline_gallery_jump",
             label_visibility="collapsed",
         )
 
-        if (
-            st.session_state.timeline_browsing_gallery
-            and int(jump_to) - 1
-            != st.session_state.timeline_gallery_index
-        ):
-            st.session_state.timeline_gallery_index = (
-                int(jump_to)
-                - 1
-            )
+        requested_index = int(jump_to) - 1
+        if requested_index != st.session_state.timeline_gallery_index:
+            st.session_state.timeline_browsing_gallery = True
+            st.session_state.timeline_mode = "ALTERNATIVE"
+            st.session_state.timeline_gallery_index = requested_index
 
+        current_gallery_solution = gallery[
+            st.session_state.timeline_gallery_index % len(gallery)
+        ]
+        current_signature = str(
+            current_gallery_solution.get("schedule_signature", "")
+        )
         navigation[3].caption(
             f'{len(gallery)} saved unique schedules · '
             f'alternative #{st.session_state.timeline_gallery_index + 1}'
+            + (f' · {current_signature}' if current_signature else '')
         )
 
     if (
@@ -4749,6 +4440,21 @@ def results_page():
     st.subheader(
         "Results"
     )
+
+    checkpoint_path = OUTPUT / "checkpoint_status.json"
+    if checkpoint_path.exists():
+        try:
+            checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+            if checkpoint.get("status") == "partial":
+                run = checkpoint.get("run")
+                generation = checkpoint.get("generation")
+                schedules = checkpoint.get("unique_aircraft_schedules", 0)
+                st.info(
+                    f"Partial optimizer results · run {run or '?'} · generation {generation if generation is not None else '?'} · "
+                    f"{schedules} saved schedules. These are usable preliminary results and will be replaced by newer checkpoints."
+                )
+        except Exception:
+            pass
 
     render_results()
 
