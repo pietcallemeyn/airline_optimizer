@@ -1311,7 +1311,20 @@ body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-seri
    }}
  }});board.appendChild(line)}})}}
  function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=Math.round(zoom*100)+'%'}}
- document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
+ let flightDaysRAF=null;
+ function scheduleFlightDaysUpdate(){{
+   if(flightDaysRAF!==null)cancelAnimationFrame(flightDaysRAF);
+   flightDaysRAF=requestAnimationFrame(()=>{{
+     flightDaysRAF=null;
+     updateVisibleFlightDays();
+   }});
+ }}
+ // Recalculate continuously when the actual horizontal timeline viewport moves.
+ viewport.addEventListener('scroll',scheduleFlightDaysUpdate,{{passive:true}});
+ viewport.addEventListener('scrollend',scheduleFlightDaysUpdate);
+ window.addEventListener('resize',scheduleFlightDaysUpdate);
+ requestAnimationFrame(updateVisibleFlightDays);
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>{{viewport.scrollTo({{left:0,behavior:'smooth'}});scheduleFlightDaysUpdate();setTimeout(scheduleFlightDaysUpdate,350);}};document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
 }})();</script>
 """
     components.html(component_html, height=760, scrolling=False)
@@ -1357,9 +1370,27 @@ def mission_editor():
                 selection_mode="single",
                 key="mission_timeline_solution_selector",
             )
+
+            if "mission_last_solution_selector" not in st.session_state:
+                st.session_state.mission_last_solution_selector = (
+                    mission_solution_name
+                )
+
             mission_solution = mission_named.get(
                 mission_solution_name or "CHEAPEST"
             )
+
+            if (
+                mission_solution_name
+                != st.session_state.mission_last_solution_selector
+            ):
+                st.session_state.mission_last_solution_selector = (
+                    mission_solution_name
+                )
+                mission_idx = _gallery_index_for_solution(
+                    mission_gallery, mission_solution
+                )
+                _set_gallery_index(mission_idx, len(mission_gallery))
         else:
             st.caption(
                 "No optimizer solutions available yet; showing mission data "
@@ -1918,6 +1949,29 @@ def _get_rule_row(rules: pd.DataFrame, pilot_id: str, pilots: pd.DataFrame) -> d
 
 def _truthy(value) -> bool:
     return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
+
+
+def _gallery_index_for_solution(gallery: list[dict], solution: dict | None) -> int:
+    """Return the exact 0-based gallery index for a selected solution."""
+    if not gallery or solution is None:
+        return 0
+
+    # _four_solution_choices() returns an object taken directly from gallery.
+    # Prefer identity/equality over schedule_signature because older optimizer
+    # outputs can have missing or duplicate signatures.
+    for i, candidate in enumerate(gallery):
+        if candidate is solution:
+            return i
+    for i, candidate in enumerate(gallery):
+        if candidate == solution:
+            return i
+
+    sig = solution.get("schedule_signature")
+    if sig is not None:
+        for i, candidate in enumerate(gallery):
+            if candidate.get("schedule_signature") == sig:
+                return i
+    return 0
 
 
 def _four_solution_choices(gallery: list[dict]) -> dict[str, dict]:
@@ -4003,16 +4057,62 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
   }});
   if((data.pilots||[]).length){{
     const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep);
-    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.name||p.id)}}</b><span>${{esc(p.role)}} · ${{esc(p.id)}}</span>`;line.appendChild(lab);addGrid(line);
+    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.name||p.id)}}</b><span>${{esc(p.role)}} · ${{esc(p.id)}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
       (p.cards||[]).forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('div');let cls='other';if(c.kind==='crewmission')cls='mission';else if(c.status==='UNAVAILABLE')cls='unavailable';else if(c.status==='LEAVE')cls='leave';else if(c.status==='TRAINING')cls='training';el.className=`crew-block ${{cls}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=c.kind==='availability'?`${{widthPct(c.start_iso,c.end_iso)}}%`:`max(7px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;
         if(c.kind==='crewmission')el.innerHTML=`<div class="cb-title">${{esc(c.label)}} · ${{esc(c.aircraft)}}</div><div class="cb-meta">${{esc(c.route)}}</div>`;else el.innerHTML=`<div class="cb-title">${{esc(c.label)}}</div><div class="cb-meta">${{esc(c.note||'')}}</div>`;
         el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.name||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}}`:`<b>${{esc(p.name||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
   }}
  }}
- function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;}}
- document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0;}};
- viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9));}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;}}}},{{passive:false}});
- render();setZoom(1);
+ function updateVisibleFlightDays(){{
+   const boardWidth=board.scrollWidth||1;
+   const viewLeft=viewport.scrollLeft;
+   const viewRight=viewLeft+viewport.clientWidth;
+   const labelWidth=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--label-w'))||160;
+   const timelineWidth=Math.max(1,boardWidth-labelWidth);
+   const timelineLeft=Math.max(0,viewLeft-labelWidth);
+   const timelineRight=Math.max(0,viewRight-labelWidth);
+   const rangeStart=first.getTime()+(timelineLeft/timelineWidth)*(lastEnd-first.getTime());
+   const rangeEnd=first.getTime()+(timelineRight/timelineWidth)*(lastEnd-first.getTime());
+
+   (data.pilots||[]).forEach(p=>{{
+     const days=new Set();
+     (p.cards||[]).forEach(c=>{{
+       if(c.kind!=='crewmission'||!c.start_iso||!c.end_iso)return;
+       const s=new Date(c.start_iso+'Z').getTime(), e=new Date(c.end_iso+'Z').getTime();
+       if(e<rangeStart||s>rangeEnd)return;
+       // Count the UTC calendar day(s) on which an assigned mission overlaps
+       // the currently visible timeline range. Multiple missions on one day
+       // still count as one flight day.
+       const a=new Date(Math.max(s,rangeStart)), b=new Date(Math.min(e,rangeEnd));
+       let d=Date.UTC(a.getUTCFullYear(),a.getUTCMonth(),a.getUTCDate());
+       const last=Date.UTC(b.getUTCFullYear(),b.getUTCMonth(),b.getUTCDate());
+       while(d<=last){{days.add(new Date(d).toISOString().slice(0,10));d+=dayMs;}}
+     }});
+     const el=document.querySelector(`.flight-days[data-pilot="${{CSS.escape(String(p.id))}}"]`);
+     if(el)el.textContent=`${{days.size}} flight day${{days.size===1?'':'s'}}`;
+   }});
+ }}
+ function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;requestAnimationFrame(updateVisibleFlightDays);}}
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>{{viewport.scrollTo({{left:0,behavior:'smooth'}});requestAnimationFrame(updateVisibleFlightDays);setTimeout(updateVisibleFlightDays,400);}};document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0;scheduleFlightDaysUpdate();}};
+ viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9));}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;requestAnimationFrame(updateVisibleFlightDays);}}}},{{passive:false}});
+
+ // IMPORTANT: this listener belongs to the Results timeline's own viewport.
+ // Recalculate on every horizontal scroll, including scrollbar dragging,
+ // trackpad scrolling and programmatic scrolling.
+ let resultsFlightDaysRAF=null;
+ function scheduleFlightDaysUpdate(){{
+   if(resultsFlightDaysRAF!==null) cancelAnimationFrame(resultsFlightDaysRAF);
+   resultsFlightDaysRAF=requestAnimationFrame(()=>{{
+     resultsFlightDaysRAF=null;
+     updateVisibleFlightDays();
+   }});
+ }}
+ viewport.addEventListener('scroll', scheduleFlightDaysUpdate, {{passive:true}});
+ window.addEventListener('resize', scheduleFlightDaysUpdate);
+
+ render();
+ setZoom(1);
+ requestAnimationFrame(updateVisibleFlightDays);
 }})();
 </script>
 """
@@ -4208,6 +4308,26 @@ def render_solution_metrics(solution):
         len(actual_outstation_swap_events(solution)),
     )
 
+def _set_gallery_index(index: int, gallery_size: int) -> None:
+    if gallery_size <= 0:
+        return
+    index = int(index) % gallery_size
+    st.session_state.timeline_gallery_index = index
+    # This is the exact same 1-based number shown in the solution number box.
+    st.session_state.timeline_gallery_jump = index + 1
+    st.session_state.timeline_browsing_gallery = True
+    st.session_state.timeline_mode = "ALTERNATIVE"
+
+
+def _gallery_jump_changed() -> None:
+    value = st.session_state.get("timeline_gallery_jump")
+    if value is None:
+        return
+    st.session_state.timeline_gallery_index = int(value) - 1
+    st.session_state.timeline_browsing_gallery = True
+    st.session_state.timeline_mode = "ALTERNATIVE"
+
+
 def render_timeline_browser():
     st.subheader(
         "Mission planning board"
@@ -4255,46 +4375,23 @@ def render_timeline_browser():
         "MIN PILOT DAYS",
     ]
 
-    # Keep the named-strategy selector independent from gallery browsing.
-    # The segmented control retains its last named value while timeline_mode is
-    # "ALTERNATIVE"; comparing those two values directly used to reset gallery
-    # browsing on the next Streamlit rerun.
-    selected_named = st.segmented_control(
-        "Solution",
-        options=named_options,
-        default=(
-            st.session_state.timeline_mode
-            if st.session_state.timeline_mode
-            in named_options
-            else "CHEAPEST"
-        ),
-        selection_mode="single",
-        key="timeline_strategy_selector",
-    )
+    # These are real action buttons, not merely labels/filters.
+    # Every click resolves the criterion to one concrete gallery solution and
+    # makes that gallery index the single source of truth for the board and
+    # solution-number box.
+    selector_cols = st.columns([1.0, 1.35, 1.85, 1.35])
 
-    if "timeline_last_named_selector" not in st.session_state:
-        st.session_state.timeline_last_named_selector = selected_named
-
-    named_selection_changed = (
-        selected_named
-        and selected_named != st.session_state.timeline_last_named_selector
-    )
-
-    if named_selection_changed:
-        st.session_state.timeline_last_named_selector = selected_named
-        st.session_state.timeline_mode = selected_named
-        st.session_state.timeline_browsing_gallery = False
-
-        if selected_named in named:
-            target = named[selected_named]
-
-            for i, candidate in enumerate(gallery):
-                if (
-                    candidate.get("schedule_signature")
-                    == target.get("schedule_signature")
-                ):
-                    st.session_state.timeline_gallery_index = i
-                    break
+    for col, label in zip(selector_cols, named_options):
+        if col.button(
+            label,
+            key=f"results_solution_{label}",
+            use_container_width=True,
+        ):
+            target = named[label]
+            target_idx = _gallery_index_for_solution(gallery, target)
+            st.session_state.timeline_last_named_selector = label
+            _set_gallery_index(target_idx, len(gallery))
+            st.rerun()
 
     navigation = st.columns(
         [
@@ -4310,59 +4407,48 @@ def render_timeline_browser():
         use_container_width=True,
         disabled=not bool(gallery),
     ):
-        st.session_state.timeline_browsing_gallery = True
-        st.session_state.timeline_mode = "ALTERNATIVE"
-        st.session_state.timeline_gallery_index = (
-            st.session_state.timeline_gallery_index - 1
-        ) % len(gallery)
+        _set_gallery_index(
+            st.session_state.timeline_gallery_index - 1,
+            len(gallery),
+        )
+        st.rerun()
 
     if navigation[1].button(
         "Next solution ▶",
         use_container_width=True,
         disabled=not bool(gallery),
     ):
-        st.session_state.timeline_browsing_gallery = True
-        st.session_state.timeline_mode = "ALTERNATIVE"
-        st.session_state.timeline_gallery_index = (
-            st.session_state.timeline_gallery_index + 1
-        ) % len(gallery)
+        _set_gallery_index(
+            st.session_state.timeline_gallery_index + 1,
+            len(gallery),
+        )
+        st.rerun()
 
     if gallery:
-        # Keep the numeric selector and the rendered alternative on one source
-        # of truth. A keyed number_input otherwise keeps its own widget state
-        # across reruns, which can overwrite Previous/Next changes.
-        desired_alt = min(
-            len(gallery),
-            max(1, st.session_state.timeline_gallery_index + 1),
-        )
-        if st.session_state.get("timeline_gallery_jump") != desired_alt:
-            st.session_state["timeline_gallery_jump"] = desired_alt
+        # Initialize the widget before creation. Afterwards its on_change callback
+        # is the only place that copies widget state back to the solution index.
+        desired_alt = (
+            st.session_state.timeline_gallery_index % len(gallery)
+        ) + 1
+        if "timeline_gallery_jump" not in st.session_state:
+            st.session_state.timeline_gallery_jump = desired_alt
 
-        jump_to = navigation[2].number_input(
+        navigation[2].number_input(
             "Alternative",
             min_value=1,
             max_value=len(gallery),
             step=1,
             key="timeline_gallery_jump",
+            on_change=_gallery_jump_changed,
             label_visibility="collapsed",
         )
-
-        requested_index = int(jump_to) - 1
-        if requested_index != st.session_state.timeline_gallery_index:
-            st.session_state.timeline_browsing_gallery = True
-            st.session_state.timeline_mode = "ALTERNATIVE"
-            st.session_state.timeline_gallery_index = requested_index
 
         current_gallery_solution = gallery[
             st.session_state.timeline_gallery_index % len(gallery)
         ]
-        current_signature = str(
-            current_gallery_solution.get("schedule_signature", "")
-        )
         navigation[3].caption(
             f'{len(gallery)} saved unique schedules · '
             f'alternative #{st.session_state.timeline_gallery_index + 1}'
-            + (f' · {current_signature}' if current_signature else '')
         )
 
     if (
@@ -4456,27 +4542,13 @@ def results_page():
         except Exception:
             pass
 
-    render_results()
-
-    st.divider()
-
+    # Primary Results view: start with the interactive mission planning board.
     render_timeline_browser()
 
     st.divider()
 
-    with st.expander(
-        "Open standalone timeline window"
-    ):
-        st.caption(
-            "The separate Matplotlib visualizer remains available "
-            "for the same results."
-        )
-
-        if st.button(
-            "Open visualize.py",
-            key="open_standalone_visualizer",
-        ):
-            launch_visualizer()
+    # Secondary analytics: Pareto/front summary and plot below the board.
+    render_results()
 
 
 st.title(
@@ -4488,15 +4560,103 @@ st.caption(
     "All underlying CSV files and Python scripts remain directly usable from Terminal."
 )
 
+# Sidebar navigation.
+# Streamlit completely hides sidebar widgets when collapsed, so add a slim
+# fixed icon rail that becomes visible only in the collapsed state.
+_NAV_ITEMS = [
+    ("Missions", "✈"),
+    ("Pilot planning", "♟"),
+    ("Fleet & crew", "▦"),
+    ("Optimizer", "⚙"),
+    ("Results", "▤"),
+]
+
 page = st.sidebar.radio(
     "Navigation",
-    [
-        "Missions",
-        "Pilot planning",
-        "Fleet & crew",
-        "Optimizer",
-        "Results",
-    ],
+    [label for label, _ in _NAV_ITEMS],
+)
+
+st.markdown(
+    """
+    <style>
+    /* Compact navigation rail shown when Streamlit's sidebar is collapsed. */
+    .collapsed-nav-rail {
+        display: none;
+        position: fixed;
+        left: 7px;
+        top: 112px;
+        z-index: 999990;
+        width: 38px;
+        padding: 5px 3px;
+        border: 1px solid rgba(49,51,63,.16);
+        border-radius: 9px;
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .collapsed-nav-rail a {
+        display: flex;
+        width: 30px;
+        height: 30px;
+        margin: 2px auto;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #31333f;
+        text-decoration: none !important;
+        font-size: 16px;
+        line-height: 1;
+    }
+    .collapsed-nav-rail a:hover {
+        background: rgba(151,166,195,.18);
+    }
+    .collapsed-nav-rail a.active {
+        background: #ff4b4b;
+        color: white;
+    }
+
+    /* Streamlit puts aria-expanded on the sidebar itself.  The previous
+       version looked for it on the collapse button, which is why the rail
+       never became visible.  Keep several selectors for Streamlit versions. */
+    body:has(section[data-testid="stSidebar"][aria-expanded="false"])
+        .collapsed-nav-rail,
+    body:has([data-testid="stSidebar"][aria-expanded="false"])
+        .collapsed-nav-rail,
+    body:has([data-testid="stSidebarCollapsedControl"])
+        .collapsed-nav-rail,
+    body:has([data-testid="collapsedControl"])
+        .collapsed-nav-rail {
+        display: block !important;
+    }
+
+    /* Give the collapsed rail a little room without sacrificing screen area. */
+    body:has(section[data-testid="stSidebar"][aria-expanded="false"])
+        [data-testid="stMainBlockContainer"] {
+        padding-left: 3.25rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Query-param links keep navigation usable even while the sidebar itself is hidden.
+_active_page = st.query_params.get("page", page)
+if _active_page in [label for label, _ in _NAV_ITEMS] and _active_page != page:
+    page = _active_page
+
+_icon_links = []
+for _label, _icon in _NAV_ITEMS:
+    _active = " active" if page == _label else ""
+    _href = "?page=" + _label.replace(" ", "%20").replace("&", "%26")
+    _icon_links.append(
+        f'<a class="{_active.strip()}" href="{_href}" target="_self" '
+        f'title="{_label}" aria-label="{_label}">{_icon}</a>'
+    )
+
+st.markdown(
+    '<nav class="collapsed-nav-rail" aria-label="Collapsed navigation">'
+    + "".join(_icon_links)
+    + "</nav>",
+    unsafe_allow_html=True,
 )
 
 if page == "Missions":

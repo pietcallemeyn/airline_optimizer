@@ -1,24 +1,28 @@
 {
-  "schedule_signature": "0cecf52e8130",
+  "schedule_signature": "6c71d9d5fa04",
   "pilot_days_by_pilot": {
     "C01": [
       "2026-09-04",
+      "2026-09-09",
       "2026-09-12",
       "2026-09-13",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-24"
     ],
     "C02": [
       "2026-09-08",
       "2026-09-09",
       "2026-09-11",
-      "2026-09-15"
+      "2026-09-22",
+      "2026-09-25"
     ],
     "C03": [
-      "2026-09-09",
-      "2026-09-11",
+      "2026-08-31",
+      "2026-09-13",
+      "2026-09-14",
       "2026-09-18",
       "2026-09-19",
-      "2026-09-21"
+      "2026-09-20"
     ],
     "C04": [
       "2026-08-31",
@@ -28,21 +32,16 @@
       "2026-09-06"
     ],
     "C05": [
-      "2026-09-06",
-      "2026-09-21",
-      "2026-09-24",
-      "2026-09-25"
-    ],
-    "C06": [
-      "2026-09-05",
-      "2026-09-06",
-      "2026-09-07",
-      "2026-09-09",
-      "2026-09-13",
       "2026-09-14",
       "2026-09-15",
-      "2026-09-17",
-      "2026-09-22"
+      "2026-09-18",
+      "2026-09-19"
+    ],
+    "C06": [
+      "2026-09-13",
+      "2026-09-18",
+      "2026-09-21",
+      "2026-09-24"
     ],
     "C07": [
       "2026-08-31",
@@ -53,36 +52,46 @@
       "2026-09-06"
     ],
     "C08": [
+      "2026-09-07",
+      "2026-09-17",
+      "2026-09-18",
+      "2026-09-20",
+      "2026-09-21",
+      "2026-09-24",
+      "2026-09-25"
+    ],
+    "C09": [
+      "2026-09-06",
+      "2026-09-12",
       "2026-09-13",
-      "2026-09-14",
       "2026-09-15",
       "2026-09-17",
       "2026-09-21"
     ],
-    "C09": [
+    "C10": [
       "2026-08-31",
       "2026-09-02",
       "2026-09-03",
-      "2026-09-14",
-      "2026-09-15",
-      "2026-09-18"
-    ],
-    "C10": [
-      "2026-08-31",
-      "2026-09-12",
-      "2026-09-13",
-      "2026-09-24"
+      "2026-09-11"
     ],
     "C11": [
       "2026-09-03",
       "2026-09-04",
       "2026-09-05",
-      "2026-09-18",
-      "2026-09-19",
-      "2026-09-20"
+      "2026-09-15"
     ],
     "C12": [
+      "2026-09-05",
+      "2026-09-06",
       "2026-09-07",
+      "2026-09-09",
+      "2026-09-13",
+      "2026-09-14",
+      "2026-09-15",
+      "2026-09-17"
+    ],
+    "F01": [
+      "2026-09-13",
       "2026-09-17",
       "2026-09-18",
       "2026-09-20",
@@ -90,86 +99,48 @@
       "2026-09-24",
       "2026-09-25"
     ],
-    "F01": [
-      "2026-09-14",
-      "2026-09-15",
-      "2026-09-18"
-    ],
     "F02": [
-      "2026-09-06",
-      "2026-09-18",
-      "2026-09-19",
-      "2026-09-21",
-      "2026-09-24"
-    ],
-    "F03": [
       "2026-08-31",
       "2026-09-01",
       "2026-09-03",
       "2026-09-05",
-      "2026-09-06",
+      "2026-09-06"
+    ],
+    "F03": [
+      "2026-09-14",
+      "2026-09-15",
       "2026-09-18",
-      "2026-09-19",
-      "2026-09-20"
+      "2026-09-21",
+      "2026-09-24"
     ],
     "F04": [
-      "2026-09-12",
-      "2026-09-13",
-      "2026-09-14"
+      "2026-09-11",
+      "2026-09-14",
+      "2026-09-15",
+      "2026-09-17",
+      "2026-09-18"
     ],
     "F05": [
-      "2026-08-31",
-      "2026-09-17",
+      "2026-09-04",
+      "2026-09-07",
       "2026-09-18",
+      "2026-09-19",
       "2026-09-20",
-      "2026-09-21",
-      "2026-09-24",
-      "2026-09-25"
+      "2026-09-21"
     ],
     "F06": [
       "2026-08-31",
       "2026-09-02",
       "2026-09-03",
-      "2026-09-15",
-      "2026-09-17"
-    ],
-    "F07": [
-      "2026-09-07",
-      "2026-09-11",
-      "2026-09-14",
-      "2026-09-21"
-    ],
-    "F08": [
-      "2026-09-04",
-      "2026-09-12",
-      "2026-09-13",
-      "2026-09-22",
-      "2026-09-24"
-    ],
-    "F09": [
-      "2026-09-05",
-      "2026-09-06",
-      "2026-09-07",
-      "2026-09-09",
-      "2026-09-13",
-      "2026-09-14",
-      "2026-09-15",
-      "2026-09-17"
-    ],
-    "F10": [
-      "2026-09-09",
-      "2026-09-13",
-      "2026-09-15",
       "2026-09-25"
     ],
-    "F11": [
-      "2026-09-03",
-      "2026-09-04",
-      "2026-09-05",
-      "2026-09-18",
-      "2026-09-21"
+    "F07": [
+      "2026-09-09",
+      "2026-09-12",
+      "2026-09-13",
+      "2026-09-24"
     ],
-    "F12": [
+    "F08": [
       "2026-08-31",
       "2026-09-01",
       "2026-09-02",
@@ -177,31 +148,61 @@
       "2026-09-04",
       "2026-09-06"
     ],
-    "F13": [
+    "F09": [
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-05",
+      "2026-09-21",
+      "2026-09-22"
+    ],
+    "F10": [
+      "2026-09-06",
+      "2026-09-12",
+      "2026-09-13",
+      "2026-09-15"
+    ],
+    "F11": [
+      "2026-09-13",
+      "2026-09-14",
+      "2026-09-18",
+      "2026-09-19"
+    ],
+    "F12": [
+      "2026-08-31",
       "2026-09-08",
       "2026-09-09",
       "2026-09-11"
+    ],
+    "F13": [
+      "2026-09-05",
+      "2026-09-06",
+      "2026-09-07",
+      "2026-09-09",
+      "2026-09-13",
+      "2026-09-14",
+      "2026-09-15",
+      "2026-09-17"
     ]
   },
   "objectives": {
-    "total_operational_cost_eur": 78600.0,
+    "total_operational_cost_eur": 79200.0,
     "complexity_score": 26,
     "empty_legs": 0,
-    "charged_pilot_days": 131,
+    "charged_pilot_days": 132,
     "aircraft_parking_days": 0,
-    "crew_balance_score": 9.4091,
+    "crew_balance_score": 3.8682,
     "backup_shortage_days": 0,
     "outstation_handovers": 2
   },
   "cost_breakdown": {
-    "pilot_cost_eur": 78600.0,
+    "pilot_cost_eur": 79200.0,
     "commercial_flight_cost_eur": 0.0,
     "empty_flight_cost_eur": 0.0
   },
   "metrics": {
     "empty_nm": 0.0,
     "empty_legs": 0,
-    "charged_pilot_days": 131,
+    "charged_pilot_days": 132,
     "aircraft_parking_days": 0,
     "changed_pilot_count": 47,
     "nonhomebase_swap_events": 2,
@@ -209,35 +210,35 @@
     "base_handovers": 24,
     "crew_return_pilots": 0,
     "inbound_crew_deadhead_pilots": 0,
-    "crew_balance_score": 9.4091,
+    "crew_balance_score": 3.8682,
     "backup_shortage_days": 0,
-    "backup_slots": 384,
+    "backup_slots": 383,
     "mission_count_by_pilot": {
-      "C01": 11,
-      "C02": 11,
-      "C03": 10,
+      "C01": 12,
+      "C02": 10,
+      "C03": 11,
       "C04": 10,
-      "C05": 7,
-      "C06": 12,
+      "C05": 10,
+      "C06": 10,
       "C07": 12,
-      "C08": 11,
-      "C09": 14,
-      "C10": 8,
+      "C08": 10,
+      "C09": 13,
+      "C10": 10,
       "C11": 11,
-      "C12": 12,
-      "F01": 6,
+      "C12": 10,
+      "F01": 11,
       "F02": 10,
-      "F03": 14,
+      "F03": 9,
       "F04": 9,
-      "F05": 10,
-      "F06": 11,
-      "F07": 9,
-      "F08": 10,
-      "F09": 10,
-      "F10": 10,
-      "F11": 11,
-      "F12": 12,
-      "F13": 7
+      "F05": 11,
+      "F06": 9,
+      "F07": 8,
+      "F08": 12,
+      "F09": 11,
+      "F10": 11,
+      "F11": 9,
+      "F12": 9,
+      "F13": 10
     }
   },
   "routes": {
@@ -393,7 +394,7 @@
         "pax": 15,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -405,7 +406,7 @@
         "pax": 19,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -417,7 +418,7 @@
         "pax": 19,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -429,7 +430,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -441,7 +442,7 @@
         "pax": 17,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -453,7 +454,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -465,7 +466,7 @@
         "pax": 14,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -477,7 +478,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -489,7 +490,7 @@
         "pax": 17,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -501,7 +502,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -513,7 +514,7 @@
         "pax": 23,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -525,7 +526,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F12"
+        "fo": "F08"
       },
       {
         "type": "MISSION",
@@ -537,7 +538,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -549,7 +550,7 @@
         "pax": 35,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -561,7 +562,7 @@
         "pax": 35,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -573,7 +574,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -585,7 +586,7 @@
         "pax": 33,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -597,7 +598,7 @@
         "pax": 33,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -609,7 +610,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C02",
-        "fo": "F13"
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -620,8 +621,8 @@
         "end": "2026-09-13T08:10:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F04"
+        "captain": "C06",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -632,8 +633,8 @@
         "end": "2026-09-13T10:04:19.796080",
         "pax": 25,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F04"
+        "captain": "C06",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -644,8 +645,8 @@
         "end": "2026-09-13T12:08:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F04"
+        "captain": "C06",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -657,7 +658,7 @@
         "pax": 25,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F07"
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -669,7 +670,7 @@
         "pax": 25,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F07"
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -680,7 +681,7 @@
         "end": "2026-09-15T05:59:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F10"
       },
       {
@@ -692,7 +693,7 @@
         "end": "2026-09-15T07:17:00.035211",
         "pax": 27,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F10"
       },
       {
@@ -704,7 +705,7 @@
         "end": "2026-09-15T09:30:04.922322",
         "pax": 31,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F10"
       },
       {
@@ -716,7 +717,7 @@
         "end": "2026-09-15T12:15:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F10"
       },
       {
@@ -728,8 +729,8 @@
         "end": "2026-09-18T10:53:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F02"
+        "captain": "C05",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -740,8 +741,8 @@
         "end": "2026-09-18T12:36:20.416213",
         "pax": 35,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F02"
+        "captain": "C05",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -752,8 +753,8 @@
         "end": "2026-09-19T21:36:20.416213",
         "pax": 35,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F02"
+        "captain": "C05",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -764,8 +765,8 @@
         "end": "2026-09-19T23:23:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F02"
+        "captain": "C05",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -776,8 +777,8 @@
         "end": "2026-09-24T08:50:14.775428",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C01",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -788,8 +789,8 @@
         "end": "2026-09-24T18:50:14.775428",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C01",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -800,8 +801,8 @@
         "end": "2026-09-25T07:40:39.237392",
         "pax": 38,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F10"
+        "captain": "C02",
+        "fo": "F06"
       }
     ],
     "PHDWC": [
@@ -814,8 +815,8 @@
         "end": "2026-08-31T09:59:52.592747",
         "pax": 10,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F05"
+        "captain": "C03",
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -826,8 +827,8 @@
         "end": "2026-08-31T13:29:52.592747",
         "pax": 13,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F05"
+        "captain": "C03",
+        "fo": "F12"
       },
       {
         "type": "MISSION",
@@ -839,7 +840,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -851,7 +852,7 @@
         "pax": 19,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -863,7 +864,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -875,7 +876,7 @@
         "pax": 30,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -887,7 +888,7 @@
         "pax": 30,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -899,7 +900,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -911,7 +912,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C11",
-        "fo": "F11"
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -922,8 +923,8 @@
         "end": "2026-09-05T08:29:46.468365",
         "pax": 16,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -934,8 +935,8 @@
         "end": "2026-09-05T11:40:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -946,8 +947,8 @@
         "end": "2026-09-06T19:31:52.050201",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -958,8 +959,8 @@
         "end": "2026-09-07T10:02:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -970,8 +971,8 @@
         "end": "2026-09-09T11:27:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -982,8 +983,8 @@
         "end": "2026-09-09T14:46:12.184725",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -994,8 +995,8 @@
         "end": "2026-09-13T21:21:48.493464",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -1006,8 +1007,8 @@
         "end": "2026-09-14T11:05:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -1018,8 +1019,8 @@
         "end": "2026-09-15T13:02:38.885650",
         "pax": 13,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -1030,8 +1031,8 @@
         "end": "2026-09-17T14:02:38.885650",
         "pax": 13,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F09"
+        "captain": "C12",
+        "fo": "F13"
       },
       {
         "type": "MISSION",
@@ -1042,8 +1043,8 @@
         "end": "2026-09-17T15:58:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1054,8 +1055,8 @@
         "end": "2026-09-18T05:48:26.608873",
         "pax": 12,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1066,8 +1067,8 @@
         "end": "2026-09-18T14:33:26.608873",
         "pax": 12,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1078,8 +1079,8 @@
         "end": "2026-09-20T17:22:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1090,8 +1091,8 @@
         "end": "2026-09-21T11:27:42.660114",
         "pax": 27,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1102,8 +1103,8 @@
         "end": "2026-09-21T16:28:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1114,8 +1115,8 @@
         "end": "2026-09-24T11:27:42.660114",
         "pax": 14,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       },
       {
         "type": "MISSION",
@@ -1126,8 +1127,8 @@
         "end": "2026-09-25T10:27:42.660114",
         "pax": 19,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F05"
+        "captain": "C08",
+        "fo": "F01"
       }
     ],
     "PHDWS": [
@@ -1140,7 +1141,7 @@
         "end": "2026-08-31T10:29:45.357074",
         "pax": 24,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1152,7 +1153,7 @@
         "end": "2026-08-31T13:44:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1164,7 +1165,7 @@
         "end": "2026-08-31T16:04:40.974827",
         "pax": 28,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1176,7 +1177,7 @@
         "end": "2026-09-02T11:27:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1188,7 +1189,7 @@
         "end": "2026-09-02T14:28:20.318974",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1200,7 +1201,7 @@
         "end": "2026-09-02T17:17:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1212,7 +1213,7 @@
         "end": "2026-09-03T12:59:45.357074",
         "pax": 25,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1224,7 +1225,7 @@
         "end": "2026-09-03T15:55:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
+        "captain": "C10",
         "fo": "F06"
       },
       {
@@ -1237,7 +1238,7 @@
         "pax": 20,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F08"
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1249,7 +1250,7 @@
         "pax": 20,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F08"
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1260,8 +1261,8 @@
         "end": "2026-09-06T16:46:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C09",
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1272,8 +1273,8 @@
         "end": "2026-09-06T19:29:43.705525",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C09",
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1284,8 +1285,8 @@
         "end": "2026-09-06T21:45:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C09",
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1296,8 +1297,8 @@
         "end": "2026-09-07T09:59:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F07"
+        "captain": "C08",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1308,8 +1309,8 @@
         "end": "2026-09-07T13:29:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F07"
+        "captain": "C08",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1320,8 +1321,8 @@
         "end": "2026-09-09T06:01:49.911517",
         "pax": 15,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F10"
+        "captain": "C01",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1332,8 +1333,8 @@
         "end": "2026-09-09T16:46:49.911517",
         "pax": 15,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F10"
+        "captain": "C01",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1344,8 +1345,8 @@
         "end": "2026-09-11T08:59:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F07"
+        "captain": "C10",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1356,8 +1357,8 @@
         "end": "2026-09-11T12:29:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F07"
+        "captain": "C10",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1368,8 +1369,8 @@
         "end": "2026-09-13T16:46:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F10"
+        "captain": "C03",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -1380,8 +1381,8 @@
         "end": "2026-09-13T19:53:14.196282",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F10"
+        "captain": "C03",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -1392,8 +1393,8 @@
         "end": "2026-09-13T22:00:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F10"
+        "captain": "C03",
+        "fo": "F11"
       },
       {
         "type": "MISSION",
@@ -1404,7 +1405,7 @@
         "end": "2026-09-14T09:59:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C08",
+        "captain": "C03",
         "fo": "F04"
       },
       {
@@ -1416,7 +1417,7 @@
         "end": "2026-09-14T13:29:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C08",
+        "captain": "C03",
         "fo": "F04"
       },
       {
@@ -1428,8 +1429,8 @@
         "end": "2026-09-15T09:12:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F06"
+        "captain": "C09",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1440,8 +1441,8 @@
         "end": "2026-09-15T12:47:38.885650",
         "pax": 13,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F06"
+        "captain": "C09",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1452,8 +1453,8 @@
         "end": "2026-09-17T16:06:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F06"
+        "captain": "C09",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1464,8 +1465,8 @@
         "end": "2026-09-18T08:59:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F11"
+        "captain": "C06",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1476,8 +1477,8 @@
         "end": "2026-09-18T12:29:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C12",
-        "fo": "F11"
+        "captain": "C06",
+        "fo": "F04"
       },
       {
         "type": "MISSION",
@@ -1488,8 +1489,8 @@
         "end": "2026-09-21T09:59:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F11"
+        "captain": "C06",
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -1500,8 +1501,8 @@
         "end": "2026-09-21T13:29:52.592747",
         "pax": 20,
         "purpose": "CUSTOMER",
-        "captain": "C03",
-        "fo": "F11"
+        "captain": "C06",
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -1512,8 +1513,8 @@
         "end": "2026-09-21T15:19:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C06",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1524,8 +1525,8 @@
         "end": "2026-09-24T10:26:11.479660",
         "pax": 25,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C06",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1536,8 +1537,8 @@
         "end": "2026-09-24T13:51:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C05",
-        "fo": "F02"
+        "captain": "C06",
+        "fo": "F03"
       }
     ],
     "PHDWA": [
@@ -1551,7 +1552,7 @@
         "pax": 41,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1563,7 +1564,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1575,7 +1576,7 @@
         "pax": 9,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1587,7 +1588,7 @@
         "pax": 31,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1599,7 +1600,7 @@
         "pax": 33,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1611,7 +1612,7 @@
         "pax": 11,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1623,7 +1624,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1635,7 +1636,7 @@
         "pax": 32,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1647,7 +1648,7 @@
         "pax": 32,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1659,7 +1660,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C04",
-        "fo": "F03"
+        "fo": "F02"
       },
       {
         "type": "MISSION",
@@ -1671,7 +1672,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F04"
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1683,7 +1684,7 @@
         "pax": 42,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F04"
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1695,7 +1696,7 @@
         "pax": 42,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F04"
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1707,7 +1708,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C01",
-        "fo": "F04"
+        "fo": "F10"
       },
       {
         "type": "MISSION",
@@ -1718,8 +1719,8 @@
         "end": "2026-09-14T06:12:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1730,8 +1731,8 @@
         "end": "2026-09-14T09:03:08.772553",
         "pax": 35,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1742,8 +1743,8 @@
         "end": "2026-09-14T12:53:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1754,8 +1755,8 @@
         "end": "2026-09-15T10:29:41.403311",
         "pax": 21,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1766,8 +1767,8 @@
         "end": "2026-09-18T17:29:41.403311",
         "pax": 24,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1778,8 +1779,8 @@
         "end": "2026-09-18T19:02:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F01"
+        "captain": "C05",
+        "fo": "F03"
       },
       {
         "type": "MISSION",
@@ -1790,8 +1791,8 @@
         "end": "2026-09-21T09:43:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F07"
+        "captain": "C09",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1802,8 +1803,8 @@
         "end": "2026-09-21T13:46:13.123431",
         "pax": 40,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F07"
+        "captain": "C09",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1814,8 +1815,8 @@
         "end": "2026-09-21T17:23:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
-        "fo": "F07"
+        "captain": "C09",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1826,8 +1827,8 @@
         "end": "2026-09-22T09:47:49.777711",
         "pax": 39,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F08"
+        "captain": "C02",
+        "fo": "F09"
       },
       {
         "type": "MISSION",
@@ -1838,8 +1839,8 @@
         "end": "2026-09-23T00:17:49.777711",
         "pax": 39,
         "purpose": "CUSTOMER",
-        "captain": "C06",
-        "fo": "F08"
+        "captain": "C02",
+        "fo": "F09"
       }
     ],
     "PHJSK": [
@@ -1852,8 +1853,8 @@
         "end": "2026-09-12T14:10:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C09",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1864,8 +1865,8 @@
         "end": "2026-09-12T16:12:55.136553",
         "pax": 40,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C09",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1876,8 +1877,8 @@
         "end": "2026-09-13T19:42:55.136553",
         "pax": 40,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C09",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1888,8 +1889,8 @@
         "end": "2026-09-13T21:25:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F08"
+        "captain": "C09",
+        "fo": "F07"
       },
       {
         "type": "MISSION",
@@ -1900,8 +1901,8 @@
         "end": "2026-09-18T10:40:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C11",
-        "fo": "F03"
+        "captain": "C03",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1912,8 +1913,8 @@
         "end": "2026-09-18T13:15:27.981286",
         "pax": 40,
         "purpose": "CUSTOMER",
-        "captain": "C11",
-        "fo": "F03"
+        "captain": "C03",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1924,8 +1925,8 @@
         "end": "2026-09-19T23:10:27.981286",
         "pax": 40,
         "purpose": "CUSTOMER",
-        "captain": "C11",
-        "fo": "F03"
+        "captain": "C03",
+        "fo": "F05"
       },
       {
         "type": "MISSION",
@@ -1936,8 +1937,8 @@
         "end": "2026-09-20T11:40:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C11",
-        "fo": "F03"
+        "captain": "C03",
+        "fo": "F05"
       }
     ]
   },
@@ -2472,519 +2473,519 @@
   "crew_assignments": {
     "M004": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "EMPTY001": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M007": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M008": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M013": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M014": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "EMPTY007": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M023": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "M025": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "EMPTY018": {
       "captain": "C04",
-      "fo": "F03"
+      "fo": "F02"
     },
     "EMPTY025": {
       "captain": "C01",
-      "fo": "F04"
+      "fo": "F10"
     },
     "M041": {
       "captain": "C01",
-      "fo": "F04"
+      "fo": "F10"
     },
     "M044": {
       "captain": "C01",
-      "fo": "F04"
+      "fo": "F10"
     },
     "EMPTY030": {
       "captain": "C01",
-      "fo": "F04"
+      "fo": "F10"
     },
     "EMPTY033": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "M048": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "EMPTY035": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "M055": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "M066": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "EMPTY043": {
-      "captain": "C09",
-      "fo": "F01"
+      "captain": "C05",
+      "fo": "F03"
     },
     "EMPTY047": {
-      "captain": "C08",
-      "fo": "F07"
+      "captain": "C09",
+      "fo": "F05"
     },
     "M071": {
-      "captain": "C08",
-      "fo": "F07"
+      "captain": "C09",
+      "fo": "F05"
     },
     "EMPTY050": {
-      "captain": "C08",
-      "fo": "F07"
+      "captain": "C09",
+      "fo": "F05"
     },
     "M073": {
-      "captain": "C06",
-      "fo": "F08"
+      "captain": "C02",
+      "fo": "F09"
     },
     "M074": {
-      "captain": "C06",
-      "fo": "F08"
+      "captain": "C02",
+      "fo": "F09"
     },
     "M002": {
-      "captain": "C10",
-      "fo": "F05"
+      "captain": "C03",
+      "fo": "F12"
     },
     "M005": {
-      "captain": "C10",
-      "fo": "F05"
+      "captain": "C03",
+      "fo": "F12"
     },
     "EMPTY005": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "M012": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "EMPTY009": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "M017": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "M021": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "EMPTY012": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "EMPTY013": {
       "captain": "C11",
-      "fo": "F11"
+      "fo": "F09"
     },
     "M022": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "EMPTY014": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "M027": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "EMPTY020": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "EMPTY022": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "M034": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "M047": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "EMPTY034": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "M057": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "M058": {
-      "captain": "C06",
-      "fo": "F09"
+      "captain": "C12",
+      "fo": "F13"
     },
     "EMPTY039": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M060": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M065": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "EMPTY046": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M070": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "EMPTY048": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M076": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M081": {
-      "captain": "C12",
-      "fo": "F05"
+      "captain": "C08",
+      "fo": "F01"
     },
     "M001": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M009": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M011": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY006": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M018": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY010": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M020": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY011": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M024": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY016": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "M029": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY019": {
       "captain": "C07",
-      "fo": "F12"
+      "fo": "F08"
     },
     "EMPTY021": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "M032": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "M036": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "EMPTY023": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "M038": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "M040": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "EMPTY024": {
       "captain": "C02",
-      "fo": "F13"
+      "fo": "F12"
     },
     "EMPTY027": {
-      "captain": "C01",
-      "fo": "F04"
+      "captain": "C06",
+      "fo": "F01"
     },
     "M043": {
-      "captain": "C01",
-      "fo": "F04"
+      "captain": "C06",
+      "fo": "F01"
     },
     "EMPTY028": {
-      "captain": "C01",
-      "fo": "F04"
+      "captain": "C06",
+      "fo": "F01"
     },
     "M050": {
       "captain": "C01",
-      "fo": "F07"
+      "fo": "F11"
     },
     "M052": {
       "captain": "C01",
-      "fo": "F07"
+      "fo": "F11"
     },
     "EMPTY036": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10"
     },
     "M053": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10"
     },
     "M054": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10"
     },
     "EMPTY038": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10"
     },
     "EMPTY041": {
-      "captain": "C03",
-      "fo": "F02"
+      "captain": "C05",
+      "fo": "F11"
     },
     "M063": {
-      "captain": "C03",
-      "fo": "F02"
+      "captain": "C05",
+      "fo": "F11"
     },
     "M067": {
-      "captain": "C03",
-      "fo": "F02"
+      "captain": "C05",
+      "fo": "F11"
     },
     "EMPTY044": {
-      "captain": "C03",
-      "fo": "F02"
+      "captain": "C05",
+      "fo": "F11"
     },
     "M075": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C01",
+      "fo": "F07"
     },
     "M078": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C01",
+      "fo": "F07"
     },
     "M080": {
-      "captain": "C05",
-      "fo": "F10"
+      "captain": "C02",
+      "fo": "F06"
     },
     "M003": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "EMPTY002": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "M006": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "EMPTY003": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "M010": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "EMPTY004": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "M015": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "EMPTY008": {
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06"
     },
     "M016": {
       "captain": "C01",
-      "fo": "F08"
+      "fo": "F05"
     },
     "M019": {
       "captain": "C01",
-      "fo": "F08"
+      "fo": "F05"
     },
     "EMPTY015": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C09",
+      "fo": "F10"
     },
     "M026": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C09",
+      "fo": "F10"
     },
     "EMPTY017": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C09",
+      "fo": "F10"
     },
     "M030": {
-      "captain": "C12",
-      "fo": "F07"
+      "captain": "C08",
+      "fo": "F05"
     },
     "M031": {
-      "captain": "C12",
-      "fo": "F07"
+      "captain": "C08",
+      "fo": "F05"
     },
     "M033": {
-      "captain": "C03",
-      "fo": "F10"
+      "captain": "C01",
+      "fo": "F07"
     },
     "M035": {
-      "captain": "C03",
-      "fo": "F10"
+      "captain": "C01",
+      "fo": "F07"
     },
     "M037": {
-      "captain": "C03",
-      "fo": "F07"
+      "captain": "C10",
+      "fo": "F04"
     },
     "M039": {
-      "captain": "C03",
-      "fo": "F07"
+      "captain": "C10",
+      "fo": "F04"
     },
     "EMPTY029": {
-      "captain": "C08",
-      "fo": "F10"
+      "captain": "C03",
+      "fo": "F11"
     },
     "M045": {
-      "captain": "C08",
-      "fo": "F10"
+      "captain": "C03",
+      "fo": "F11"
     },
     "EMPTY032": {
-      "captain": "C08",
-      "fo": "F10"
+      "captain": "C03",
+      "fo": "F11"
     },
     "M049": {
-      "captain": "C08",
+      "captain": "C03",
       "fo": "F04"
     },
     "M051": {
-      "captain": "C08",
+      "captain": "C03",
       "fo": "F04"
     },
     "EMPTY037": {
-      "captain": "C08",
-      "fo": "F06"
+      "captain": "C09",
+      "fo": "F04"
     },
     "M056": {
-      "captain": "C08",
-      "fo": "F06"
+      "captain": "C09",
+      "fo": "F04"
     },
     "EMPTY040": {
-      "captain": "C08",
-      "fo": "F06"
+      "captain": "C09",
+      "fo": "F04"
     },
     "M061": {
-      "captain": "C12",
-      "fo": "F11"
+      "captain": "C06",
+      "fo": "F04"
     },
     "M062": {
-      "captain": "C12",
-      "fo": "F11"
+      "captain": "C06",
+      "fo": "F04"
     },
     "M069": {
-      "captain": "C03",
-      "fo": "F11"
+      "captain": "C06",
+      "fo": "F09"
     },
     "M072": {
-      "captain": "C03",
-      "fo": "F11"
+      "captain": "C06",
+      "fo": "F09"
     },
     "EMPTY049": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C06",
+      "fo": "F03"
     },
     "M077": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C06",
+      "fo": "F03"
     },
     "EMPTY051": {
-      "captain": "C05",
-      "fo": "F02"
+      "captain": "C06",
+      "fo": "F03"
     },
     "EMPTY026": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C09",
+      "fo": "F07"
     },
     "M042": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C09",
+      "fo": "F07"
     },
     "M046": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C09",
+      "fo": "F07"
     },
     "EMPTY031": {
-      "captain": "C10",
-      "fo": "F08"
+      "captain": "C09",
+      "fo": "F07"
     },
     "EMPTY042": {
-      "captain": "C11",
-      "fo": "F03"
+      "captain": "C03",
+      "fo": "F05"
     },
     "M064": {
-      "captain": "C11",
-      "fo": "F03"
+      "captain": "C03",
+      "fo": "F05"
     },
     "M068": {
-      "captain": "C11",
-      "fo": "F03"
+      "captain": "C03",
+      "fo": "F05"
     },
     "EMPTY045": {
-      "captain": "C11",
-      "fo": "F03"
+      "captain": "C03",
+      "fo": "F05"
     }
   },
   "crew_actions": [
@@ -2992,7 +2993,7 @@
       "mission": "M001",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3001,8 +3002,8 @@
     {
       "mission": "M002",
       "aircraft": "PHDWC",
-      "captain": "C10",
-      "fo": "F05",
+      "captain": "C03",
+      "fo": "F12",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3011,7 +3012,7 @@
     {
       "mission": "M003",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
@@ -3022,7 +3023,7 @@
       "mission": "M004",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3032,7 +3033,7 @@
       "mission": "EMPTY001",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3041,8 +3042,8 @@
     {
       "mission": "M005",
       "aircraft": "PHDWC",
-      "captain": "C10",
-      "fo": "F05",
+      "captain": "C03",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3051,7 +3052,7 @@
     {
       "mission": "EMPTY002",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3061,7 +3062,7 @@
     {
       "mission": "M006",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3072,7 +3073,7 @@
       "mission": "M007",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3082,7 +3083,7 @@
       "mission": "M008",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3092,7 +3093,7 @@
       "mission": "M009",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3101,7 +3102,7 @@
     {
       "mission": "EMPTY003",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3111,7 +3112,7 @@
     {
       "mission": "M010",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3122,7 +3123,7 @@
       "mission": "M011",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3131,7 +3132,7 @@
     {
       "mission": "EMPTY004",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3142,7 +3143,7 @@
       "mission": "EMPTY005",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3152,7 +3153,7 @@
       "mission": "M012",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3162,7 +3163,7 @@
       "mission": "M013",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3172,7 +3173,7 @@
       "mission": "M014",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3181,7 +3182,7 @@
     {
       "mission": "M015",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3192,7 +3193,7 @@
       "mission": "EMPTY006",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3202,7 +3203,7 @@
       "mission": "EMPTY007",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3211,7 +3212,7 @@
     {
       "mission": "EMPTY008",
       "aircraft": "PHDWS",
-      "captain": "C09",
+      "captain": "C10",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3222,7 +3223,7 @@
       "mission": "EMPTY009",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3232,7 +3233,7 @@
       "mission": "M016",
       "aircraft": "PHDWS",
       "captain": "C01",
-      "fo": "F08",
+      "fo": "F05",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3242,7 +3243,7 @@
       "mission": "M017",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3252,7 +3253,7 @@
       "mission": "M018",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3262,7 +3263,7 @@
       "mission": "M019",
       "aircraft": "PHDWS",
       "captain": "C01",
-      "fo": "F08",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3272,7 +3273,7 @@
       "mission": "EMPTY010",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3282,7 +3283,7 @@
       "mission": "M020",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3292,7 +3293,7 @@
       "mission": "EMPTY011",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3302,7 +3303,7 @@
       "mission": "M021",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3312,7 +3313,7 @@
       "mission": "EMPTY012",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3322,7 +3323,7 @@
       "mission": "EMPTY013",
       "aircraft": "PHDWC",
       "captain": "C11",
-      "fo": "F11",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3331,8 +3332,8 @@
     {
       "mission": "M022",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "OUTSTATION_FULL_CREW_SWAP",
       "handover_airport": "LIRQ",
       "changed_pilots": 2,
@@ -3341,8 +3342,8 @@
     {
       "mission": "EMPTY014",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3352,7 +3353,7 @@
       "mission": "M023",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3362,7 +3363,7 @@
       "mission": "M024",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3371,8 +3372,8 @@
     {
       "mission": "EMPTY015",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
+      "captain": "C09",
+      "fo": "F10",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3382,7 +3383,7 @@
       "mission": "EMPTY016",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3392,7 +3393,7 @@
       "mission": "M025",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3401,8 +3402,8 @@
     {
       "mission": "M026",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
+      "captain": "C09",
+      "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3411,8 +3412,8 @@
     {
       "mission": "M027",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3422,7 +3423,7 @@
       "mission": "M029",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3431,8 +3432,8 @@
     {
       "mission": "EMPTY017",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
+      "captain": "C09",
+      "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3442,7 +3443,7 @@
       "mission": "EMPTY018",
       "aircraft": "PHDWA",
       "captain": "C04",
-      "fo": "F03",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3452,7 +3453,7 @@
       "mission": "EMPTY019",
       "aircraft": "PHDWP",
       "captain": "C07",
-      "fo": "F12",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3461,8 +3462,8 @@
     {
       "mission": "M030",
       "aircraft": "PHDWS",
-      "captain": "C12",
-      "fo": "F07",
+      "captain": "C08",
+      "fo": "F05",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3471,8 +3472,8 @@
     {
       "mission": "EMPTY020",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3481,8 +3482,8 @@
     {
       "mission": "M031",
       "aircraft": "PHDWS",
-      "captain": "C12",
-      "fo": "F07",
+      "captain": "C08",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3492,7 +3493,7 @@
       "mission": "EMPTY021",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3502,7 +3503,7 @@
       "mission": "M032",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3511,8 +3512,8 @@
     {
       "mission": "M033",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F10",
+      "captain": "C01",
+      "fo": "F07",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3521,8 +3522,8 @@
     {
       "mission": "EMPTY022",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3531,8 +3532,8 @@
     {
       "mission": "M034",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3541,8 +3542,8 @@
     {
       "mission": "M035",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F10",
+      "captain": "C01",
+      "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3552,7 +3553,7 @@
       "mission": "M036",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3562,7 +3563,7 @@
       "mission": "EMPTY023",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3571,18 +3572,18 @@
     {
       "mission": "M037",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F07",
-      "action": "BASE_FO_SWAP",
+      "captain": "C10",
+      "fo": "F04",
+      "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
-      "changed_pilots": 1,
+      "changed_pilots": 2,
       "nonhome_swap_event": 0
     },
     {
       "mission": "M038",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3591,8 +3592,8 @@
     {
       "mission": "M039",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F07",
+      "captain": "C10",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3602,7 +3603,7 @@
       "mission": "M040",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3612,7 +3613,7 @@
       "mission": "EMPTY024",
       "aircraft": "PHDWP",
       "captain": "C02",
-      "fo": "F13",
+      "fo": "F12",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3622,7 +3623,7 @@
       "mission": "EMPTY025",
       "aircraft": "PHDWA",
       "captain": "C01",
-      "fo": "F04",
+      "fo": "F10",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3631,8 +3632,8 @@
     {
       "mission": "EMPTY026",
       "aircraft": "PHJSK",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C09",
+      "fo": "F07",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3642,7 +3643,7 @@
       "mission": "M041",
       "aircraft": "PHDWA",
       "captain": "C01",
-      "fo": "F04",
+      "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3651,8 +3652,8 @@
     {
       "mission": "M042",
       "aircraft": "PHJSK",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C09",
+      "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3661,8 +3662,8 @@
     {
       "mission": "EMPTY027",
       "aircraft": "PHDWP",
-      "captain": "C01",
-      "fo": "F04",
+      "captain": "C06",
+      "fo": "F01",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3671,8 +3672,8 @@
     {
       "mission": "M043",
       "aircraft": "PHDWP",
-      "captain": "C01",
-      "fo": "F04",
+      "captain": "C06",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3681,8 +3682,8 @@
     {
       "mission": "EMPTY028",
       "aircraft": "PHDWP",
-      "captain": "C01",
-      "fo": "F04",
+      "captain": "C06",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3691,8 +3692,8 @@
     {
       "mission": "EMPTY029",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F10",
+      "captain": "C03",
+      "fo": "F11",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3702,7 +3703,7 @@
       "mission": "M044",
       "aircraft": "PHDWA",
       "captain": "C01",
-      "fo": "F04",
+      "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3711,8 +3712,8 @@
     {
       "mission": "M045",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F10",
+      "captain": "C03",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3722,7 +3723,7 @@
       "mission": "EMPTY030",
       "aircraft": "PHDWA",
       "captain": "C01",
-      "fo": "F04",
+      "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3731,8 +3732,8 @@
     {
       "mission": "M046",
       "aircraft": "PHJSK",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C09",
+      "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3741,8 +3742,8 @@
     {
       "mission": "M047",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3751,8 +3752,8 @@
     {
       "mission": "EMPTY031",
       "aircraft": "PHJSK",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C09",
+      "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3761,8 +3762,8 @@
     {
       "mission": "EMPTY032",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F10",
+      "captain": "C03",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3771,8 +3772,8 @@
     {
       "mission": "EMPTY033",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3781,8 +3782,8 @@
     {
       "mission": "M048",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3791,7 +3792,7 @@
     {
       "mission": "M049",
       "aircraft": "PHDWS",
-      "captain": "C08",
+      "captain": "C03",
       "fo": "F04",
       "action": "BASE_FO_SWAP",
       "handover_airport": "EBLG",
@@ -3802,17 +3803,17 @@
       "mission": "M050",
       "aircraft": "PHDWP",
       "captain": "C01",
-      "fo": "F07",
-      "action": "BASE_FO_SWAP",
+      "fo": "F11",
+      "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
-      "changed_pilots": 1,
+      "changed_pilots": 2,
       "nonhome_swap_event": 0
     },
     {
       "mission": "EMPTY034",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3821,8 +3822,8 @@
     {
       "mission": "EMPTY035",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3831,7 +3832,7 @@
     {
       "mission": "M051",
       "aircraft": "PHDWS",
-      "captain": "C08",
+      "captain": "C03",
       "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3842,7 +3843,7 @@
       "mission": "M052",
       "aircraft": "PHDWP",
       "captain": "C01",
-      "fo": "F07",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3851,7 +3852,7 @@
     {
       "mission": "EMPTY036",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
@@ -3861,7 +3862,7 @@
     {
       "mission": "M053",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3871,9 +3872,9 @@
     {
       "mission": "EMPTY037",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F06",
-      "action": "BASE_FO_SWAP",
+      "captain": "C09",
+      "fo": "F04",
+      "action": "BASE_CAPT_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 1,
       "nonhome_swap_event": 0
@@ -3881,7 +3882,7 @@
     {
       "mission": "M054",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3891,8 +3892,8 @@
     {
       "mission": "M055",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3901,7 +3902,7 @@
     {
       "mission": "EMPTY038",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F10",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3911,8 +3912,8 @@
     {
       "mission": "M056",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F06",
+      "captain": "C09",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3921,8 +3922,8 @@
     {
       "mission": "M057",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3931,8 +3932,8 @@
     {
       "mission": "M058",
       "aircraft": "PHDWC",
-      "captain": "C06",
-      "fo": "F09",
+      "captain": "C12",
+      "fo": "F13",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3941,8 +3942,8 @@
     {
       "mission": "EMPTY039",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "OUTSTATION_FULL_CREW_SWAP",
       "handover_airport": "LFPB",
       "changed_pilots": 2,
@@ -3951,8 +3952,8 @@
     {
       "mission": "EMPTY040",
       "aircraft": "PHDWS",
-      "captain": "C08",
-      "fo": "F06",
+      "captain": "C09",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3961,8 +3962,8 @@
     {
       "mission": "M060",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3971,18 +3972,18 @@
     {
       "mission": "M061",
       "aircraft": "PHDWS",
-      "captain": "C12",
-      "fo": "F11",
-      "action": "BASE_FULL_CREW_SWAP",
+      "captain": "C06",
+      "fo": "F04",
+      "action": "BASE_CAPT_SWAP",
       "handover_airport": "EBAW",
-      "changed_pilots": 2,
+      "changed_pilots": 1,
       "nonhome_swap_event": 0
     },
     {
       "mission": "EMPTY041",
       "aircraft": "PHDWP",
-      "captain": "C03",
-      "fo": "F02",
+      "captain": "C05",
+      "fo": "F11",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3991,8 +3992,8 @@
     {
       "mission": "EMPTY042",
       "aircraft": "PHJSK",
-      "captain": "C11",
-      "fo": "F03",
+      "captain": "C03",
+      "fo": "F05",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4001,8 +4002,8 @@
     {
       "mission": "M062",
       "aircraft": "PHDWS",
-      "captain": "C12",
-      "fo": "F11",
+      "captain": "C06",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4011,8 +4012,8 @@
     {
       "mission": "M063",
       "aircraft": "PHDWP",
-      "captain": "C03",
-      "fo": "F02",
+      "captain": "C05",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4021,8 +4022,8 @@
     {
       "mission": "M064",
       "aircraft": "PHJSK",
-      "captain": "C11",
-      "fo": "F03",
+      "captain": "C03",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4031,8 +4032,8 @@
     {
       "mission": "M065",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4041,8 +4042,8 @@
     {
       "mission": "M066",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4051,8 +4052,8 @@
     {
       "mission": "EMPTY043",
       "aircraft": "PHDWA",
-      "captain": "C09",
-      "fo": "F01",
+      "captain": "C05",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4061,8 +4062,8 @@
     {
       "mission": "M067",
       "aircraft": "PHDWP",
-      "captain": "C03",
-      "fo": "F02",
+      "captain": "C05",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4071,8 +4072,8 @@
     {
       "mission": "M068",
       "aircraft": "PHJSK",
-      "captain": "C11",
-      "fo": "F03",
+      "captain": "C03",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4081,8 +4082,8 @@
     {
       "mission": "EMPTY044",
       "aircraft": "PHDWP",
-      "captain": "C03",
-      "fo": "F02",
+      "captain": "C05",
+      "fo": "F11",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4091,8 +4092,8 @@
     {
       "mission": "EMPTY045",
       "aircraft": "PHJSK",
-      "captain": "C11",
-      "fo": "F03",
+      "captain": "C03",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4101,8 +4102,8 @@
     {
       "mission": "EMPTY046",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4111,8 +4112,8 @@
     {
       "mission": "EMPTY047",
       "aircraft": "PHDWA",
-      "captain": "C08",
-      "fo": "F07",
+      "captain": "C09",
+      "fo": "F05",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4121,9 +4122,9 @@
     {
       "mission": "M069",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F11",
-      "action": "BASE_CAPT_SWAP",
+      "captain": "C06",
+      "fo": "F09",
+      "action": "BASE_FO_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 1,
       "nonhome_swap_event": 0
@@ -4131,8 +4132,8 @@
     {
       "mission": "M070",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4141,8 +4142,8 @@
     {
       "mission": "M071",
       "aircraft": "PHDWA",
-      "captain": "C08",
-      "fo": "F07",
+      "captain": "C09",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4151,8 +4152,8 @@
     {
       "mission": "M072",
       "aircraft": "PHDWS",
-      "captain": "C03",
-      "fo": "F11",
+      "captain": "C06",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4161,8 +4162,8 @@
     {
       "mission": "EMPTY048",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4171,18 +4172,18 @@
     {
       "mission": "EMPTY049",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
-      "action": "BASE_FULL_CREW_SWAP",
+      "captain": "C06",
+      "fo": "F03",
+      "action": "BASE_FO_SWAP",
       "handover_airport": "EBAW",
-      "changed_pilots": 2,
+      "changed_pilots": 1,
       "nonhome_swap_event": 0
     },
     {
       "mission": "EMPTY050",
       "aircraft": "PHDWA",
-      "captain": "C08",
-      "fo": "F07",
+      "captain": "C09",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4191,8 +4192,8 @@
     {
       "mission": "M073",
       "aircraft": "PHDWA",
-      "captain": "C06",
-      "fo": "F08",
+      "captain": "C02",
+      "fo": "F09",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4201,8 +4202,8 @@
     {
       "mission": "M074",
       "aircraft": "PHDWA",
-      "captain": "C06",
-      "fo": "F08",
+      "captain": "C02",
+      "fo": "F09",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4211,8 +4212,8 @@
     {
       "mission": "M075",
       "aircraft": "PHDWP",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C01",
+      "fo": "F07",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4221,8 +4222,8 @@
     {
       "mission": "M076",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4231,8 +4232,8 @@
     {
       "mission": "M077",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
+      "captain": "C06",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4241,8 +4242,8 @@
     {
       "mission": "EMPTY051",
       "aircraft": "PHDWS",
-      "captain": "C05",
-      "fo": "F02",
+      "captain": "C06",
+      "fo": "F03",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4251,8 +4252,8 @@
     {
       "mission": "M078",
       "aircraft": "PHDWP",
-      "captain": "C10",
-      "fo": "F08",
+      "captain": "C01",
+      "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4261,8 +4262,8 @@
     {
       "mission": "M080",
       "aircraft": "PHDWP",
-      "captain": "C05",
-      "fo": "F10",
+      "captain": "C02",
+      "fo": "F06",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4271,8 +4272,8 @@
     {
       "mission": "M081",
       "aircraft": "PHDWC",
-      "captain": "C12",
-      "fo": "F05",
+      "captain": "C08",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,

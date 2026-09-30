@@ -1,10 +1,10 @@
 {
-  "runs": 2,
-  "population": 100,
-  "generations": 10,
-  "total_evaluations": 2200,
+  "runs": 3,
+  "population": 200,
+  "generations": 20,
+  "total_evaluations": 12600,
   "seed": 42,
-  "elapsed_seconds": 11.4,
-  "solutions": 8,
+  "elapsed_seconds": 64.16,
+  "solutions": 22,
   "optimizer": "LEAN_CREW_GA"
 }
