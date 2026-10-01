@@ -1,18 +1,9 @@
 LEAN CREW GA · missions=67 fixed aircraft · captains=11 · FOs=8
 Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers
-run=1/3 gen=1/20 outstation=0 balance=23.701 backup_shortage=0 base_handovers=9 elapsed=0.7s
-run=1/3 gen=6/20 outstation=0 balance=18.917 backup_shortage=0 base_handovers=9 elapsed=2.4s
-run=1/3 gen=11/20 outstation=0 balance=17.633 backup_shortage=0 base_handovers=9 elapsed=4.1s
-run=1/3 gen=16/20 outstation=0 balance=17.144 backup_shortage=0 base_handovers=9 elapsed=5.8s
-run=1/3 gen=20/20 outstation=0 balance=17.144 backup_shortage=0 base_handovers=9 elapsed=7.1s
-run=2/3 gen=1/20 outstation=0 balance=23.394 backup_shortage=0 base_handovers=9 elapsed=7.8s
-run=2/3 gen=6/20 outstation=0 balance=19.178 backup_shortage=0 base_handovers=9 elapsed=9.5s
-run=2/3 gen=11/20 outstation=0 balance=18.485 backup_shortage=0 base_handovers=9 elapsed=11.2s
-run=2/3 gen=16/20 outstation=0 balance=17.110 backup_shortage=0 base_handovers=9 elapsed=12.9s
-run=2/3 gen=20/20 outstation=0 balance=17.110 backup_shortage=0 base_handovers=9 elapsed=14.2s
-run=3/3 gen=1/20 outstation=0 balance=20.789 backup_shortage=0 base_handovers=9 elapsed=14.9s
-run=3/3 gen=6/20 outstation=0 balance=19.328 backup_shortage=0 base_handovers=9 elapsed=16.6s
-run=3/3 gen=11/20 outstation=0 balance=17.078 backup_shortage=0 base_handovers=9 elapsed=18.3s
-run=3/3 gen=16/20 outstation=0 balance=16.953 backup_shortage=0 base_handovers=9 elapsed=20.0s
-run=3/3 gen=20/20 outstation=0 balance=16.828 backup_shortage=0 base_handovers=9 elapsed=21.3s
-DONE · outstation=0 · balance=16.8281 · backup shortage=0 · handovers=9 · 21.3s
+run=1/2 gen=1/10 outstation=2 balance=25.726 backup_shortage=0 base_handovers=9 elapsed=3.1s
+run=1/2 gen=6/10 outstation=2 balance=22.248 backup_shortage=0 base_handovers=9 elapsed=10.9s
+run=1/2 gen=10/10 outstation=2 balance=19.623 backup_shortage=0 base_handovers=9 elapsed=16.9s
+run=2/2 gen=1/10 outstation=2 balance=25.112 backup_shortage=0 base_handovers=9 elapsed=20.0s
+run=2/2 gen=6/10 outstation=2 balance=20.373 backup_shortage=0 base_handovers=9 elapsed=27.7s
+run=2/2 gen=10/10 outstation=2 balance=17.362 backup_shortage=0 base_handovers=9 elapsed=33.8s
+DONE · outstation=2 · balance=17.3619 · backup shortage=0 · handovers=11 · 33.8s

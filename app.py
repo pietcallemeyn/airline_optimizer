@@ -3661,6 +3661,17 @@ def actual_outstation_swap_events(solution, home_bases=("EBAW", "EBLG")):
     return events
 
 
+
+def actual_outstation_changed_pilots(solution, home_bases=("EBAW", "EBLG")):
+    """Count individual pilot changes at genuine physical outstation swaps."""
+    total = 0
+    for event in actual_outstation_swap_events(solution, home_bases):
+        prev_c, prev_f = event["previous_crew"]
+        new_c, new_f = event["new_crew"]
+        total += int(prev_c != new_c) + int(prev_f != new_f)
+    return total
+
+
 def _mission_lookup(missions) -> dict:
     """Return mission data keyed by mission id, regardless of stored shape."""
     if missions is None:
@@ -3800,26 +3811,19 @@ def operations_board_payload(
                     {},
                 )
 
+                movement_action = str(movement.get("crew_action", "") or "")
+                action_name = str(action.get("action", "") or movement_action)
                 swap = (
-                    action.get(
-                        "action"
-                    )
-                    == "HANDOVER"
-                    and not str(
-                        action.get(
-                            "transition_mode",
-                            "",
-                        )
-                    ).startswith(
-                        "IDLE_RETURN_"
-                    )
-                )
+                    ("SWAP" in action_name)
+                    or int(movement.get("changed_pilots", 0) or 0) > 0
+                    or int(action.get("changed_pilots", 0) or 0) > 0
+                ) and not str(action.get("transition_mode", "")).startswith("IDLE_RETURN_")
 
                 nonhome = int(
-                    action.get(
-                        "nonhome_swap_event",
-                        0,
-                    )
+                    movement.get(
+                        "outstation_swap",
+                        action.get("nonhome_swap_event", 0),
+                    ) or 0
                 )
 
                 cards.append({
@@ -3854,6 +3858,11 @@ def operations_board_payload(
                         )
                     ),
                     "sort": start.isoformat(),
+                    "split_duty": bool(movement.get("split_duty", False)),
+                    "split_duty_info": movement.get("split_duty_info") or {},
+                    "crew_swap": bool(swap),
+                    "crew_swap_reason": movement.get("crew_change_reason") or ("FTL_REQUIRED" if swap and nonhome else ""),
+                    "handover_airport": movement.get("handover_airport") or action.get("handover_airport"),
                 })
 
             else:
@@ -4256,6 +4265,8 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
 .route {{ font-size:8px; font-weight:700; line-height:1.15; white-space:nowrap; overflow:visible; text-overflow:clip; }}
 .meta {{ margin-top:1px; font-size:7px; font-weight:600; color:inherit; white-space:nowrap; overflow:visible; text-overflow:clip; }}
 .swap {{ color:#2878ff; font-weight:900; margin-right:4px; }} .fixed {{ margin-right:4px; }}
+.swap-badge {{ position:absolute; left:2px; top:2px; padding:1px 3px; background:#d9ecff; color:#075985; border:1px solid #5aa7d9; font-size:6px; font-weight:900; line-height:1.1; letter-spacing:.03em; z-index:2; }}
+.split-badge {{ position:absolute; right:2px; top:2px; padding:1px 3px; background:#fff4c7; color:#6b5200; border:1px solid #d4aa22; font-size:6px; font-weight:900; line-height:1.1; letter-spacing:.03em; z-index:2; }}
 .detail {{ position:sticky; top:0; border:1px solid #ddd; border-radius:12px; padding:14px; background:#fff; max-height:650px; overflow:auto; }}
 .detail h3 {{ margin:0 0 12px; font-size:18px; }} .detail-block {{ border-bottom:1px solid #eee; padding:9px 0; }} .detail-block:last-child {{ border:0; }}
 .dlabel {{ font-size:10px; color:#777; text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; }} .dvalue {{ font-size:13px; font-weight:600; overflow-wrap:anywhere; }}
@@ -4312,8 +4323,8 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
    const line=document.createElement('div');line.className='row';
    const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{row.registration}}</b><span>${{row.crew||'—'}}</span>`;line.appendChild(lab);addGrid(line);
    row.cards.forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('button');el.type='button';el.className=`block ${{c.kind}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=`max(48px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;el.style.zIndex=c.kind==='parking'?2:5;
-     const destination=(c.route||'').split('→').pop().trim(); el.innerHTML=c.kind==='mission'?`<div class="route">${{esc(destination)}}</div><div class="meta">${{esc(c.label)}}</div>`:`<div class="route">${{esc(c.label)}}</div><div class="meta">${{esc(c.route||'')}}</div>`;
-     el.addEventListener('click',()=>detail(c,row.registration,el)); el.onmouseenter=(e)=>showTip(`<b>${{esc(c.label)}} · ${{esc(c.route||'')}}</b><br>${{esc(c.day)}} · ${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(row.registration)}}<br><span style="color:#52bfff">Crew ${{esc(c.crew||'—')}}</span><br>${{esc(c.extra||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});
+     const destination=(c.route||'').split('→').pop().trim(); const splitBadge=c.split_duty?'<span class="split-badge">SPLIT</span>':''; el.innerHTML=c.kind==='mission'?`${{splitBadge}}<div class="route">${{esc(destination)}}</div><div class="meta">${{esc(c.label)}}</div>`:`<div class="route">${{esc(c.label)}}</div><div class="meta">${{esc(c.route||'')}}</div>`;
+     el.addEventListener('click',()=>detail(c,row.registration,el)); el.onmouseenter=(e)=>{{const si=c.split_duty_info||{{}};const hm=(v)=>{{v=Number(v||0);return `${{String(Math.floor(v/60)).padStart(2,'0')}}:${{String(v%60).padStart(2,'0')}}`;}};const split=c.split_duty?`<br><span style="color:#ffd75e;font-weight:800">SPLIT DUTY · ${{esc(si.station||'')}}</span><br>Ground interval ${{hm(si.ground_break_min)}} · protected break ${{hm(si.protected_break_min)}}<br>FDP extension +${{hm(si.extension_min)}} · basic max ${{hm(si.basic_max_fdp_min)}} → adjusted ${{hm(si.adjusted_max_fdp_min)}} · actual ${{hm(si.actual_fdp_min)}}`:'';showTip(`<b>${{esc(c.label)}} · ${{esc(c.route||'')}}</b><br>${{esc(c.day)}} · ${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(row.registration)}}<br><span style="color:#52bfff">Crew ${{esc(c.crew||'—')}}</span><br>${{esc(c.extra||'')}}${{split}}`,e);}};el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});
    board.appendChild(line);
   }});
   if((data.pilots||[]).length){{
@@ -4550,24 +4561,13 @@ def render_solution_metrics(solution):
     m = solution.get("metrics", {})
     o = solution.get("objectives", {})
 
-    cols = st.columns(4)
+    cols = st.columns(5)
 
-    cols[0].metric(
-        "Total cost",
-        f'€{o.get("total_operational_cost_eur", 0):,.0f}',
-    )
-    cols[1].metric(
-        "Complexity",
-        int(o.get("complexity_score", 0)),
-    )
-    cols[2].metric(
-        "Pilot-days",
-        int(m.get("charged_pilot_days", 0)),
-    )
-    cols[3].metric(
-        "Outstation swaps",
-        len(actual_outstation_swap_events(solution)),
-    )
+    cols[0].metric("Total cost", f'€{o.get("total_operational_cost_eur", 0):,.0f}')
+    cols[1].metric("Complexity", int(o.get("complexity_score", 0)))
+    cols[2].metric("Pilot-days", int(m.get("charged_pilot_days", o.get("charged_pilot_days", 0))))
+    cols[3].metric("Outstation swaps", len(actual_outstation_swap_events(solution)))
+    cols[4].metric("Pilots changed outstation", actual_outstation_changed_pilots(solution))
 
 def _set_gallery_index(index: int, gallery_size: int) -> None:
     if gallery_size <= 0:
