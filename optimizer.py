@@ -96,61 +96,97 @@ def build_tours(missions):
             tours.append((reg,current))
     return sorted(tours,key=lambda x:(x[1][0].departure,x[0]))
 
-def decode(keys,missions,feasible,caps,fos,rng=None):
-    """Crew continuity with exceptional outstation replacement.
+def decode(keys,missions,feasible,caps,fos,avail,rng=None):
+    """Assign one CAPT + FO to each complete aircraft tour.
 
-    Outstation, an incumbent CAPT/FO is always retained when feasible.
-    A replacement is allowed only for a role whose incumbent cannot continue
-    because of availability or overlap. At EBAW/EBLG normal rebalancing is
-    allowed.
+    A tour starts with the first mission after a base handover and ends when the
+    aircraft next arrives at EBAW/EBLG. Crew is selected for the complete tour,
+    so an outstation crew swap cannot be created by the decoder. If no captain
+    or FO can cover the whole tour, the candidate is infeasible instead of
+    inventing an outstation replacement.
     """
     busy={}; counts={p:0 for p in caps+fos}; days={p:set() for p in caps+fos}; assign={}; meta={}
-    by_aircraft={}
-    for m in missions: by_aircraft.setdefault(m.fixed_aircraft,[]).append(m)
     gi=0
 
-    def pick(role,pool,m,incumbent=None):
+    # Keep the previous crew per aircraft so a change between two tours is
+    # reported as a BASE_* swap on the first mission of the new tour.
+    last_crew={}
+
+    def tour_available(pid,tour):
+        # The pilot must be available for the complete period away from base,
+        # including layover days between missions.
+        d=tour[0].departure.date(); end=tour[-1].arrival.date()
+        while d<=end:
+            if avail.get((pid,d),'AVAILABLE') in BLOCKING:
+                return False
+            d+=timedelta(days=1)
+        return True
+
+    def tour_can_assign(pid,tour):
+        if not tour_available(pid,tour):
+            return False
+        # Internal intervals belong to the same tour/crew and therefore do not
+        # conflict with one another. Only compare against already assigned tours.
+        return all(can_assign(pid,m,busy) for m in tour)
+
+    def pick_for_tour(role,pool,tour):
         nonlocal gi
-        options=[p for p in pool if p in feasible[m.id][role] and can_assign(p,m,busy)]
-        if not options: return None
-        if incumbent in options: return incumbent
+        # precompute() remains useful as a quick per-mission eligibility filter;
+        # require the pilot to be feasible on every leg as well as for the whole
+        # away-from-base period.
+        options=[p for p in pool
+                 if all(p in feasible[m.id][role] for m in tour)
+                 and tour_can_assign(p,tour)]
+        if not options:
+            return None
         ranked=sorted(options,key=lambda p:(counts[p],len(days[p]),p))
         gene=keys[gi % len(keys)] if keys else 0.0; gi+=1
         width=max(1,(len(ranked)+1)//2)
         return ranked[min(width-1,int(gene*width))]
 
-    for reg,seq in sorted(by_aircraft.items()):
-        seq=sorted(seq,key=lambda m:(m.departure,m.id))
-        old_c=old_f=None; previous_destination=None
-        for m in seq:
-            at_base=(previous_destination in BASES) if previous_destination is not None else True
-            captain=pick('CAPT',caps,m,None if at_base else old_c)
-            fo=pick('FO',fos,m,None if at_base else old_f)
-            if captain is None or fo is None: return None
+    for reg,tour in build_tours(missions):
+        captain=pick_for_tour('CAPT',caps,tour)
+        fo=pick_for_tour('FO',fos,tour)
+        if captain is None or fo is None:
+            return None
 
-            changed_c=old_c is not None and captain!=old_c
-            changed_f=old_f is not None and fo!=old_f
-            outstation=previous_destination is not None and previous_destination not in BASES
-            if old_c is None:
+        previous=last_crew.get(reg)
+        changed_c=previous is not None and captain!=previous[0]
+        changed_f=previous is not None and fo!=previous[1]
+
+        for i,m in enumerate(tour):
+            assign[m.id]={'captain':captain,'fo':fo}
+            if i>0:
+                action='CONTINUE'
+                handover=None
+                changed=0
+            elif previous is None:
                 action='INITIAL_ATTACH'
+                handover=None
+                changed=0
             elif not changed_c and not changed_f:
                 action='CONTINUE'
-            elif outstation:
-                action=('OUTSTATION_FULL_CREW_SWAP' if changed_c and changed_f
-                        else 'OUTSTATION_CAPT_SWAP' if changed_c else 'OUTSTATION_FO_SWAP')
+                handover=None
+                changed=0
             else:
                 action=('BASE_FULL_CREW_SWAP' if changed_c and changed_f
                         else 'BASE_CAPT_SWAP' if changed_c else 'BASE_FO_SWAP')
+                # By construction the preceding tour ended at a base.
+                handover=m.origin if m.origin in BASES else None
+                changed=int(changed_c)+int(changed_f)
 
-            assign[m.id]={'captain':captain,'fo':fo}
             meta[m.id]={'action':action,
-                        'handover_airport':previous_destination if 'SWAP' in action else None,
-                        'outstation':bool(outstation and (changed_c or changed_f)),
-                        'changed_pilots':int(changed_c)+int(changed_f)}
+                        'handover_airport':handover,
+                        'outstation':False,
+                        'changed_pilots':changed}
+
             for pid in (captain,fo):
                 busy.setdefault(pid,[]).append(duty_interval(m))
-                counts[pid]+=1; days[pid].add(m.departure.date())
-            old_c,old_f=captain,fo; previous_destination=m.destination
+                counts[pid]+=1
+                days[pid].add(m.departure.date())
+
+        last_crew[reg]=(captain,fo)
+
     return assign,counts,days,meta
 
 def score(decoded,missions,pilots,avail,caps,fos):
@@ -254,20 +290,20 @@ def main():
     ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
     a=ap.parse_args(); missions,pilots,avail=load_data(); feasible,caps,fos=precompute(missions,pilots,avail)
     print(f'LEAN CREW GA · missions={len(missions)} fixed aircraft · captains={len(caps)} · FOs={len(fos)}')
-    print('Priority: feasibility -> MIN outstation handovers -> crew balance -> backup coverage -> base handovers')
+    print('Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers')
     archive={}; start=time.perf_counter(); evals=0
     for run in range(a.runs):
         rng=random.Random(a.seed+run*10007); n=max(2,len(missions)*2)
         pop=[]
         for _ in range(a.population):
-            genes=[rng.random() for _ in range(n)]; dec=decode(genes,missions,feasible,caps,fos,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); pop.append({'genes':genes,'decoded':dec,'score':sc}); evals+=1
+            genes=[rng.random() for _ in range(n)]; dec=decode(genes,missions,feasible,caps,fos,avail,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); pop.append({'genes':genes,'decoded':dec,'score':sc}); evals+=1
         for gen in range(a.generations):
             children=[]
             while len(children)<a.population:
                 p1=tournament(pop,rng); p2=tournament(pop,rng); cut=rng.randrange(n) if n else 0; g=p1['genes'][:cut]+p2['genes'][cut:]
                 for _ in range(1+(rng.random()<0.25)):
                     if n: g[rng.randrange(n)]=rng.random()
-                dec=decode(g,missions,feasible,caps,fos,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); children.append({'genes':g,'decoded':dec,'score':sc}); evals+=1
+                dec=decode(g,missions,feasible,caps,fos,avail,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); children.append({'genes':g,'decoded':dec,'score':sc}); evals+=1
             pop=sorted(pop+children,key=lambda x:x['score'])[:a.population]
             if a.verbose and (gen%5==0 or gen==a.generations-1):
                 b=pop[0]['score']; print(f'run={run+1}/{a.runs} gen={gen+1}/{a.generations} outstation={b[0]} balance={b[2]:.3f} backup_shortage={b[3]} base_handovers={b[4]} elapsed={time.perf_counter()-start:.1f}s',flush=True)
@@ -277,8 +313,8 @@ def main():
     save(list(archive.values()),{'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
     if not archive:
         print('NO FEASIBLE CREW SCHEDULE FOUND.')
-        print('Outstation continuity is preferred; a role is replaced only when its incumbent cannot continue.')
-        print('Likely causes: a crew member becomes unavailable mid-tour, or all eligible crews overlap with another tour.')
+        print('Outstation crew continuity is mandatory: one CAPT + FO must cover each complete tour until EBAW/EBLG.')
+        print('Likely causes: no complete crew is available for a full tour, or all eligible crews overlap with another tour.')
         return 2
     best=min(archive.values(),key=lambda s:(s['objectives'].get('outstation_handovers',0),s['objectives']['crew_balance_score'],s['objectives']['backup_shortage_days'],s['objectives']['complexity_score']))
     print(f"DONE · outstation={best['objectives'].get('outstation_handovers',0)} · balance={best['objectives']['crew_balance_score']} · backup shortage={best['objectives']['backup_shortage_days']} · handovers={best['objectives']['complexity_score']} · {time.perf_counter()-start:.1f}s")
