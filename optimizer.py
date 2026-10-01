@@ -251,7 +251,7 @@ def save(solutions,stats):
 
 def main():
     ap=argparse.ArgumentParser(description='Lean GA: fixed missions/aircraft, optimize crew balance and reserve coverage.')
-    ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--respect-fixed-aircraft',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
+    ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
     a=ap.parse_args(); missions,pilots,avail=load_data(); feasible,caps,fos=precompute(missions,pilots,avail)
     print(f'LEAN CREW GA · missions={len(missions)} fixed aircraft · captains={len(caps)} · FOs={len(fos)}')
     print('Priority: feasibility -> MIN outstation handovers -> crew balance -> backup coverage -> base handovers')

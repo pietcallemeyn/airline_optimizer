@@ -185,6 +185,89 @@ def mission_source_name() -> str:
         return "Standard mission set"
 
 
+def load_flight_export_excel(raw: bytes) -> pd.DataFrame:
+    """Convert the standard flight-export XLSX to the app mission schema."""
+    from io import BytesIO
+
+    # The flight export uses two header rows.
+    raw_df = pd.read_excel(BytesIO(raw), header=[0, 1], engine="openpyxl")
+
+    if raw_df.shape[1] < 43:
+        raise ValueError(
+            "This Excel file does not look like the expected flight export."
+        )
+
+    out = []
+    for _, row in raw_df.iterrows():
+        source_mission = row.iloc[1]
+        aircraft = str(
+            row.iloc[3] if pd.notna(row.iloc[3]) else ""
+        ).strip().upper().replace("-", "")
+        dep_date = row.iloc[8]
+        dep_time = row.iloc[9]
+        origin = str(
+            row.iloc[11] if pd.notna(row.iloc[11]) else ""
+        ).strip().upper()
+        destination = str(
+            row.iloc[13] if pd.notna(row.iloc[13]) else ""
+        ).strip().upper()
+        arr_time = row.iloc[16]
+        pax_raw = row.iloc[42]
+
+        if (
+            not aircraft
+            or not origin
+            or not destination
+            or pd.isna(dep_date)
+            or pd.isna(dep_time)
+        ):
+            continue
+
+        dep_day = pd.to_datetime(dep_date, dayfirst=True).date()
+        dep_clock = pd.to_datetime(str(dep_time)).time()
+        departure = pd.Timestamp.combine(dep_day, dep_clock)
+
+        arrival = ""
+        if pd.notna(arr_time) and str(arr_time).strip():
+            arr_clock = pd.to_datetime(str(arr_time)).time()
+            arr_dt = pd.Timestamp.combine(dep_day, arr_clock)
+            if arr_dt <= departure:
+                arr_dt += pd.Timedelta(days=1)
+            arrival = arr_dt.isoformat()
+
+        try:
+            pax = (
+                int(float(pax_raw))
+                if pd.notna(pax_raw) and str(pax_raw).strip()
+                else 0
+            )
+        except (TypeError, ValueError):
+            pax = 0
+
+        # Keep the historical mission-id convention used throughout the app.
+        out.append(
+            {
+                "id": f"M{len(out) + 1:03d}",
+                "origin": origin,
+                "destination": destination,
+                "departure": departure.isoformat(),
+                "arrival": arrival,
+                "pax": pax,
+                "fixed_aircraft": aircraft,
+                "source_mission_number": (
+                    ""
+                    if pd.isna(source_mission)
+                    else str(source_mission)
+                ),
+            }
+        )
+
+    if not out:
+        raise ValueError("No usable flight legs were found in the Excel export.")
+
+    return normalize_missions(pd.DataFrame(out))
+
+
 def load_missions_csv_bytes(raw: bytes) -> pd.DataFrame:
     from io import BytesIO
     df = pd.read_csv(BytesIO(raw), keep_default_na=False)
@@ -462,7 +545,6 @@ def start_optimizer(
     live_every: int,
     verbose: bool,
     debug: bool,
-    respect_fixed_aircraft: bool = False,
 ):
     OUTPUT.mkdir(exist_ok=True)
 
@@ -489,9 +571,6 @@ def start_optimizer(
         "--seed",
         str(seed),
     ]
-
-    if respect_fixed_aircraft:
-        command.append("--respect-fixed-aircraft")
 
     if live:
         command.extend(
@@ -601,6 +680,51 @@ def cost_complexity_front(df: pd.DataFrame) -> pd.DataFrame:
             best_complexity = complexity
 
     return work.loc[keep].copy()
+
+
+
+def _pilot_display_map() -> dict[str, str]:
+    """Map stable internal pilot IDs (C01/F01) to GUI trigrams."""
+    path = PILOTS
+    try:
+        df = pd.read_csv(path, dtype=str).fillna("")
+    except Exception:
+        return {}
+    if "id" not in df.columns:
+        return {}
+    trigram_col = "trigram" if "trigram" in df.columns else None
+    result = {}
+    for _, row in df.iterrows():
+        pid = str(row.get("id", "")).strip()
+        tri = str(row.get(trigram_col, "")).strip().upper() if trigram_col else ""
+        if pid:
+            result[pid] = tri or pid
+    return result
+
+
+def pilot_label(pilot_id) -> str:
+    """GUI-only pilot label; optimizer/storage continue using the internal ID."""
+    if pilot_id is None:
+        return ""
+    pid = str(pilot_id)
+    return _pilot_display_map().get(pid, pid)
+
+
+def _replace_pilot_ids_for_display(value):
+    """Recursively replace known pilot IDs in GUI payloads only."""
+    labels = _pilot_display_map()
+    if isinstance(value, dict):
+        return {
+            k: _replace_pilot_ids_for_display(v)
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [_replace_pilot_ids_for_display(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_replace_pilot_ids_for_display(v) for v in value)
+    if isinstance(value, str) and value in labels:
+        return labels[value]
+    return value
 
 
 def render_results():
@@ -1218,8 +1342,8 @@ def render_mission_demand_timeline(missions: pd.DataFrame, solution: dict | None
             "start": dep.isoformat(),
             "end": arr.isoformat(),
             "arrival_source": "manual" if str(row.get("arrival", "")).strip() else "estimated",
-            "captain": crew.get("captain", ""),
-            "fo": crew.get("fo", ""),
+            "captain": pilot_label(crew.get("captain", "")),
+            "fo": pilot_label(crew.get("fo", "")),
             "crew_aircraft": crew.get("aircraft", ""),
         })
     if not items:
@@ -1311,20 +1435,7 @@ body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-seri
    }}
  }});board.appendChild(line)}})}}
  function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=Math.round(zoom*100)+'%'}}
- let flightDaysRAF=null;
- function scheduleFlightDaysUpdate(){{
-   if(flightDaysRAF!==null)cancelAnimationFrame(flightDaysRAF);
-   flightDaysRAF=requestAnimationFrame(()=>{{
-     flightDaysRAF=null;
-     updateVisibleFlightDays();
-   }});
- }}
- // Recalculate continuously when the actual horizontal timeline viewport moves.
- viewport.addEventListener('scroll',scheduleFlightDaysUpdate,{{passive:true}});
- viewport.addEventListener('scrollend',scheduleFlightDaysUpdate);
- window.addEventListener('resize',scheduleFlightDaysUpdate);
- requestAnimationFrame(updateVisibleFlightDays);
- document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>{{viewport.scrollTo({{left:0,behavior:'smooth'}});scheduleFlightDaysUpdate();setTimeout(scheduleFlightDaysUpdate,350);}};document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
 }})();</script>
 """
     components.html(component_html, height=760, scrolling=False)
@@ -1554,17 +1665,24 @@ def mission_editor():
         st.info(f"Current mission source: **{mission_source_name()}** · {len(missions)} missions")
 
         uploaded = st.file_uploader(
-            "Mission CSV file",
-            type=["csv"],
+            "Mission CSV or flight-export Excel file",
+            type=["csv", "xlsx"],
             key="mission_csv_upload",
-            help="Expected columns: id, origin, destination, departure, arrival, pax. Optional: fixed_aircraft.",
+            help=(
+                "CSV: id, origin, destination, departure, arrival, pax; "
+                "optional fixed_aircraft. XLSX: the standard flight export "
+                "is automatically converted to the mission schema."
+            ),
         )
         preview = None
         preview_errors = []
         missing_airports = []
         if uploaded is not None:
             try:
-                preview = load_missions_csv_bytes(uploaded.getvalue())
+                if uploaded.name.lower().endswith(".xlsx"):
+                    preview = load_flight_export_excel(uploaded.getvalue())
+                else:
+                    preview = load_missions_csv_bytes(uploaded.getvalue())
                 missing_airports = unknown_airport_codes(preview)
                 if missing_airports:
                     st.warning(
@@ -1593,6 +1711,15 @@ def mission_editor():
                 if not preview_errors:
                     st.success(f"Valid mission file: {len(preview)} missions.")
                 st.dataframe(preview.head(12), hide_index=True, width="stretch")
+
+                if uploaded.name.lower().endswith(".xlsx"):
+                    st.download_button(
+                        "Download parsed mission CSV",
+                        data=preview.to_csv(index=False).encode("utf-8"),
+                        file_name="missions_parsed.csv",
+                        mime="text/csv",
+                        key="download_parsed_missions_csv",
+                    )
             except Exception as exc:
                 st.error(f"Could not read mission CSV: {exc}")
 
@@ -1801,8 +1928,6 @@ def _pilot_availability_events(df: pd.DataFrame, pilot_id: str) -> list[dict]:
         if not day:
             continue
         status = str(row.get("status", "AVAILABLE")).strip().upper() or "AVAILABLE"
-        if status not in PILOT_AVAILABILITY_COLORS:
-            status = "AVAILABLE"
         note = str(row.get("note", "")).strip()
         exceptions[day] = (status, note)
 
@@ -1811,7 +1936,9 @@ def _pilot_availability_events(df: pd.DataFrame, pilot_id: str) -> list[dict]:
     for stamp in pd.date_range(start_day, end_day, freq="D"):
         day = stamp.date().isoformat()
         status, note = exceptions.get(day, ("AVAILABLE", ""))
-        palette = PILOT_AVAILABILITY_COLORS[status]
+        palette = PILOT_AVAILABILITY_COLORS.get(
+            status, PILOT_AVAILABILITY_COLORS["UNAVAILABLE"]
+        )
         events.append({
             "id": f"{pilot_id}:{day}:background",
             "start": day,
@@ -2230,6 +2357,67 @@ def _pilot_solution_day_details(solution: dict | None, pilot_id: str, day: date)
     result["away_or_attached"] = not bool(movements)
     return result
 
+def parse_pilot_availability_excel(raw: bytes, pilots_df: pd.DataFrame):
+    """Parse crew agenda XLSX to pilot_availability.csv format."""
+    from io import BytesIO
+    agenda = pd.read_excel(BytesIO(raw), header=1, engine="openpyxl")
+    agenda.columns = [str(c).strip() for c in agenda.columns]
+    required = ["Resource", "Category", "Start (z)", "End (z)", "Remarks"]
+    missing = [c for c in required if c not in agenda.columns]
+    if missing:
+        raise ValueError("Missing Excel columns: " + ", ".join(missing))
+    if "id" not in pilots_df.columns or "trigram" not in pilots_df.columns:
+        raise ValueError("pilots.csv must contain 'id' and 'trigram' columns.")
+    trigram_to_id = {
+        str(r["trigram"]).strip().upper(): str(r["id"]).strip()
+        for _, r in pilots_df.fillna("").iterrows()
+        if str(r.get("trigram", "")).strip() and str(r.get("id", "")).strip()
+    }
+    unknown, rows = set(), []
+    for _, r in agenda.fillna("").iterrows():
+        resource = str(r.get("Resource", "")).strip()
+        if not resource:
+            continue
+        trigram = resource[:3].upper()
+        pilot_id = trigram_to_id.get(trigram)
+        if not pilot_id:
+            unknown.add(trigram)
+            continue
+        start = pd.to_datetime(r.get("Start (z)"), dayfirst=True, errors="coerce")
+        end = pd.to_datetime(r.get("End (z)"), dayfirst=True, errors="coerce")
+        if pd.isna(start) or pd.isna(end):
+            continue
+        if end < start:
+            start, end = end, start
+        category = str(r.get("Category", "")).strip()
+        category_upper = category.upper()
+
+        # CAT is a flight activity, not an availability restriction.
+        # It must therefore create no blocked pilot-days.
+        if category_upper == "CAT":
+            continue
+
+        # Every other agenda entry is, for now, a full-day hard block.
+        # Preserve the original category + remarks in note for GUI context,
+        # while keeping optimizer-facing status deliberately simple.
+        remarks = str(r.get("Remarks", "")).strip()
+        note = category
+        if remarks:
+            note = f"{category} - {remarks}" if category else remarks
+
+        for day in pd.date_range(start.normalize(), end.normalize(), freq="D"):
+            rows.append({
+                "pilot_id": pilot_id,
+                "date": day.date().isoformat(),
+                "status": "UNAVAILABLE",
+                "note": note,
+            })
+    out = pd.DataFrame(rows, columns=["pilot_id", "date", "status", "note"])
+    if not out.empty:
+        out = out.drop_duplicates(["pilot_id", "date"], keep="last").sort_values(["pilot_id", "date"]).reset_index(drop=True)
+    return out, sorted(unknown)
+
+
 def pilot_planning_page():
     _ensure_pilot_planning_files()
     st.subheader("Pilot planning")
@@ -2262,19 +2450,31 @@ def pilot_planning_page():
     with availability_tab:
         availability = load_csv(PILOT_AVAILABILITY)
 
-        with st.expander("Load availability CSV", expanded=False):
+        with st.expander("Load availability CSV / crew agenda Excel", expanded=False):
             st.caption(
-                "Replace the active pilot availability calendar with another CSV. "
-                "Expected columns: pilot_id, date, status, note. Missing rows mean AVAILABLE."
+                "Upload pilot_availability.csv or a crew agenda XLSX. For Excel, the first 3 letters "
+                "of Resource are matched to pilots.csv trigram. CAT entries are ignored; every other "
+                "agenda entry blocks the full calendar day as UNAVAILABLE. Category and Remarks are kept in note."
             )
             uploaded_availability = st.file_uploader(
-                "Pilot availability CSV",
-                type=["csv"],
+                "Pilot availability CSV or crew agenda Excel",
+                type=["csv", "xlsx"],
                 key="pilot_availability_csv_upload",
             )
             if uploaded_availability is not None:
                 try:
-                    uploaded_df = pd.read_csv(uploaded_availability, keep_default_na=False)
+                    unknown_trigrams = []
+                    is_excel = uploaded_availability.name.lower().endswith(".xlsx")
+                    if is_excel:
+                        pilots_for_import = pd.read_csv(PILOTS, dtype=str, keep_default_na=False)
+                        uploaded_df, unknown_trigrams = parse_pilot_availability_excel(
+                            uploaded_availability.getvalue(), pilots_for_import
+                        )
+                        if unknown_trigrams:
+                            st.warning("Ignored unknown crew trigrams: " + ", ".join(unknown_trigrams))
+                    else:
+                        uploaded_df = pd.read_csv(uploaded_availability, keep_default_na=False)
+
                     required = ["pilot_id", "date", "status", "note"]
                     missing_cols = [c for c in required if c not in uploaded_df.columns]
                     errors = []
@@ -2286,52 +2486,52 @@ def pilot_planning_page():
                         uploaded_df["date"] = uploaded_df["date"].astype(str).str.strip()
                         uploaded_df["status"] = uploaded_df["status"].astype(str).str.strip().str.upper()
                         uploaded_df["note"] = uploaded_df["note"].astype(str)
-
                         known_pilots = set(pilot_ids)
                         unknown_pilots = sorted(set(uploaded_df["pilot_id"]) - known_pilots - {""})
                         if unknown_pilots:
                             errors.append("Unknown pilot IDs: " + ", ".join(unknown_pilots))
-
                         allowed_statuses = {"AVAILABLE", "UNAVAILABLE", "LEAVE", "TRAINING"}
                         bad_statuses = sorted(set(uploaded_df["status"]) - allowed_statuses)
                         if bad_statuses:
                             errors.append("Unknown statuses: " + ", ".join(bad_statuses))
-
                         parsed_dates = pd.to_datetime(uploaded_df["date"], format="%Y-%m-%d", errors="coerce")
                         bad_dates = uploaded_df.loc[parsed_dates.isna(), "date"].drop_duplicates().tolist()
                         if bad_dates:
                             errors.append("Invalid dates (use YYYY-MM-DD): " + ", ".join(map(str, bad_dates[:10])))
-
                         duplicate_mask = uploaded_df.duplicated(["pilot_id", "date"], keep=False)
                         if duplicate_mask.any():
                             examples = uploaded_df.loc[duplicate_mask, ["pilot_id", "date"]].drop_duplicates().head(10)
-                            errors.append(
-                                "Duplicate pilot/date rows: "
-                                + ", ".join(f"{r.pilot_id} {r.date}" for r in examples.itertuples())
-                            )
-
+                            errors.append("Duplicate pilot/date rows: " + ", ".join(f"{r.pilot_id} {r.date}" for r in examples.itertuples()))
                     if errors:
                         st.error("This availability file cannot be activated yet:\n\n" + "\n\n".join(errors))
                     else:
-                        # AVAILABLE is the model default, so keep the stored file compact.
                         active_upload = uploaded_df[uploaded_df["status"] != "AVAILABLE"].copy()
-                        st.success(
-                            f"Valid availability file: {len(active_upload)} blocked pilot-days "
-                            f"for {active_upload['pilot_id'].nunique()} pilots."
-                        )
+                        st.success(f"Valid availability file: {len(active_upload)} blocked pilot-days for {active_upload['pilot_id'].nunique()} pilots.")
                         st.dataframe(active_upload.head(30), width="stretch", hide_index=True)
-                        if st.button("Use uploaded availability CSV", type="primary", key="activate_pilot_availability_csv"):
+                        if is_excel:
+                            # XLSX agenda imports are used immediately as the active
+                            # pilot_availability.csv. Guard with a content fingerprint
+                            # because Streamlit keeps the uploaded file mounted after rerun.
+                            import hashlib
+                            upload_fingerprint = hashlib.sha256(uploaded_availability.getvalue()).hexdigest()
+                            if st.session_state.get("last_pilot_agenda_import") != upload_fingerprint:
+                                save_csv(active_upload, PILOT_AVAILABILITY)
+                                st.session_state["last_pilot_agenda_import"] = upload_fingerprint
+                                st.session_state["pilot_availability_table_revision"] = int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
+                                _reset_pilot_availability_calendar()
+                                st.session_state["pilot_availability_upload_notice"] = (
+                                    f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}. "
+                                    "CAT entries were ignored."
+                                )
+                                st.rerun()
+                        elif st.button("Use uploaded availability", type="primary", key="activate_pilot_availability_csv"):
                             save_csv(active_upload, PILOT_AVAILABILITY)
-                            st.session_state["pilot_availability_table_revision"] = (
-                                int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
-                            )
+                            st.session_state["pilot_availability_table_revision"] = int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
                             _reset_pilot_availability_calendar()
-                            st.session_state["pilot_availability_upload_notice"] = (
-                                f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}."
-                            )
+                            st.session_state["pilot_availability_upload_notice"] = f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}."
                             st.rerun()
                 except Exception as exc:
-                    st.error(f"Could not read this CSV: {exc}")
+                    st.error(f"Could not read this availability file: {exc}")
 
         upload_notice = st.session_state.pop("pilot_availability_upload_notice", None)
         if upload_notice:
@@ -2854,32 +3054,6 @@ def optimizer_page():
     if debug:
         verbose = True
 
-    # Aircraft assignment mode must be defined before the Start optimization
-    # button uses it. Keep this outside live_optimizer_terminal(), because that
-    # fragment has its own execution scope.
-    fixed_count = 0
-    if "fixed_aircraft" in missions.columns:
-        fixed_values = missions["fixed_aircraft"].fillna("").astype(str).str.strip()
-        fixed_count = int((fixed_values != "").sum())
-
-    respect_fixed_aircraft = st.checkbox(
-        "Respect pre-assigned aircraft from mission CSV",
-        value=False,
-        disabled=(fixed_count == 0),
-        help=(
-            "ON: missions with fixed_aircraft stay on that registration. "
-            "OFF: fixed_aircraft is ignored and the optimizer assigns aircraft freely."
-        ),
-        key="optimizer_respect_fixed_aircraft",
-    )
-    if fixed_count:
-        st.caption(f"{fixed_count} mission(s) currently contain a fixed_aircraft assignment.")
-    else:
-        st.caption(
-            "The active mission CSV contains no fixed_aircraft assignments; "
-            "aircraft will be optimized freely."
-        )
-
     running, pid = optimizer_status()
 
     status_cols = st.columns(
@@ -2910,7 +3084,6 @@ def optimizer_page():
                 int(live_every),
                 bool(verbose),
                 bool(debug),
-                bool(respect_fixed_aircraft),
             )
 
             st.success(
@@ -2959,6 +3132,11 @@ def timeline_data():
     estimated_missions_path = DATA / "missions_with_estimates.csv"
     raw_missions_path = DATA / "missions.csv"
 
+    # Load the estimated file for calculated timing fields, but keep the
+    # currently active missions.csv authoritative for user-entered metadata
+    # such as pax. missions_with_estimates.csv can be stale after a new CSV/XLSX
+    # import and was the reason the Results board could show "0 pax" while the
+    # Missions tab showed the correct value.
     missions = viz.load_csv_dict(
         (
             estimated_missions_path
@@ -2967,6 +3145,25 @@ def timeline_data():
         ),
         "id",
     )
+
+    if raw_missions_path.exists():
+        raw_missions = viz.load_csv_dict(raw_missions_path, "id")
+        for mid, raw_row in raw_missions.items():
+            if mid not in missions:
+                missions[mid] = dict(raw_row)
+                continue
+
+            # These fields belong to the active mission input and must never be
+            # taken from an older estimates file.
+            for key in (
+                "pax",
+                "origin",
+                "destination",
+                "fixed_aircraft",
+                "source_mission_number",
+            ):
+                if key in raw_row:
+                    missions[mid][key] = raw_row[key]
 
     airports = viz.load_csv_dict(
         DATA / "airports.csv",
@@ -3464,6 +3661,39 @@ def actual_outstation_swap_events(solution, home_bases=("EBAW", "EBLG")):
     return events
 
 
+def _mission_lookup(missions) -> dict:
+    """Return mission data keyed by mission id, regardless of stored shape."""
+    if missions is None:
+        return {}
+
+    if isinstance(missions, pd.DataFrame):
+        if "id" not in missions.columns:
+            return {}
+        return {
+            str(row["id"]): row.to_dict()
+            for _, row in missions.iterrows()
+        }
+
+    if isinstance(missions, list):
+        return {
+            str(row.get("id")): row
+            for row in missions
+            if isinstance(row, dict) and row.get("id") is not None
+        }
+
+    if isinstance(missions, dict):
+        # Optimizer snapshots may either already be keyed by mission id or be
+        # a dict-like collection of mission records.
+        if all(isinstance(v, dict) for v in missions.values()):
+            return {
+                str(v.get("id", k)): v
+                for k, v in missions.items()
+            }
+        return {str(k): v for k, v in missions.items()}
+
+    return {}
+
+
 def operations_board_payload(
     solution,
     missions,
@@ -3474,8 +3704,35 @@ def operations_board_payload(
     Prefer explicit aircraft_movements so the web board is always identical to
     the schedule that passed the hard feasibility checks.
     """
-    if solution.get("mission_snapshot"):
-        missions = solution["mission_snapshot"]
+    # The solution snapshot is authoritative for the solved schedule, but older
+    # optimizer snapshots may not contain the current mission metadata (notably
+    # pax). Keep both lookups: use the snapshot for schedule-related fields and
+    # enrich display metadata from the active Missions dataset by mission id.
+    active_mission_by_id = _mission_lookup(missions)
+
+    # GUI pax is always authoritative from the currently active missions.csv.
+    active_pax_by_id = {}
+    try:
+        _pax_df = pd.read_csv(MISSIONS, dtype=str).fillna("")
+        if "id" in _pax_df.columns and "pax" in _pax_df.columns:
+            active_pax_by_id = {str(row["id"]).strip(): row["pax"] for _, row in _pax_df.iterrows()}
+    except Exception:
+        active_pax_by_id = {}
+    snapshot = solution.get("mission_snapshot")
+    mission_by_id = _mission_lookup(snapshot) if snapshot else active_mission_by_id
+
+    if snapshot:
+        for mid, active_row in active_mission_by_id.items():
+            if mid not in mission_by_id:
+                mission_by_id[mid] = dict(active_row)
+                continue
+            snap_row = mission_by_id[mid]
+            if isinstance(snap_row, dict) and isinstance(active_row, dict):
+                # GUI metadata should reflect the mission CSV currently loaded.
+                # Do not alter the solution's timing/aircraft assignment.
+                for key in ("pax", "source_mission_number"):
+                    if key in active_row and str(active_row.get(key, "")).strip() != "":
+                        snap_row[key] = active_row[key]
 
     actions = {
         action.get("mission"): action
@@ -3521,8 +3778,11 @@ def operations_board_payload(
                 "fo",
                 "?",
             )
+            # GUI display only: keep C01/F01 internally, show trigrams everywhere.
+            captain_display = pilot_label(captain) if captain != "?" else "?"
+            fo_display = pilot_label(fo) if fo != "?" else "?"
             crew = (
-                f"{captain}/{fo}"
+                f"{captain_display}/{fo_display}"
             )
 
             if movement[
@@ -3531,9 +3791,10 @@ def operations_board_payload(
                 mid = movement[
                     "mission"
                 ]
-                mission = missions[
-                    mid
-                ]
+                # Do not assume mission_snapshot is a dict. Older/newer
+                # optimizer outputs can store it as a list, while the active
+                # CSV may also differ from the solution that is being viewed.
+                mission = mission_by_id.get(str(mid), {})
                 action = actions.get(
                     mid,
                     {},
@@ -3579,7 +3840,7 @@ def operations_board_payload(
                     "end_iso": end.isoformat(),
                     "crew": crew,
                     "extra": (
-                        f'{int(mission["pax"])} pax'
+                        f'{int(float(active_pax_by_id.get(str(mid), 0) or 0))} pax'
                     ),
                     "fixed": bool(str(mission.get("fixed_aircraft", "")).strip()),
                     "swap": swap,
@@ -3923,7 +4184,7 @@ def operations_board_payload(
                         "day": day,
                     })
             cards.sort(key=lambda x: x.get("start_iso", ""))
-            pilot_rows.append({"id": pid, "name": name, "role": role, "cards": cards})
+            pilot_rows.append({"id": pid, "display": pilot_label(pid), "name": name, "role": role, "cards": cards})
 
     role_order = {"CAPT": 0, "CAPTAIN": 0, "FO": 1, "F/O": 1, "FIRST OFFICER": 1}
     pilot_rows.sort(key=lambda r: (role_order.get(r["role"], 9), r["name"] or r["id"]))
@@ -4057,10 +4318,10 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
   }});
   if((data.pilots||[]).length){{
     const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep);
-    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.name||p.id)}}</b><span>${{esc(p.role)}} · ${{esc(p.id)}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
+    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.display||p.id)}}</b><span>${{esc(p.role)}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
       (p.cards||[]).forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('div');let cls='other';if(c.kind==='crewmission')cls='mission';else if(c.status==='UNAVAILABLE')cls='unavailable';else if(c.status==='LEAVE')cls='leave';else if(c.status==='TRAINING')cls='training';el.className=`crew-block ${{cls}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=c.kind==='availability'?`${{widthPct(c.start_iso,c.end_iso)}}%`:`max(7px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;
         if(c.kind==='crewmission')el.innerHTML=`<div class="cb-title">${{esc(c.label)}} · ${{esc(c.aircraft)}}</div><div class="cb-meta">${{esc(c.route)}}</div>`;else el.innerHTML=`<div class="cb-title">${{esc(c.label)}}</div><div class="cb-meta">${{esc(c.note||'')}}</div>`;
-        el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.name||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}}`:`<b>${{esc(p.name||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
+        el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.display||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}}`:`<b>${{esc(p.display||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
   }}
  }}
  function updateVisibleFlightDays(){{
@@ -4571,9 +4832,20 @@ _NAV_ITEMS = [
     ("Results", "▤"),
 ]
 
+_NAV_LABELS = [label for label, _ in _NAV_ITEMS]
+_query_page = st.query_params.get("page")
+if _query_page in _NAV_LABELS and st.session_state.get("navigation_radio") != _query_page:
+    st.session_state["navigation_radio"] = _query_page
+
+def _sidebar_navigation_changed():
+    selected = st.session_state.get("navigation_radio", _NAV_LABELS[0])
+    st.query_params["page"] = selected
+
 page = st.sidebar.radio(
     "Navigation",
-    [label for label, _ in _NAV_ITEMS],
+    _NAV_LABELS,
+    key="navigation_radio",
+    on_change=_sidebar_navigation_changed,
 )
 
 st.markdown(
@@ -4638,10 +4910,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Query-param links keep navigation usable even while the sidebar itself is hidden.
-_active_page = st.query_params.get("page", page)
-if _active_page in [label for label, _ in _NAV_ITEMS] and _active_page != page:
-    page = _active_page
+# Sidebar radio and collapsed icon rail share the same ?page= state.
 
 _icon_links = []
 for _label, _icon in _NAV_ITEMS:

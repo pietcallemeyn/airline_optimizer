@@ -1,70 +1,133 @@
 pilot_id,date,status,note
-C01,2026-09-01,UNAVAILABLE,Local day off
-C01,2026-09-02,UNAVAILABLE,Local day off
-C01,2026-09-03,UNAVAILABLE,Local day off
-C01,2026-09-08,UNAVAILABLE,Local day off
-C01,2026-09-15,UNAVAILABLE,Local day off
-C01,2026-09-16,UNAVAILABLE,Local day off
-C02,2026-09-01,UNAVAILABLE,Local day off
-C02,2026-09-02,UNAVAILABLE,Local day off
-C02,2026-09-05,UNAVAILABLE,Local day off
-C02,2026-09-13,UNAVAILABLE,Local day off
-C03,2026-09-02,UNAVAILABLE,Local day off
-C03,2026-09-04,UNAVAILABLE,Local day off
-C03,2026-09-07,UNAVAILABLE,Local day off
-C03,2026-09-15,UNAVAILABLE,Local day off
-C04,2026-09-08,UNAVAILABLE,Air Force related.
-C04,2026-09-11,UNAVAILABLE,Formationteam The Victors - airshow Jersey en Sanicole. TBC
-C04,2026-09-12,UNAVAILABLE,Formationteam The Victors - airshow Jersey en Sanicole. TBC
-C04,2026-09-13,UNAVAILABLE,Formationteam The Victors - airshow Jersey en Sanicole. TBC
-C05,2026-09-10,UNAVAILABLE,Unavailable
-C05,2026-09-11,UNAVAILABLE,Unavailable
-C05,2026-09-12,UNAVAILABLE,Unavailable
-C05,2026-09-13,UNAVAILABLE,Unavailable
-C07,2026-09-09,UNAVAILABLE,Unavailable
-C07,2026-09-14,UNAVAILABLE,Medical
-C07,2026-09-15,UNAVAILABLE,Unavailable
-C07,2026-09-16,UNAVAILABLE,Unavailable
-C07,2026-09-17,UNAVAILABLE,Unavailable
-C07,2026-09-18,UNAVAILABLE,Unavailable
-C07,2026-09-19,UNAVAILABLE,Unavailable
-C07,2026-09-20,UNAVAILABLE,Unavailable
-C07,2026-09-21,UNAVAILABLE,Unavailable
-C07,2026-09-22,UNAVAILABLE,Unavailable
-C07,2026-09-23,UNAVAILABLE,Unavailable
-F01,2026-08-28,UNAVAILABLE,Unavailable
-F01,2026-08-29,UNAVAILABLE,Unavailable
-F01,2026-08-30,UNAVAILABLE,Unavailable
-F01,2026-08-31,UNAVAILABLE,Unavailable
-F01,2026-09-01,UNAVAILABLE,Unavailable
-F01,2026-09-02,UNAVAILABLE,Local day off
-F01,2026-09-03,UNAVAILABLE,Local day off
-F01,2026-09-04,UNAVAILABLE,Unavailable
-F01,2026-09-05,UNAVAILABLE,Unavailable
-F01,2026-09-06,UNAVAILABLE,Unavailable
-F01,2026-09-12,UNAVAILABLE,Unavailable
-F02,2026-09-07,UNAVAILABLE,Local day off
-F02,2026-09-11,UNAVAILABLE,Local day off
-F02,2026-09-15,UNAVAILABLE,Local day off
-F03,2026-09-07,UNAVAILABLE,Local day off
-F03,2026-09-08,UNAVAILABLE,Local day off
-F03,2026-09-09,UNAVAILABLE,Local day off
-F03,2026-09-10,UNAVAILABLE,Local day off
-F03,2026-09-11,UNAVAILABLE,Local day off
-F03,2026-09-12,UNAVAILABLE,Local day off
-F03,2026-09-13,UNAVAILABLE,Local day off
-F04,2026-09-03,UNAVAILABLE,Local day off
-F04,2026-09-04,UNAVAILABLE,Local day off
-F04,2026-09-05,UNAVAILABLE,Local day off
-F04,2026-09-06,UNAVAILABLE,Fixed
-F04,2026-09-07,UNAVAILABLE,Unavailable
-F05,2026-09-05,UNAVAILABLE,Local day off
-F05,2026-09-10,UNAVAILABLE,Local day off
-F05,2026-09-11,UNAVAILABLE,Local day off
-F05,2026-09-12,UNAVAILABLE,Local day off
-F05,2026-09-14,UNAVAILABLE,Local day off
-F05,2026-09-15,UNAVAILABLE,Local day off
-F06,2026-09-05,UNAVAILABLE,Local day off
-F06,2026-09-06,UNAVAILABLE,Local day off
-F06,2026-09-12,UNAVAILABLE,Local day off
-F06,2026-09-13,UNAVAILABLE,Local day off
+C01,2026-11-01,UNAVAILABLE,Holiday BE
+C01,2026-11-02,UNAVAILABLE,Vacation
+C01,2026-11-10,UNAVAILABLE,Base training
+C01,2026-11-17,UNAVAILABLE,Base training
+C01,2026-11-18,UNAVAILABLE,"Base training - Training for GPU : lpc , opc, uprt, lvto , ehsq Training for WOS : lpc, opc , lvto , uprt; ehsq"
+C01,2026-11-19,UNAVAILABLE,General
+C01,2026-11-28,UNAVAILABLE,Rather Not
+C02,2026-11-01,UNAVAILABLE,Unavailable - Verlof
+C02,2026-11-02,UNAVAILABLE,Unavailable - Verlof
+C02,2026-11-03,UNAVAILABLE,Unavailable - Verlof
+C02,2026-11-04,UNAVAILABLE,Unavailable - Verlof
+C02,2026-11-05,UNAVAILABLE,Unavailable - Verlof
+C02,2026-11-06,UNAVAILABLE,Base training
+C02,2026-11-08,UNAVAILABLE,Unavailable
+C02,2026-11-11,UNAVAILABLE,Unavailable
+C02,2026-11-16,UNAVAILABLE,Unavailable - Installation thuisbatterij
+C02,2026-11-25,UNAVAILABLE,Unavailable
+C02,2026-11-26,UNAVAILABLE,Unavailable
+C03,2026-11-01,UNAVAILABLE,Unavailable
+C03,2026-11-02,UNAVAILABLE,Unavailable
+C03,2026-11-03,UNAVAILABLE,Unavailable
+C03,2026-11-04,UNAVAILABLE,Unavailable
+C03,2026-11-05,UNAVAILABLE,Unavailable
+C03,2026-11-06,UNAVAILABLE,Unavailable
+C03,2026-11-07,UNAVAILABLE,Unavailable
+C03,2026-11-08,UNAVAILABLE,Unavailable
+C03,2026-11-09,UNAVAILABLE,Unavailable
+C03,2026-11-10,UNAVAILABLE,Unavailable
+C03,2026-11-11,UNAVAILABLE,Unavailable
+C03,2026-11-12,UNAVAILABLE,Unavailable - Tandarts
+C03,2026-11-13,UNAVAILABLE,Unavailable
+C03,2026-11-14,UNAVAILABLE,Unavailable
+C04,2026-11-01,UNAVAILABLE,General
+C04,2026-11-02,UNAVAILABLE,Base training
+C04,2026-11-03,UNAVAILABLE,"Base training - Training for BJO : opc, lvto , uprt training for CGR : opc , lvto , uprt"
+C04,2026-11-04,UNAVAILABLE,General
+C04,2026-11-05,UNAVAILABLE,General
+C04,2026-11-16,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-17,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-18,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-19,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-20,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-21,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-22,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-23,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-24,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-25,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-26,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-27,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-28,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-29,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C04,2026-11-30,UNAVAILABLE,Rather Not - But a min of 3 days rostered during this period anywwy.
+C05,2026-11-01,UNAVAILABLE,Base training - Ground course
+C05,2026-11-03,UNAVAILABLE,Base training - FSTD
+C05,2026-11-04,UNAVAILABLE,Base training - FSTD
+C05,2026-11-05,UNAVAILABLE,Base training - FSTD
+C05,2026-11-06,UNAVAILABLE,Base training - FSTD
+C05,2026-11-08,UNAVAILABLE,Base training - FSTD
+C05,2026-11-09,UNAVAILABLE,Base training - FSTD
+C05,2026-11-10,UNAVAILABLE,Base training - FSTD
+C05,2026-11-13,UNAVAILABLE,Base training - LPC/OPC
+C05,2026-11-15,UNAVAILABLE,Base training - Diffrence course
+C05,2026-11-16,UNAVAILABLE,Base training - Diffrence course
+C05,2026-11-17,UNAVAILABLE,General
+C05,2026-11-20,UNAVAILABLE,Unavailable
+C05,2026-11-21,UNAVAILABLE,Unavailable
+C05,2026-11-22,UNAVAILABLE,Unavailable
+C05,2026-11-29,UNAVAILABLE,Unavailable
+C06,2026-11-02,UNAVAILABLE,General
+C06,2026-11-06,UNAVAILABLE,General
+C07,2026-11-04,UNAVAILABLE,General
+C07,2026-11-05,UNAVAILABLE,FSTD+LVTO
+C07,2026-11-06,UNAVAILABLE,General
+C07,2026-11-10,UNAVAILABLE,Base training
+C07,2026-11-17,UNAVAILABLE,Base training
+C07,2026-11-18,UNAVAILABLE,"Base training - Training for GPU : lpc , opc, uprt, lvto , ehsq Training for WOS : lpc, opc , lvto , uprt; ehsq"
+C07,2026-11-19,UNAVAILABLE,General
+C07,2026-11-26,UNAVAILABLE,Unavailable - Tandarts
+C08,2026-11-05,UNAVAILABLE,Office duty - Teams meeting KMAR
+C08,2026-11-06,UNAVAILABLE,General
+C08,2026-11-08,UNAVAILABLE,General
+C08,2026-11-09,UNAVAILABLE,Base training
+C08,2026-11-10,UNAVAILABLE,Base training
+C08,2026-11-11,UNAVAILABLE,General
+C08,2026-11-21,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-22,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-23,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-24,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-25,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-26,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-27,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-28,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-29,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+C08,2026-11-30,UNAVAILABLE,Unavailable - As agreed every last 10 days of the month not available for flying duties
+F01,2026-11-01,UNAVAILABLE,General
+F01,2026-11-02,UNAVAILABLE,Base training
+F01,2026-11-03,UNAVAILABLE,"Base training - Training for BJO : opc, lvto , uprt training for CGR : opc , lvto , uprt"
+F01,2026-11-04,UNAVAILABLE,General
+F01,2026-11-05,UNAVAILABLE,General
+F01,2026-11-28,UNAVAILABLE,Local day off
+F01,2026-11-29,UNAVAILABLE,Local day off
+F01,2026-11-30,UNAVAILABLE,Vacation
+F01,2026-12-01,UNAVAILABLE,Vacation
+F01,2026-12-02,UNAVAILABLE,Vacation
+F01,2026-12-03,UNAVAILABLE,Vacation
+F01,2026-12-04,UNAVAILABLE,Vacation
+F02,2026-11-02,UNAVAILABLE,General
+F02,2026-11-08,UNAVAILABLE,General
+F02,2026-11-09,UNAVAILABLE,Base training
+F02,2026-11-10,UNAVAILABLE,Base training
+F02,2026-11-11,UNAVAILABLE,General
+F02,2026-11-12,UNAVAILABLE,Local day off
+F02,2026-11-13,UNAVAILABLE,Local day off
+F02,2026-11-14,UNAVAILABLE,Local day off
+F02,2026-11-15,UNAVAILABLE,Local day off
+F03,2026-11-02,UNAVAILABLE,Unavailable
+F03,2026-11-03,UNAVAILABLE,Unavailable
+F03,2026-11-04,UNAVAILABLE,Unavailable
+F03,2026-11-05,UNAVAILABLE,Unavailable
+F03,2026-11-06,UNAVAILABLE,Unavailable
+F03,2026-11-07,UNAVAILABLE,Unavailable
+F03,2026-11-08,UNAVAILABLE,Unavailable
+F03,2026-11-09,UNAVAILABLE,Unavailable
+F03,2026-11-25,UNAVAILABLE,Unavailable
+F04,2026-11-04,UNAVAILABLE,"CBT Duty - ""Planned initially by Training. Can be rescheduled by crewing if required. Not during LDO or 36hours rest. Must remain between 01/10 and 31/12."""
+F04,2026-11-06,UNAVAILABLE,General
+F05,2026-11-10,UNAVAILABLE,Base training
+F05,2026-11-21,UNAVAILABLE,General
+F05,2026-11-22,UNAVAILABLE,Base training
+F05,2026-11-23,UNAVAILABLE,Base training
+F05,2026-11-24,UNAVAILABLE,"Base training - Training for ADJ : opc,lpc, lvto , uprt , ehsq Training for PCA : opc , lpc, lvto , uprt"
+F05,2026-11-25,UNAVAILABLE,General
