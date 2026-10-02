@@ -44,8 +44,6 @@ AIRPORTS = DATA / "airports.csv"
 AIRCRAFT = DATA / "aircraft.csv"
 PILOTS = DATA / "pilots.csv"
 PILOT_AVAILABILITY = DATA / "pilot_availability.csv"
-PILOT_RULES = DATA / "pilot_rules.csv"
-PILOT_MONTHLY_STATE = DATA / "pilot_monthly_state.csv"
 
 PID_FILE = OUTPUT / "gui_optimizer.pid"
 LOG_FILE = OUTPUT / "gui_optimizer.log"
@@ -57,7 +55,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
 
 def load_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -515,6 +512,22 @@ def read_pid() -> int | None:
 def process_running(pid: int | None) -> bool:
     if pid is None:
         return False
+
+    # The optimizer is launched as a child of the Streamlit process.  A child
+    # that has already exited can remain as a zombie until it is reaped;
+    # os.kill(pid, 0) still succeeds for such a process and used to make the
+    # GUI show "Running" after optimizer.py had printed DONE.
+    try:
+        waited_pid, _ = os.waitpid(pid, os.WNOHANG)
+        if waited_pid == pid:
+            return False
+    except ChildProcessError:
+        # Not our child (for example after a Streamlit restart); fall back to
+        # the normal existence check below.
+        pass
+    except (AttributeError, OSError):
+        # Keep the fallback portable on platforms without waitpid/WNOHANG.
+        pass
 
     try:
         os.kill(pid, 0)
@@ -1434,8 +1447,21 @@ body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-seri
      }}
    }}
  }});board.appendChild(line)}})}}
- function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=Math.round(zoom*100)+'%'}}
- document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
+ function setZoom(z,anchorX=null){{
+   const oldZoom=zoom;
+   const labelWidth=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--label-w'))||0;
+   const oldTimelineWidth=Math.max(1,board.scrollWidth-labelWidth);
+   const anchorTimelineX=anchorX===null?null:Math.max(0,viewport.scrollLeft+anchorX-labelWidth);
+   const anchorRatio=anchorTimelineX===null?null:anchorTimelineX/oldTimelineWidth;
+   zoom=Math.max(.08,Math.min(3,z));
+   document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);
+   document.getElementById('zoomTxt').textContent=Math.round(zoom*100)+'%';
+   if(anchorRatio!==null && zoom!==oldZoom){{
+     const newTimelineWidth=Math.max(1,board.scrollWidth-labelWidth);
+     viewport.scrollLeft=Math.max(0,labelWidth+anchorRatio*newTimelineWidth-anchorX);
+   }}
+ }}
+ document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>viewport.scrollTo({{left:0,behavior:'smooth'}});document.getElementById('fit').onclick=()=>{{const labelWidth=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--label-w'))||0;const avail=Math.max(1,viewport.clientWidth-labelWidth);setZoom(avail/(data.dates.length*baseDayW));viewport.scrollLeft=0}};viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();const rect=viewport.getBoundingClientRect();setZoom(zoom*(e.deltaY<0?1.1:.9),e.clientX-rect.left);}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX}}}},{{passive:false}});render();setZoom(1);
 }})();</script>
 """
     components.html(component_html, height=760, scrolling=False)
@@ -1460,229 +1486,88 @@ def mission_editor():
     elif st.session_state.pop("missions_changed_notice", False):
         st.info("Mission planning saved.")
 
-    timeline_tab, calendar_tab, json_tab, paste_tab, table_tab = st.tabs(
-        ["Timeline", "Calendar", "Load CSV", "Bulk import", "Table"]
+    timeline_tab, xls_tab, table_tab = st.tabs(
+        ["Timeline", "Load XLS", "Table"]
     )
 
     with timeline_tab:
         mission_solution = None
+        results_stale = optimizer_results_are_stale()
         try:
-            mission_gallery = viz.load_gallery()
-            mission_named = _four_solution_choices(mission_gallery)
+            mission_gallery = [] if results_stale else viz.load_gallery()
         except Exception:
             mission_gallery = []
-            mission_named = {}
 
-        if mission_named:
-            mission_solution_name = st.segmented_control(
-                "Solution",
-                options=list(mission_named.keys()),
-                default="CHEAPEST",
-                selection_mode="single",
-                key="mission_timeline_solution_selector",
+        if mission_gallery:
+            # Mission Planning uses the actual saved solution number directly.
+            if "mission_timeline_solution_number" not in st.session_state:
+                st.session_state.mission_timeline_solution_number = 1
+            if int(st.session_state.mission_timeline_solution_number) > len(mission_gallery):
+                st.session_state.mission_timeline_solution_number = 1
+
+            selected_number = st.number_input(
+                "Solution number",
+                min_value=1,
+                max_value=len(mission_gallery),
+                step=1,
+                key="mission_timeline_solution_number",
             )
+            selected_idx = int(selected_number) - 1
+            mission_solution = mission_gallery[selected_idx]
 
-            if "mission_last_solution_selector" not in st.session_state:
-                st.session_state.mission_last_solution_selector = (
-                    mission_solution_name
-                )
+            # Synchronize the Results board with the same saved solution.
+            st.session_state.timeline_gallery_index = selected_idx
+            st.session_state.timeline_gallery_jump = selected_number
+            st.session_state.timeline_browsing_gallery = True
+            st.session_state.timeline_mode = "ALTERNATIVE"
 
-            mission_solution = mission_named.get(
-                mission_solution_name or "CHEAPEST"
-            )
-
-            if (
-                mission_solution_name
-                != st.session_state.mission_last_solution_selector
-            ):
-                st.session_state.mission_last_solution_selector = (
-                    mission_solution_name
+            split_ids = []
+            for movements in (mission_solution.get("aircraft_movements", {}) or {}).values():
+                for movement in movements or []:
+                    if movement.get("split_duty"):
+                        mid = str(movement.get("mission_id", movement.get("id", "")) or "")
+                        if mid and mid not in split_ids:
+                            split_ids.append(mid)
+            if split_ids:
+                st.warning(
+                    "⚠️ Split duty is used in this solution: " + ", ".join(split_ids) +
+                    ". See the solution planning board for the detailed FDP/split-duty information."
                 )
-                mission_idx = _gallery_index_for_solution(
-                    mission_gallery, mission_solution
-                )
-                _set_gallery_index(mission_idx, len(mission_gallery))
         else:
-            st.caption(
-                "No optimizer solutions available yet; showing mission data "
-                "without a selected crew solution."
-            )
+            if results_stale:
+                st.info(
+                    "This mission set has changed and has no current solutions yet. "
+                    "Run the optimizer first to calculate solutions for this set."
+                )
+            else:
+                st.info(
+                    "No optimizer solutions are available yet. "
+                    "Run the optimizer first to calculate solutions."
+                )
 
         render_mission_demand_timeline(missions, mission_solution)
 
-    with calendar_tab:
-        if streamlit_calendar is None:
-            st.error(
-                "The interactive calendar component is not installed yet. Run "
-                "`python -m pip install streamlit-calendar` once in this virtual environment, "
-                "then restart Streamlit. The Table and Bulk import tabs still work."
-            )
-        else:
-            events = mission_calendar_events(missions)
-            valid_departures = [
-                _parse_iso_datetime(x)
-                for x in missions["departure"].tolist()
-            ] if not missions.empty else []
-            valid_departures = [x for x in valid_departures if x is not None]
-            default_initial_date = (
-                min(valid_departures).date().isoformat()
-                if valid_departures
-                else date.today().isoformat()
-            )
-            initial_date = st.session_state.get(
-                "mission_calendar_focus_date",
-                default_initial_date,
-            )
-            initial_view = st.session_state.get(
-                "mission_calendar_view",
-                "timeGridWeek",
-            )
-
-            options = {
-                "initialView": initial_view,
-                # Render floating mission times as browser wall-clock. The UI is
-                # labelled UTC; callback conversion below prevents browser TZ
-                # serialization from changing the stored mission hour.
-                "timeZone": "local",
-                "initialDate": initial_date,
-                "firstDay": 1,
-                "editable": True,
-                "eventStartEditable": True,
-                "eventDurationEditable": False,
-                "selectable": True,
-                "selectMirror": True,
-                "nowIndicator": True,
-                "allDaySlot": False,
-                "slotMinTime": "00:00:00",
-                "slotMaxTime": "24:00:00",
-                "slotDuration": "00:30:00",
-                "snapDuration": "00:15:00",
-                "scrollTime": "06:00:00",
-                "height": 760,
-                "eventTimeFormat": {
-                    "hour": "2-digit",
-                    "minute": "2-digit",
-                    "hour12": False,
-                },
-                "headerToolbar": {
-                    "left": "today prev,next",
-                    "center": "title",
-                    "right": "timeGridDay,timeGridWeek,dayGridMonth",
-                },
-                "buttonText": {
-                    "today": "Today",
-                    "day": "Day",
-                    "week": "Week",
-                    "month": "Month",
-                },
-            }
-
-            custom_css = """
-            .fc { font-size: 0.88rem; }
-            .fc .fc-toolbar-title { font-size: 1.2rem; font-weight: 650; }
-            .fc .fc-timegrid-slot { height: 2.15em; }
-            .fc .fc-event { border-radius: 5px; padding: 1px 3px; cursor: pointer; }
-            .fc .fc-event-title { font-weight: 650; }
-            .fc .fc-event-time { font-weight: 600; }
-            .fc .fc-col-header-cell-cushion { padding: 6px 4px; }
-            """
-
-            left, right = st.columns([3.5, 1.25], gap="large")
-            with left:
-                calendar_revision = int(
-                    st.session_state.get("mission_calendar_revision", 0)
-                )
-                state = streamlit_calendar(
-                    events=events,
-                    options=options,
-                    custom_css=custom_css,
-                    callbacks=["dateClick", "eventClick", "eventChange", "select"],
-                    key=f"mission_planning_calendar_{calendar_revision}",
-                ) or {}
-
-                callback = state.get("callback")
-                if callback:
-                    # Save the browser-side date/view before any st.rerun() or
-                    # component remount. This keeps the dispatcher on the same
-                    # week/day/month after Save, Delete, Cancel or drag/drop.
-                    _remember_mission_calendar_position(state)
-                    signature = _calendar_callback_signature(state)
-                    if signature != st.session_state.get("last_mission_calendar_callback"):
-                        st.session_state["last_mission_calendar_callback"] = signature
-
-                        if callback == "eventClick":
-                            event = (state.get("eventClick") or {}).get("event", {})
-                            mid = str(event.get("id", "")).strip()
-                            if mid:
-                                _set_calendar_editor_for_existing(missions, mid)
-                                st.rerun()
-
-                        elif callback == "dateClick":
-                            clicked = _parse_calendar_callback_datetime(
-                                (state.get("dateClick") or {}).get("date", "")
-                            )
-                            if clicked is not None:
-                                _set_calendar_editor_for_new(clicked)
-                                st.rerun()
-
-                        elif callback == "select":
-                            clicked = _parse_calendar_callback_datetime(
-                                (state.get("select") or {}).get("start", "")
-                            )
-                            if clicked is not None:
-                                _set_calendar_editor_for_new(clicked)
-                                st.rerun()
-
-                        elif callback == "eventChange":
-                            missions, moved_mid = _apply_calendar_event_change(
-                                missions,
-                                state.get("eventChange") or {},
-                            )
-                            if moved_mid:
-                                st.session_state["missions_changed_notice"] = True
-                                st.session_state["mission_calendar_editor"] = {
-                                    "mode": "edit",
-                                    "id": moved_mid,
-                                }
-                                _reset_mission_calendar_component()
-                                st.rerun()
-
-                st.caption(
-                    f"{len(events)} missions · drag = move departure · "
-                    "15-minute snapping · times shown in UTC"
-                )
-
-            with right:
-                render_calendar_mission_form(missions, airports)
-
-    with json_tab:
-        st.markdown("#### Load mission CSV")
+    with xls_tab:
+        st.markdown("#### Load mission XLS")
         st.caption(
-            "Replace the active mission set with another mission CSV. The file is validated first. "
+            "Load a flight-export Excel file. It is converted automatically to the mission format and validated first. "
             "If it contains airports that are not yet in data/airports.csv, the app can fetch their "
             "name and coordinates from the public OurAirports reference dataset and add them automatically."
         )
         st.info(f"Current mission source: **{mission_source_name()}** · {len(missions)} missions")
 
         uploaded = st.file_uploader(
-            "Mission CSV or flight-export Excel file",
-            type=["csv", "xlsx"],
-            key="mission_csv_upload",
-            help=(
-                "CSV: id, origin, destination, departure, arrival, pax; "
-                "optional fixed_aircraft. XLSX: the standard flight export "
-                "is automatically converted to the mission schema."
-            ),
+            "Flight-export Excel file",
+            type=["xlsx", "xls"],
+            key="mission_xls_upload",
+            help="The standard flight export is automatically converted to the internal mission format.",
         )
         preview = None
         preview_errors = []
         missing_airports = []
         if uploaded is not None:
             try:
-                if uploaded.name.lower().endswith(".xlsx"):
-                    preview = load_flight_export_excel(uploaded.getvalue())
-                else:
-                    preview = load_missions_csv_bytes(uploaded.getvalue())
+                preview = load_flight_export_excel(uploaded.getvalue())
                 missing_airports = unknown_airport_codes(preview)
                 if missing_airports:
                     st.warning(
@@ -1712,23 +1597,16 @@ def mission_editor():
                     st.success(f"Valid mission file: {len(preview)} missions.")
                 st.dataframe(preview.head(12), hide_index=True, width="stretch")
 
-                if uploaded.name.lower().endswith(".xlsx"):
-                    st.download_button(
-                        "Download parsed mission CSV",
-                        data=preview.to_csv(index=False).encode("utf-8"),
-                        file_name="missions_parsed.csv",
-                        mime="text/csv",
-                        key="download_parsed_missions_csv",
-                    )
+
             except Exception as exc:
-                st.error(f"Could not read mission CSV: {exc}")
+                st.error(f"Could not read mission Excel file: {exc}")
 
         c_load, c_default = st.columns(2)
         if c_load.button(
-            "Use uploaded CSV",
+            "Use uploaded XLS",
             type="primary",
             disabled=(preview is None or bool(preview_errors)),
-            key="activate_mission_csv",
+            key="activate_mission_xls",
         ):
             save_missions(preview, source_name=uploaded.name)
             st.session_state["missions_changed_notice"] = True
@@ -1750,51 +1628,6 @@ def mission_editor():
                     st.rerun()
             except Exception as exc:
                 st.error(f"Could not restore the standard mission CSV: {exc}")
-
-    with paste_tab:
-        st.markdown("#### Bulk import")
-        st.caption(
-            "Keep the fast paste workflow for larger planning updates. New missions "
-            "appear in the calendar immediately after import."
-        )
-        default_year = st.number_input(
-            "Default year",
-            min_value=2020,
-            max_value=2100,
-            value=2026,
-            step=1,
-        )
-        bulk = st.text_area(
-            "Paste missions",
-            height=280,
-            placeholder=(
-                "ZA 1/08\n"
-                "EGGW-EDDC 1402 13\n\n"
-                "MA 3/08\n"
-                "EDDC-LDPL 1050 13"
-            ),
-        )
-        if st.button("Parse & append", type="primary", key="bulk_append_missions"):
-            rows, warnings = parse_bulk_missions(bulk, missions, int(default_year))
-            known = set(airports)
-            unknown = sorted({
-                airport
-                for row in rows
-                for airport in (row["origin"], row["destination"])
-                if airport not in known
-            })
-            if warnings:
-                st.warning("\n".join(warnings))
-            if unknown:
-                st.error("These airports are not yet in airports.csv: " + ", ".join(unknown))
-            elif rows:
-                updated = pd.concat([missions, pd.DataFrame(rows)], ignore_index=True)
-                save_missions(normalize_missions(updated))
-                st.session_state["missions_changed_notice"] = True
-                st.success(f"Added {len(rows)} missions.")
-                st.rerun()
-            else:
-                st.info("No missions found.")
 
     with table_tab:
         st.markdown("#### Table editor")
@@ -1838,46 +1671,9 @@ def mission_editor():
 
 
 def _ensure_pilot_planning_files() -> None:
-    pilots = load_csv(PILOTS)
-    pilot_ids = pilots["id"].astype(str).tolist() if not pilots.empty and "id" in pilots.columns else []
-
+    # Pilot planning only needs the availability file.
     if not PILOT_AVAILABILITY.exists():
         save_csv(pd.DataFrame(columns=["pilot_id", "date", "status", "note"]), PILOT_AVAILABILITY)
-
-    if not PILOT_MONTHLY_STATE.exists():
-        save_csv(pd.DataFrame(columns=["pilot_id", "month", "days_already_used", "note"]), PILOT_MONTHLY_STATE)
-
-    if not PILOT_RULES.exists():
-        rows = []
-        for _, pilot in pilots.iterrows():
-            rows.append({
-                "pilot_id": str(pilot.get("id", "")),
-                "active": "true",
-                "daily_rate_eur": 600,
-                "min_paid_days_per_month": 0,
-                "max_planned_days_per_month": "",
-                "preferred_home_base": str(pilot.get("home_base", "")),
-                "note": "",
-            })
-        save_csv(pd.DataFrame(rows), PILOT_RULES)
-    else:
-        rules = load_csv(PILOT_RULES)
-        existing = set(rules.get("pilot_id", pd.Series(dtype=str)).astype(str)) if not rules.empty else set()
-        missing = []
-        for _, pilot in pilots.iterrows():
-            pid = str(pilot.get("id", ""))
-            if pid and pid not in existing:
-                missing.append({
-                    "pilot_id": pid,
-                    "active": "true",
-                    "daily_rate_eur": 600,
-                    "min_paid_days_per_month": 0,
-                    "max_planned_days_per_month": "",
-                    "preferred_home_base": str(pilot.get("home_base", "")),
-                    "note": "",
-                })
-        if missing:
-            save_csv(pd.concat([rules, pd.DataFrame(missing)], ignore_index=True), PILOT_RULES)
 
 
 def _pilot_display_lookup() -> dict[str, str]:
@@ -2051,31 +1847,6 @@ def _save_availability_day(pilot_id: str, day: date, status: str, note: str) -> 
     if not df.empty:
         df = df.sort_values(["pilot_id", "date"]).reset_index(drop=True)
     save_csv(df, PILOT_AVAILABILITY)
-
-
-def _get_rule_row(rules: pd.DataFrame, pilot_id: str, pilots: pd.DataFrame) -> dict:
-    if not rules.empty and "pilot_id" in rules.columns:
-        rows = rules[rules["pilot_id"].astype(str) == str(pilot_id)]
-        if not rows.empty:
-            return rows.iloc[0].to_dict()
-    home = ""
-    if not pilots.empty:
-        rows = pilots[pilots["id"].astype(str) == str(pilot_id)]
-        if not rows.empty:
-            home = str(rows.iloc[0].get("home_base", ""))
-    return {
-        "pilot_id": pilot_id,
-        "active": "true",
-        "daily_rate_eur": 600,
-        "min_paid_days_per_month": 0,
-        "max_planned_days_per_month": "",
-        "preferred_home_base": home,
-        "note": "",
-    }
-
-
-def _truthy(value) -> bool:
-    return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
 
 
 def _gallery_index_for_solution(gallery: list[dict], solution: dict | None) -> int:
@@ -2423,8 +2194,8 @@ def pilot_planning_page():
     _ensure_pilot_planning_files()
     st.subheader("Pilot planning")
     st.caption(
-        "Availability and individual contract rules are stored as data, not hard-coded in optimizer.py. "
-        "Unavailable / Leave / Training are hard planning blocks. Contract minima change the marginal pilot-day cost."
+        "Pilot availability is used as a hard planning constraint. "
+        "Unavailable / Leave / Training block the full calendar day."
     )
 
     pilots = load_csv(PILOTS)
@@ -2434,109 +2205,107 @@ def pilot_planning_page():
 
     display = _pilot_display_lookup()
     pilot_ids = [pid for pid in pilots["id"].astype(str).tolist() if pid]
-    selected = st.selectbox(
-        "Pilot",
-        pilot_ids,
-        format_func=lambda pid: display.get(pid, pid),
-        key="pilot_planning_selected",
-    )
-
-    availability_tab, rules_tab, carry_tab, table_tab = st.tabs([
-        "Availability calendar",
-        "Contract rules",
-        "Monthly carry-in",
-        "All data",
+    timeline_tab, load_tab, table_tab, detailed_tab = st.tabs([
+        "Timeline",
+        "Load XLS",
+        "Table",
+        "Detailed view per pilot",
     ])
 
-    with availability_tab:
+    with timeline_tab:
         availability = load_csv(PILOT_AVAILABILITY)
+        results_stale = optimizer_results_are_stale()
+        try:
+            pilot_gallery = [] if results_stale else viz.load_gallery()
+        except Exception:
+            pilot_gallery = []
 
-        with st.expander("Load availability CSV / crew agenda Excel", expanded=False):
-            st.caption(
-                "Upload pilot_availability.csv or a crew agenda XLSX. For Excel, the first 3 letters "
-                "of Resource are matched to pilots.csv trigram. CAT entries are ignored; every other "
-                "agenda entry blocks the full calendar day as UNAVAILABLE. Category and Remarks are kept in note."
+        if pilot_gallery:
+            # Use the same direct saved-solution selector as Mission Planning.
+            # Both pages share the selected gallery index so moving between them
+            # keeps the same solution active.
+            # Initialise the pilot selector only once.  Do NOT copy the Mission
+            # Planning value into the widget key on every Streamlit rerun: doing
+            # that overwrites the value the user has just selected and makes the
+            # control appear to jump back (usually to solution 1).
+            if "pilot_timeline_solution_number" not in st.session_state:
+                current_number = int(st.session_state.get("mission_timeline_solution_number", 1) or 1)
+                st.session_state["pilot_timeline_solution_number"] = max(
+                    1, min(current_number, len(pilot_gallery))
+                )
+            elif int(st.session_state["pilot_timeline_solution_number"]) > len(pilot_gallery):
+                st.session_state["pilot_timeline_solution_number"] = 1
+
+            selected_number = st.number_input(
+                "Solution number",
+                min_value=1,
+                max_value=len(pilot_gallery),
+                step=1,
+                key="pilot_timeline_solution_number",
             )
-            uploaded_availability = st.file_uploader(
-                "Pilot availability CSV or crew agenda Excel",
-                type=["csv", "xlsx"],
-                key="pilot_availability_csv_upload",
+            selected_idx = int(selected_number) - 1
+            selected_solution = pilot_gallery[selected_idx]
+
+            # Synchronize Mission Planning and Results with this solution.
+            st.session_state["mission_timeline_solution_number"] = int(selected_number)
+            st.session_state.timeline_gallery_index = selected_idx
+            st.session_state.timeline_gallery_jump = int(selected_number)
+            st.session_state.timeline_browsing_gallery = True
+            st.session_state.timeline_mode = "ALTERNATIVE"
+
+            # Reuse the exact crew-planning renderer from the Results mission
+            # planning board. This keeps row sizing, colours, timed mission
+            # blocks, availability blocks, tooltips, zoom and visible-flight-day
+            # counting identical in both places.
+            missions_for_timeline = normalize_missions(load_csv(MISSIONS))
+            render_operations_board_component(
+                selected_solution,
+                missions_for_timeline,
+                "Pilot planning",
+                pilots_only=True,
             )
-            if uploaded_availability is not None:
-                try:
-                    unknown_trigrams = []
-                    is_excel = uploaded_availability.name.lower().endswith(".xlsx")
-                    if is_excel:
-                        pilots_for_import = pd.read_csv(PILOTS, dtype=str, keep_default_na=False)
-                        uploaded_df, unknown_trigrams = parse_pilot_availability_excel(
-                            uploaded_availability.getvalue(), pilots_for_import
-                        )
-                        if unknown_trigrams:
-                            st.warning("Ignored unknown crew trigrams: " + ", ".join(unknown_trigrams))
-                    else:
-                        uploaded_df = pd.read_csv(uploaded_availability, keep_default_na=False)
+        elif results_stale:
+            st.warning(
+                "Planning or pilot data changed — run the optimizer first to calculate solutions for the current data."
+            )
+        else:
+            st.info("No optimizer solutions found yet. Run the optimizer first to calculate solutions.")
 
-                    required = ["pilot_id", "date", "status", "note"]
-                    missing_cols = [c for c in required if c not in uploaded_df.columns]
-                    errors = []
-                    if missing_cols:
-                        errors.append("Missing columns: " + ", ".join(missing_cols))
-                    else:
-                        uploaded_df = uploaded_df[required].copy()
-                        uploaded_df["pilot_id"] = uploaded_df["pilot_id"].astype(str).str.strip()
-                        uploaded_df["date"] = uploaded_df["date"].astype(str).str.strip()
-                        uploaded_df["status"] = uploaded_df["status"].astype(str).str.strip().str.upper()
-                        uploaded_df["note"] = uploaded_df["note"].astype(str)
-                        known_pilots = set(pilot_ids)
-                        unknown_pilots = sorted(set(uploaded_df["pilot_id"]) - known_pilots - {""})
-                        if unknown_pilots:
-                            errors.append("Unknown pilot IDs: " + ", ".join(unknown_pilots))
-                        allowed_statuses = {"AVAILABLE", "UNAVAILABLE", "LEAVE", "TRAINING"}
-                        bad_statuses = sorted(set(uploaded_df["status"]) - allowed_statuses)
-                        if bad_statuses:
-                            errors.append("Unknown statuses: " + ", ".join(bad_statuses))
-                        parsed_dates = pd.to_datetime(uploaded_df["date"], format="%Y-%m-%d", errors="coerce")
-                        bad_dates = uploaded_df.loc[parsed_dates.isna(), "date"].drop_duplicates().tolist()
-                        if bad_dates:
-                            errors.append("Invalid dates (use YYYY-MM-DD): " + ", ".join(map(str, bad_dates[:10])))
-                        duplicate_mask = uploaded_df.duplicated(["pilot_id", "date"], keep=False)
-                        if duplicate_mask.any():
-                            examples = uploaded_df.loc[duplicate_mask, ["pilot_id", "date"]].drop_duplicates().head(10)
-                            errors.append("Duplicate pilot/date rows: " + ", ".join(f"{r.pilot_id} {r.date}" for r in examples.itertuples()))
-                    if errors:
-                        st.error("This availability file cannot be activated yet:\n\n" + "\n\n".join(errors))
-                    else:
-                        active_upload = uploaded_df[uploaded_df["status"] != "AVAILABLE"].copy()
-                        st.success(f"Valid availability file: {len(active_upload)} blocked pilot-days for {active_upload['pilot_id'].nunique()} pilots.")
-                        st.dataframe(active_upload.head(30), width="stretch", hide_index=True)
-                        if is_excel:
-                            # XLSX agenda imports are used immediately as the active
-                            # pilot_availability.csv. Guard with a content fingerprint
-                            # because Streamlit keeps the uploaded file mounted after rerun.
-                            import hashlib
-                            upload_fingerprint = hashlib.sha256(uploaded_availability.getvalue()).hexdigest()
-                            if st.session_state.get("last_pilot_agenda_import") != upload_fingerprint:
-                                save_csv(active_upload, PILOT_AVAILABILITY)
-                                st.session_state["last_pilot_agenda_import"] = upload_fingerprint
-                                st.session_state["pilot_availability_table_revision"] = int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
-                                _reset_pilot_availability_calendar()
-                                st.session_state["pilot_availability_upload_notice"] = (
-                                    f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}. "
-                                    "CAT entries were ignored."
-                                )
-                                st.rerun()
-                        elif st.button("Use uploaded availability", type="primary", key="activate_pilot_availability_csv"):
-                            save_csv(active_upload, PILOT_AVAILABILITY)
-                            st.session_state["pilot_availability_table_revision"] = int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
-                            _reset_pilot_availability_calendar()
-                            st.session_state["pilot_availability_upload_notice"] = f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}."
-                            st.rerun()
-                except Exception as exc:
-                    st.error(f"Could not read this availability file: {exc}")
-
+    with load_tab:
+        st.caption("Load a crew agenda Excel file. The first 3 letters of Resource are matched to the pilot trigram. CAT entries are ignored; all other entries block the full calendar day.")
+        uploaded_availability = st.file_uploader(
+            "Crew agenda Excel", type=["xlsx"], key="pilot_availability_xls_upload"
+        )
+        if uploaded_availability is not None:
+            try:
+                pilots_for_import = pd.read_csv(PILOTS, dtype=str, keep_default_na=False)
+                uploaded_df, unknown_trigrams = parse_pilot_availability_excel(uploaded_availability.getvalue(), pilots_for_import)
+                if unknown_trigrams:
+                    st.warning("Ignored unknown crew trigrams: " + ", ".join(unknown_trigrams))
+                active_upload = uploaded_df[uploaded_df["status"] != "AVAILABLE"].copy()
+                st.success(f"Valid crew agenda: {len(active_upload)} blocked pilot-days for {active_upload['pilot_id'].nunique()} pilots.")
+                st.dataframe(active_upload.head(30), width="stretch", hide_index=True)
+                import hashlib
+                upload_fingerprint = hashlib.sha256(uploaded_availability.getvalue()).hexdigest()
+                if st.session_state.get("last_pilot_agenda_import") != upload_fingerprint:
+                    save_csv(active_upload, PILOT_AVAILABILITY)
+                    st.session_state["last_pilot_agenda_import"] = upload_fingerprint
+                    st.session_state["pilot_availability_table_revision"] = int(st.session_state.get("pilot_availability_table_revision", 0)) + 1
+                    _reset_pilot_availability_calendar()
+                    st.session_state["pilot_availability_upload_notice"] = f"Loaded {len(active_upload)} blocked pilot-days from {uploaded_availability.name}. CAT entries were ignored."
+                    st.rerun()
+            except Exception as exc:
+                st.error(f"Could not read this crew agenda: {exc}")
         upload_notice = st.session_state.pop("pilot_availability_upload_notice", None)
         if upload_notice:
             st.success(upload_notice)
+
+    with detailed_tab:
+        selected = st.selectbox(
+            "Pilot", pilot_ids, format_func=lambda pid: display.get(pid, pid),
+            key="pilot_planning_selected",
+        )
+        availability = load_csv(PILOT_AVAILABILITY)
 
         # Reload after a CSV replacement so calendar and editor always use the active file.
         availability = load_csv(PILOT_AVAILABILITY)
@@ -2732,115 +2501,8 @@ def pilot_planning_page():
                         f"Not planned or charged on {edit_day.isoformat()} in the selected solution."
                     )
 
-    with rules_tab:
-        rules = load_csv(PILOT_RULES)
-        rule = _get_rule_row(rules, selected, pilots)
-        st.markdown("#### Individual optimizer rules")
-        st.caption(
-            "Example: minimum paid days = 15 means the first guaranteed days have zero marginal cost "
-            "until carry-in + planned days exceed 15. This makes the optimizer naturally prefer using already-paid capacity."
-        )
-        c1, c2 = st.columns(2)
-        active = c1.checkbox("Active for planning", value=_truthy(rule.get("active", "true")), key=f"rule_active_{selected}")
-        daily_rate = c2.number_input(
-            "Daily rate (€)", min_value=0.0, value=float(rule.get("daily_rate_eur") or 600), step=50.0, key=f"rule_rate_{selected}"
-        )
-        c3, c4 = st.columns(2)
-        min_paid = c3.number_input(
-            "Minimum paid days / month", min_value=0, max_value=31,
-            value=int(float(rule.get("min_paid_days_per_month") or 0)), step=1, key=f"rule_min_{selected}"
-        )
-        max_raw = str(rule.get("max_planned_days_per_month", "") or "").strip()
-        max_days_text = c4.text_input(
-            "Maximum planned days / month (blank = none)", value=max_raw, key=f"rule_max_{selected}"
-        )
-        bases = ["", "EBAW", "EBLG"]
-        preferred = str(rule.get("preferred_home_base", "") or "").upper()
-        preferred_base = st.selectbox(
-            "Preferred homebase", bases,
-            index=bases.index(preferred) if preferred in bases else 0,
-            key=f"rule_base_{selected}",
-            help="Stored as a preference field for future scoring; personal home_base in pilots.csv remains the physical reference for current crew cost logic.",
-        )
-        rule_note = st.text_area("Rule note", value=str(rule.get("note", "")), key=f"rule_note_{selected}")
-
-        if st.button("Save contract rules", type="primary", key="save_pilot_rules"):
-            max_days = ""
-            if max_days_text.strip():
-                try:
-                    parsed = int(max_days_text)
-                    if parsed < 0 or parsed > 31:
-                        raise ValueError
-                    max_days = parsed
-                except Exception:
-                    st.error("Maximum planned days must be blank or an integer from 0 to 31.")
-                    st.stop()
-            for col in ["pilot_id", "active", "daily_rate_eur", "min_paid_days_per_month", "max_planned_days_per_month", "preferred_home_base", "note"]:
-                if col not in rules.columns:
-                    rules[col] = ""
-            mask = rules["pilot_id"].astype(str) == selected
-            new_row = {
-                "pilot_id": selected,
-                "active": "true" if active else "false",
-                "daily_rate_eur": float(daily_rate),
-                "min_paid_days_per_month": int(min_paid),
-                "max_planned_days_per_month": max_days,
-                "preferred_home_base": preferred_base,
-                "note": rule_note.strip(),
-            }
-            if mask.any():
-                idx = rules.index[mask][0]
-                for col, value in new_row.items():
-                    rules.at[idx, col] = value
-            else:
-                rules = pd.concat([rules, pd.DataFrame([new_row])], ignore_index=True)
-            save_csv(rules, PILOT_RULES)
-            st.success("Contract rules saved. They will be loaded on the next optimizer run.")
-
-    with carry_tab:
-        state_df = load_csv(PILOT_MONTHLY_STATE)
-        st.markdown("#### Monthly carry-in")
-        st.caption(
-            "Use this for days already used before the optimization horizon. Example: if the pilot has already worked 11 days in July "
-            "and has a 15-day minimum, enter 11 for 2026-07."
-        )
-        default_month = "2026-07"
-        mission_df = normalize_missions(load_csv(MISSIONS))
-        if not mission_df.empty:
-            first_dep = _parse_iso_datetime(mission_df.iloc[0].get("departure", ""))
-            if first_dep:
-                default_month = first_dep.strftime("%Y-%m")
-        month = st.text_input("Month (YYYY-MM)", value=default_month, key=f"carry_month_{selected}")
-        existing = state_df[
-            (state_df.get("pilot_id", pd.Series(dtype=str)).astype(str) == selected)
-            & (state_df.get("month", pd.Series(dtype=str)).astype(str) == month)
-        ] if not state_df.empty else pd.DataFrame()
-        current_days = int(float(existing.iloc[0].get("days_already_used", 0) or 0)) if not existing.empty else 0
-        current_note = str(existing.iloc[0].get("note", "")) if not existing.empty else ""
-        days_already = st.number_input("Days already used", min_value=0, max_value=31, value=current_days, step=1, key=f"carry_days_{selected}_{month}")
-        carry_note = st.text_input("Note", value=current_note, key=f"carry_note_{selected}_{month}")
-        if st.button("Save monthly carry-in", type="primary", key="save_monthly_carry"):
-            try:
-                datetime.strptime(month + "-01", "%Y-%m-%d")
-            except Exception:
-                st.error("Month must use YYYY-MM, for example 2026-07.")
-            else:
-                for col in ["pilot_id", "month", "days_already_used", "note"]:
-                    if col not in state_df.columns:
-                        state_df[col] = ""
-                mask = (state_df["pilot_id"].astype(str) == selected) & (state_df["month"].astype(str) == month)
-                state_df = state_df.loc[~mask].copy()
-                state_df = pd.concat([state_df, pd.DataFrame([{
-                    "pilot_id": selected,
-                    "month": month,
-                    "days_already_used": int(days_already),
-                    "note": carry_note.strip(),
-                }])], ignore_index=True)
-                save_csv(state_df.sort_values(["pilot_id", "month"]), PILOT_MONTHLY_STATE)
-                st.success("Monthly carry-in saved.")
-
     with table_tab:
-        st.markdown("#### Availability rows")
+        st.markdown("#### Pilot availability")
         av = load_csv(PILOT_AVAILABILITY)
         av_revision = int(st.session_state.get("pilot_availability_table_revision", 0))
         av_edit = st.data_editor(
@@ -2851,19 +2513,6 @@ def pilot_planning_page():
             save_csv(av_edit, PILOT_AVAILABILITY)
             st.success("pilot_availability.csv saved.")
 
-        st.markdown("#### Contract rules")
-        rule_df = load_csv(PILOT_RULES)
-        rule_edit = st.data_editor(rule_df, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_rules_table")
-        if st.button("Save rules table", key="save_pilot_rules_table"):
-            save_csv(rule_edit, PILOT_RULES)
-            st.success("pilot_rules.csv saved.")
-
-        st.markdown("#### Monthly carry-in")
-        carry_df = load_csv(PILOT_MONTHLY_STATE)
-        carry_edit = st.data_editor(carry_df, width="stretch", hide_index=True, num_rows="dynamic", key="pilot_carry_table")
-        if st.button("Save carry-in table", key="save_pilot_carry_table"):
-            save_csv(carry_edit, PILOT_MONTHLY_STATE)
-            st.success("pilot_monthly_state.csv saved.")
 
 
 def data_editor_page():
@@ -2932,6 +2581,17 @@ def live_optimizer_terminal():
     """
     running, pid = optimizer_status()
 
+    # The terminal fragment is the part of the page that polls every second.
+    # When it observes the optimizer transition from running to finished, do
+    # one full app rerun so the status badge and Start/Stop buttons outside
+    # this fragment are refreshed as well.
+    was_running = st.session_state.get("_optimizer_seen_running", False)
+    if running:
+        st.session_state["_optimizer_seen_running"] = True
+    elif was_running:
+        st.session_state["_optimizer_seen_running"] = False
+        st.rerun(scope="app")
+
     header_cols = st.columns([2, 3])
 
     if running:
@@ -2993,114 +2653,101 @@ def optimizer_page():
                     error,
                 )
 
-    col1, col2, col3, col4 = st.columns(4)
-
-    runs = col1.number_input(
-        "Independent runs",
-        min_value=1,
-        max_value=50,
-        value=5,
-        step=1,
-    )
-
-    population = col2.number_input(
-        "Population",
-        min_value=10,
-        max_value=2000,
-        value=200,
-        step=10,
-    )
-
-    generations = col3.number_input(
-        "Generations",
-        min_value=1,
-        max_value=5000,
-        value=180,
-        step=10,
-    )
-
-    seed = col4.number_input(
-        "Random seed",
-        min_value=0,
-        max_value=10_000_000,
-        value=42,
-        step=1,
-    )
-
-    live = st.checkbox(
-        "Open separate live Pareto window",
-        value=False,
-    )
-
-    live_every = st.number_input(
-        "Live update every N generations",
-        min_value=1,
-        max_value=100,
-        value=2,
-        step=1,
-        disabled=not live,
-    )
-
-    log_cols = st.columns(2)
-    verbose = log_cols[0].checkbox(
-        "Verbose progress logging",
-        value=True,
-        help="Show every generation, feasibility rate, rejection categories, best KPIs and timings in the live terminal.",
-    )
-    debug = log_cols[1].checkbox(
-        "Debug rejection examples",
-        value=False,
-        help="Also show a few concrete invalid-reason examples per generation. This automatically enables verbose logging.",
-    )
-    if debug:
-        verbose = True
-
     running, pid = optimizer_status()
 
-    status_cols = st.columns(
-        [1, 1, 3]
-    )
+    basic_tab, advanced_tab = st.tabs(["Basic", "Advanced"])
 
+    with basic_tab:
+        st.caption("Quick run: 2 independent runs · population 100 · 10 generations")
+
+        if st.button(
+            "Start optimization",
+            type="primary",
+            disabled=running or bool(errors),
+            key="basic_start_optimization",
+        ):
+            try:
+                # Basic mode is deliberately fixed and keeps terminal output verbose.
+                start_optimizer(
+                    2,      # runs
+                    100,    # population
+                    10,     # generations
+                    42,     # seed
+                    False,  # separate live Pareto window
+                    2,      # live update interval (unused while live=False)
+                    True,   # verbose terminal logging
+                    False,  # debug rejection examples
+                )
+                st.success("Optimizer started.")
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
+
+    with advanced_tab:
+        col1, col2, col3, col4 = st.columns(4)
+
+        runs = col1.number_input(
+            "Independent runs", min_value=1, max_value=50, value=5, step=1,
+            key="advanced_runs",
+        )
+        population = col2.number_input(
+            "Population", min_value=10, max_value=2000, value=200, step=10,
+            key="advanced_population",
+        )
+        generations = col3.number_input(
+            "Generations", min_value=1, max_value=5000, value=180, step=10,
+            key="advanced_generations",
+        )
+        seed = col4.number_input(
+            "Random seed", min_value=0, max_value=10_000_000, value=42, step=1,
+            key="advanced_seed",
+        )
+
+        live = st.checkbox(
+            "Open separate live Pareto window", value=False, key="advanced_live"
+        )
+        live_every = st.number_input(
+            "Live update every N generations", min_value=1, max_value=100,
+            value=2, step=1, disabled=not live, key="advanced_live_every",
+        )
+
+        log_cols = st.columns(2)
+        verbose = log_cols[0].checkbox(
+            "Verbose progress logging", value=True, key="advanced_verbose",
+            help="Show every generation, feasibility rate, rejection categories, best KPIs and timings in the live terminal.",
+        )
+        debug = log_cols[1].checkbox(
+            "Debug rejection examples", value=False, key="advanced_debug",
+            help="Also show a few concrete invalid-reason examples per generation. This automatically enables verbose logging.",
+        )
+        if debug:
+            verbose = True
+
+        if st.button(
+            "Start optimization",
+            type="primary",
+            disabled=running or bool(errors),
+            key="advanced_start_optimization",
+        ):
+            try:
+                start_optimizer(
+                    int(runs), int(population), int(generations), int(seed),
+                    bool(live), int(live_every), bool(verbose), bool(debug),
+                )
+                st.success("Optimizer started.")
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
+
+    # Keep run status / stop control outside the tabs so it is always visible.
+    running, pid = optimizer_status()
+    status_cols = st.columns([1, 1, 3])
     if running:
-        status_cols[0].success(
-            f"Running · PID {pid}"
-        )
+        status_cols[0].success(f"Running · PID {pid}")
     else:
-        status_cols[0].info(
-            "Optimizer idle"
-        )
+        status_cols[0].info("Optimizer idle")
 
-    if status_cols[1].button(
-        "Start optimization",
-        type="primary",
-        disabled=running or bool(errors),
-    ):
-        try:
-            start_optimizer(
-                int(runs),
-                int(population),
-                int(generations),
-                int(seed),
-                bool(live),
-                int(live_every),
-                bool(verbose),
-                bool(debug),
-            )
-
-            st.success(
-                "Optimizer started."
-            )
-            st.rerun()
-
-        except Exception as exc:
-            st.error(
-                str(exc)
-            )
-
-    if status_cols[2].button(
-        "Stop optimizer",
-        disabled=not running,
-    ):
+    if status_cols[1].button("Stop optimizer", disabled=not running):
         stop_optimizer()
         st.warning(
             "Graceful stop requested. The optimizer will save the best solutions found so far before exiting."
@@ -4210,6 +3857,7 @@ def render_operations_board_component(
     solution,
     missions,
     title,
+    pilots_only=False,
 ):
     """Render a continuous UTC aircraft timeline, one horizontal lane per aircraft."""
     payload = operations_board_payload(solution, missions)
@@ -4232,6 +3880,7 @@ def render_operations_board_component(
         "swaps": len(actual_outstation_swap_events(solution)),
     }
     header_json = _json.dumps(header, ensure_ascii=False)
+    pilots_only_json = "true" if pilots_only else "false"
 
     component_html = f"""
 <div id="aircraft-timeline-root">
@@ -4299,7 +3948,7 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
 </div>
 <script>
 (() => {{
- const data={data_json}, header={header_json};
+ const data={data_json}, header={header_json}, pilotsOnly={pilots_only_json};
  const board=document.getElementById('board'), viewport=document.getElementById('viewport');
  const dayMs=86400000, baseDayW=112;
  const zoomStorageKey='airline_optimizer_results_board_zoom_v1';
@@ -4311,7 +3960,12 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
  const first=new Date(data.dates[0]+'T00:00:00Z');
  const lastEnd=new Date(data.dates[data.dates.length-1]+'T00:00:00Z').getTime()+dayMs;
  document.getElementById('title').textContent=header.title;
- [[header.cost,'Total cost'],[header.complexity,'Complexity'],[header.empty,'Empty legs'],[header.pilot_days,'Pilot-days'],[header.swaps,'Outstation swaps']].forEach(([v,l])=>{{const e=document.createElement('div');e.className='kpi';e.innerHTML=`<b>${{v}}</b><span>${{l}}</span>`;document.getElementById('kpis').appendChild(e);}});
+ if(pilotsOnly){{
+   document.getElementById('kpis').style.display='none';
+   document.querySelector('.hint').textContent='UTC · one row per pilot · horizontal position = actual time';
+ }} else {{
+   [[header.cost,'Total cost'],[header.complexity,'Complexity'],[header.empty,'Empty legs'],[header.pilot_days,'Pilot-days'],[header.swaps,'Outstation swaps']].forEach(([v,l])=>{{const e=document.createElement('div');e.className='kpi';e.innerHTML=`<b>${{v}}</b><span>${{l}}</span>`;document.getElementById('kpis').appendChild(e);}});
+ }}
  const pct=(iso)=>((new Date(iso+'Z').getTime()-first.getTime())/(lastEnd-first.getTime()))*100;
  const widthPct=(a,b)=>Math.max(.12,((new Date(b+'Z')-new Date(a+'Z'))/(lastEnd-first.getTime()))*100);
  function pretty(d){{return new Date(d+'T00:00:00Z').toLocaleDateString('en-GB',{{weekday:'short',day:'2-digit',month:'short',timeZone:'UTC'}})}}
@@ -4325,8 +3979,8 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
   board.innerHTML=''; board.style.setProperty('--days',data.dates.length);
   const head=document.createElement('div');head.className='header';
   data.dates.forEach((d,i)=>{{const h=document.createElement('div');h.className='day-head';h.style.left=`calc(${{i}} * var(--day-w))`;h.style.width='var(--day-w)';h.textContent=pretty(d);head.appendChild(h);}});board.appendChild(head);
-  const corner=document.createElement('div');corner.className='corner';corner.textContent='Aircraft';board.appendChild(corner);
-  data.aircraft.forEach(row=>{{
+  const corner=document.createElement('div');corner.className='corner';corner.textContent=pilotsOnly?'Pilots':'Aircraft';board.appendChild(corner);
+  if(!pilotsOnly) data.aircraft.forEach(row=>{{
    const line=document.createElement('div');line.className='row';
    const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{row.registration}}</b><span>${{row.crew||'—'}}</span>`;line.appendChild(lab);addGrid(line);
    row.cards.forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('button');el.type='button';el.className=`block ${{c.kind}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=`max(48px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;el.style.zIndex=c.kind==='parking'?2:5;
@@ -4335,7 +3989,7 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
    board.appendChild(line);
   }});
   if((data.pilots||[]).length){{
-    const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep);
+    if(!pilotsOnly){{ const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep); }}
     data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.display||p.id)}}</b><span>${{esc(p.role)}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
       (p.cards||[]).forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('div');let cls='other';if(c.kind==='crewmission')cls='mission';else if(c.status==='UNAVAILABLE')cls='unavailable';else if(c.status==='LEAVE')cls='leave';else if(c.status==='TRAINING')cls='training';el.className=`crew-block ${{cls}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=c.kind==='availability'?`${{widthPct(c.start_iso,c.end_iso)}}%`:`max(7px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;
         if(c.kind==='crewmission')el.innerHTML=`<div class="cb-title">${{esc(c.label)}} · ${{esc(c.aircraft)}}</div><div class="cb-meta">${{esc(c.route)}}</div>`;else el.innerHTML=`<div class="cb-title">${{esc(c.label)}}</div><div class="cb-meta">${{esc(c.note||'')}}</div>`;
@@ -4371,9 +4025,30 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
      if(el)el.textContent=`${{days.size}} flight day${{days.size===1?'':'s'}}`;
    }});
  }}
- function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;try {{ window.localStorage.setItem(zoomStorageKey,String(zoom)); }} catch (_) {{}}requestAnimationFrame(updateVisibleFlightDays);}}
+ function setZoom(z, anchorClientX=null){{
+   const oldZoom=zoom;
+   const oldScrollWidth=board.scrollWidth||1;
+   const labelWidth=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--label-w'))||160;
+   const rect=viewport.getBoundingClientRect();
+   const anchorX=anchorClientX===null ? null : Math.max(labelWidth,Math.min(viewport.clientWidth,anchorClientX-rect.left));
+   const oldTimelineWidth=Math.max(1,oldScrollWidth-labelWidth);
+   const anchorTimelineX=anchorX===null ? null : Math.max(0,viewport.scrollLeft+anchorX-labelWidth);
+   const anchorRatio=anchorTimelineX===null ? null : anchorTimelineX/oldTimelineWidth;
+
+   zoom=Math.max(.35,Math.min(3,z));
+   document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);
+   document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;
+   try {{ window.localStorage.setItem(zoomStorageKey,String(zoom)); }} catch (_) {{}}
+
+   // Keep the instant underneath the mouse pointer fixed while zooming.
+   if(anchorRatio!==null && zoom!==oldZoom){{
+     const newTimelineWidth=Math.max(1,board.scrollWidth-labelWidth);
+     viewport.scrollLeft=Math.max(0,labelWidth+anchorRatio*newTimelineWidth-anchorX);
+   }}
+   requestAnimationFrame(updateVisibleFlightDays);
+ }}
  document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>{{viewport.scrollTo({{left:0,behavior:'smooth'}});requestAnimationFrame(updateVisibleFlightDays);setTimeout(updateVisibleFlightDays,400);}};document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0;scheduleFlightDaysUpdate();}};
- viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9));}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;requestAnimationFrame(updateVisibleFlightDays);}}}},{{passive:false}});
+ viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9),e.clientX);}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;requestAnimationFrame(updateVisibleFlightDays);}}}},{{passive:false}});
 
  // IMPORTANT: this listener belongs to the Results timeline's own viewport.
  // Recalculate on every horizontal scroll, including scrollbar dragging,
@@ -4814,10 +4489,11 @@ def results_page():
     # Primary Results view: start with the interactive mission planning board.
     render_timeline_browser()
 
-    st.divider()
-
-    # Secondary analytics: Pareto/front summary and plot below the board.
-    render_results()
+    # Keep the secondary analytics out of the way by default. The planning
+    # board remains the primary Results view; users can expand the detailed
+    # Pareto information when they need it.
+    with st.expander("Detailed Pareto info", expanded=False):
+        render_results()
 
 
 st.title(
@@ -4833,15 +4509,17 @@ st.caption(
 # Streamlit completely hides sidebar widgets when collapsed, so add a slim
 # fixed icon rail that becomes visible only in the collapsed state.
 _NAV_ITEMS = [
+    ("Mission planning board", "▤"),
     ("Missions", "✈"),
     ("Pilot planning", "♟"),
     ("Fleet & crew", "▦"),
     ("Optimizer", "⚙"),
-    ("Results", "▤"),
 ]
 
 _NAV_LABELS = [label for label, _ in _NAV_ITEMS]
 _query_page = st.query_params.get("page")
+if _query_page == "Results":
+    _query_page = "Mission planning board"
 if _query_page in _NAV_LABELS and st.session_state.get("navigation_radio") != _query_page:
     st.session_state["navigation_radio"] = _query_page
 
@@ -4936,7 +4614,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if page == "Missions":
+if page == "Mission planning board":
+    results_page()
+
+elif page == "Missions":
     mission_editor()
 
 elif page == "Pilot planning":
@@ -4948,5 +4629,3 @@ elif page == "Fleet & crew":
 elif page == "Optimizer":
     optimizer_page()
 
-elif page == "Results":
-    results_page()

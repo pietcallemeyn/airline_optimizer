@@ -4,7 +4,7 @@
   "generations": 10,
   "total_evaluations": 2200,
   "seed": 42,
-  "elapsed_seconds": 42.2,
+  "elapsed_seconds": 41.76,
   "solutions": 8,
   "optimizer": "LEAN_CREW_GA"
 }
