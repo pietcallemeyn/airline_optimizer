@@ -608,6 +608,30 @@ def score(decoded,missions,pilots,avail,caps,fos):
     # Strict lexicographic priority.
     return (out_events,out_changed,balance,reserve_short,base_swaps,-reserve_total)
 
+def backup_coverage_details(assign, missions, avail, caps, fos):
+    """Explain exactly where the one-CAPT + one-FO reserve target is missed."""
+    byday={}
+    for m in missions:
+        byday.setdefault(m.departure.date(),[]).append(m)
+    details=[]
+    for day,ms in sorted(byday.items()):
+        active_c={assign[m.id]['captain'] for m in ms}
+        active_f={assign[m.id]['fo'] for m in ms}
+        available_c=[p for p in caps if avail.get((p,day),'AVAILABLE') not in BLOCKING]
+        available_f=[p for p in fos if avail.get((p,day),'AVAILABLE') not in BLOCKING]
+        reserve_c=[p for p in available_c if p not in active_c]
+        reserve_f=[p for p in available_f if p not in active_f]
+        cap_short=max(0,1-len(reserve_c)); fo_short=max(0,1-len(reserve_f))
+        if cap_short or fo_short:
+            details.append({
+                'date':day.isoformat(),
+                'captain_shortage':cap_short,'fo_shortage':fo_short,
+                'available_captains':len(available_c),'active_captains':len(active_c),'reserve_captains':reserve_c,
+                'available_fos':len(available_f),'active_fos':len(active_f),'reserve_fos':reserve_f,
+                'missions':[m.id for m in ms],
+            })
+    return details
+
 def build_crew_actions(assign, missions, handover_meta):
     """Return explicit crew-continuity / handover actions for the GUI."""
     actions = []
@@ -657,9 +681,10 @@ def split_duty_metadata(assign, missions):
                 existing.setdefault('pilots',[]).append(pid)
     return result
 
-def make_solution(decoded,scorev,missions,pilots):
+def make_solution(decoded,scorev,missions,pilots,avail,caps,fos):
     assign,counts,days,meta=decoded; routes={}; movements={}; actions={}
     split_meta=split_duty_metadata(assign,missions)
+    backup_details=backup_coverage_details(assign,missions,avail,caps,fos)
     for m in missions:
         reg=m.fixed_aircraft; routes.setdefault(reg,[]).append(m.id)
         actions.setdefault(reg,[]).append({'mission':m.id,'transition_mode':'FIXED'})
@@ -689,7 +714,7 @@ def make_solution(decoded,scorev,missions,pilots):
         'changed_pilot_count':int(changed_total),'nonhomebase_swap_events':int(out_events),
         'outstation_changed_pilots':int(out_changed),'base_handovers':int(base_swaps),
         'crew_return_pilots':0,'inbound_crew_deadhead_pilots':0,'crew_balance_score':round(balance,4),
-        'backup_shortage_days':int(reserve_short),'backup_slots':int(-neg_reserve),'mission_count_by_pilot':counts},
+        'backup_shortage_days':int(reserve_short),'backup_slots':int(-neg_reserve),'backup_coverage_issues':backup_details,'mission_count_by_pilot':counts},
       'routes':routes,'aircraft_movements':movements,'aircraft_actions':actions,'crew_assignments':assign,
       'crew_actions':build_crew_actions(assign, missions, meta),'final_crew_decisions':[],
       'validation':{'fixed_aircraft':True,'pilot_availability_valid':True,'pilot_overlap_valid':True,
@@ -759,7 +784,7 @@ def main():
                 b=pop[0]['score']; print(f'run={run+1}/{a.runs} gen={gen+1}/{a.generations} outstation={b[0]} balance={b[2]:.3f} backup_shortage={b[3]} base_handovers={b[4]} elapsed={time.perf_counter()-start:.1f}s',flush=True)
         for x in pop[:20]:
             if x['decoded']:
-                s=make_solution(x['decoded'],x['score'],missions,pilots); archive[s['schedule_signature']]=s
+                s=make_solution(x['decoded'],x['score'],missions,pilots,avail,caps,fos); archive[s['schedule_signature']]=s
     save(list(archive.values()),{'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
     if not archive:
         print('NO FEASIBLE CREW SCHEDULE FOUND.')

@@ -1,9 +1,4 @@
 solution_index,schedule_signature,total_operational_cost_eur,complexity_score,outstation_handovers,outstation_changed_pilots,base_handovers,empty_legs,charged_pilot_days,aircraft_parking_days,empty_nm,crew_balance_score,backup_shortage_days
-0,f29b001429e1,51600.0,11,2,4,9,0,86,0,0,20.2483,0
-1,8b5d9fb7ef02,51600.0,11,2,4,9,0,86,0,0,20.2483,0
-2,1838d4b6b9f9,51600.0,11,2,4,9,0,86,0,0,20.2483,0
-3,daf25a395dcf,51600.0,11,2,4,9,0,86,0,0,20.2483,0
-4,e74688b12b85,51600.0,11,2,4,9,0,86,0,0,20.7483,0
-5,f0e90dcf8d01,51600.0,11,2,4,9,0,86,0,0,20.8164,0
-6,d2c50ba9ee25,51600.0,11,2,4,9,0,86,0,0,21.4642,0
-7,4b155356d05f,51600.0,11,2,4,9,0,86,0,0,21.4642,0
+0,0fff5d2ed358,97800.0,24,5,8,19,0,163,0,0,132.7556,3
+1,1d176b143f39,98400.0,25,5,8,20,0,164,0,0,134.9209,3
+2,a07eca6ea439,99000.0,24,5,8,19,0,165,0,0,135.5325,3

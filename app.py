@@ -3882,6 +3882,35 @@ def render_operations_board_component(
     header_json = _json.dumps(header, ensure_ascii=False)
     pilots_only_json = "true" if pilots_only else "false"
 
+    # New optimizer solutions contain an exact reserve-coverage diagnostic.
+    # Keep it compact by default, but make the dates/roles immediately inspectable.
+    backup_issues = metrics.get("backup_coverage_issues", []) or []
+    backup_shortage = int(objectives.get("backup_shortage_days", metrics.get("backup_shortage_days", 0)) or 0)
+    if backup_shortage:
+        with st.expander(f"⚠ Backup coverage · {backup_shortage} shortage unit{'s' if backup_shortage != 1 else ''}", expanded=False):
+            if backup_issues:
+                labels = _pilot_display_map()
+                rows = []
+                for issue in backup_issues:
+                    cap_short = int(issue.get("captain_shortage", 0) or 0)
+                    fo_short = int(issue.get("fo_shortage", 0) or 0)
+                    missing = []
+                    if cap_short: missing.append("CAPT")
+                    if fo_short: missing.append("FO")
+                    rows.append({
+                        "Date": issue.get("date", ""),
+                        "Missing backup": " + ".join(missing),
+                        "CAPT reserve": len(issue.get("reserve_captains", []) or []),
+                        "FO reserve": len(issue.get("reserve_fos", []) or []),
+                        "CAPT flying": int(issue.get("active_captains", 0) or 0),
+                        "FO flying": int(issue.get("active_fos", 0) or 0),
+                        "Missions": ", ".join(issue.get("missions", []) or []),
+                    })
+                st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                st.caption("Target: at least 1 available, non-flying backup CAPT and 1 backup FO on every mission day. A shortage is a reserve warning, not an uncovered flight.")
+            else:
+                st.info("This solution was generated before detailed backup diagnostics were stored. Run the optimizer again to see the exact dates and crew pool causing the shortage.")
+
     component_html = f"""
 <div id="aircraft-timeline-root">
 <style>

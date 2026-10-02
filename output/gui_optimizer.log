@@ -1,9 +1,6 @@
-LEAN CREW GA · missions=67 fixed aircraft · captains=11 · FOs=8
+LEAN CREW GA · missions=154 fixed aircraft · captains=11 · FOs=8
 Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers
-run=1/2 gen=1/10 outstation=2 balance=24.953 backup_shortage=0 base_handovers=9 elapsed=3.8s
-run=1/2 gen=6/10 outstation=2 balance=21.498 backup_shortage=0 base_handovers=9 elapsed=13.3s
-run=1/2 gen=10/10 outstation=2 balance=20.248 backup_shortage=0 base_handovers=9 elapsed=20.9s
-run=2/2 gen=1/10 outstation=2 balance=24.635 backup_shortage=0 base_handovers=9 elapsed=24.7s
-run=2/2 gen=6/10 outstation=2 balance=22.544 backup_shortage=0 base_handovers=9 elapsed=34.2s
-run=2/2 gen=10/10 outstation=2 balance=20.816 backup_shortage=0 base_handovers=9 elapsed=41.7s
-DONE · outstation=2 · balance=20.2483 · backup shortage=0 · handovers=11 · 41.8s
+run=1/1 gen=1/10 outstation=5 balance=155.301 backup_shortage=3 base_handovers=19 elapsed=32.2s
+run=1/1 gen=6/10 outstation=5 balance=135.937 backup_shortage=3 base_handovers=18 elapsed=111.3s
+run=1/1 gen=10/10 outstation=5 balance=132.756 backup_shortage=3 base_handovers=19 elapsed=173.5s
+DONE · outstation=5 · balance=132.7556 · backup shortage=3 · handovers=24 · 173.6s
