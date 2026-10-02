@@ -438,64 +438,82 @@ def decode(keys,missions,feasible,caps,fos,avail,pilots,rng=None):
         return best[0],best_len
 
     def minimum_segments(role,pool,tour):
-        """Cover an infeasible tour with genuinely legal relief segments.
+        """Return a minimum-segment legal relief plan without exhaustive DP.
 
-        Planned segments already count toward a pilot's FTL roster, even before
-        the completed tour is committed to `assigned`.
+        The previous exact DP explored *all* legal segmentations before choosing
+        the shortest one.  That is mathematically correct but very expensive in
+        a GA because decode() runs thousands of times.  This version uses
+        iterative deepening: try to cover the tour with 1 segment, then 2, then
+        3, ... and stop at the first feasible plan.  Therefore the first result
+        still has the minimum possible number of crew segments, while the
+        common 2-segment relief case returns as soon as one valid plan is found.
+
+        Planned segments are included immediately in each pilot's FTL roster,
+        preserving the hard invariant that a pilot reused later in the same
+        tour is validated against his/her complete planned history.
         """
-        result=[]; i=0
         planned={p:[] for p in pool}
-        previous_pid=None
+        # Cache the expensive roster-wide FTL check for this slow-path call.
+        local_legal_cache={}
 
-        while i<len(tour):
-            best_len=0; best=[]
+        def planned_legal(p,i,end):
+            segment=list(tour[i:end])
+            roster=assigned.get(p,[])+planned[p]
+            key=(p,tuple(m.id for m in planned[p]),i,end)
+            if key in local_legal_cache:
+                return local_legal_cache[key]
+            ok=(all(p in feasible[m.id][role] for m in segment)
+                and segment_available(p,segment)
+                and not any(m.departure < x.arrival and x.departure < m.arrival
+                            for m in segment for x in roster)
+                and ftl_ok_for_missions(roster+segment,pilots[p].home_base))
+            local_legal_cache[key]=ok
+            return ok
 
-            for p in pool:
-                # A relief must actually change the operating pilot.
-                if p == previous_pid:
-                    continue
+        # One segment was already attempted by the fast path.  Start at two.
+        for max_segments in range(2,len(tour)+1):
+            failed=set()
 
-                lo=0
-                for end in range(i+1,len(tour)+1):
-                    segment=tour[i:end]
+            def search(i,previous_pid,segments_left):
+                if i >= len(tour):
+                    return []
+                if segments_left <= 0:
+                    return None
+                # At least one mission must remain for every later segment.
+                if len(tour)-i < 1:
+                    return None
+                state=(i,previous_pid,segments_left,tuple(
+                    (p,tuple(m.id for m in planned[p])) for p in sorted(pool)
+                ))
+                if state in failed:
+                    return None
 
-                    if not all(p in feasible[m.id][role] for m in segment):
-                        break
-                    if not segment_available(p,segment):
-                        break
-
-                    roster=assigned.get(p,[])+planned[p]
-                    if any(m.departure < x.arrival and x.departure < m.arrival
-                           for m in segment for x in roster):
-                        break
-
-                    if not ftl_ok_for_missions(
-                        roster+list(segment),
-                        pilots[p].home_base
-                    ):
-                        break
-                    lo=end-i
-
-                if lo>best_len:
-                    best_len=lo; best=[p]
-                elif lo and lo==best_len:
-                    best.append(p)
-
-            if not best_len:
+                # Operational tie-breaks only affect which minimum solution is
+                # returned, not the guaranteed minimum number of segments.
+                ordered=sorted(pool,key=lambda p:(counts[p],len(days[p]),p))
+                for p in ordered:
+                    if p == previous_pid:
+                        continue
+                    # Longest prefix first: most 2-segment reliefs terminate on
+                    # the first successful branch instead of enumerating every
+                    # alternative segmentation.
+                    latest_end=len(tour)-(segments_left-1)
+                    for end in range(latest_end,i,-1):
+                        if not planned_legal(p,i,end):
+                            continue
+                        segment=list(tour[i:end])
+                        planned[p].extend(segment)
+                        tail=search(end,p,segments_left-1)
+                        del planned[p][-len(segment):]
+                        if tail is not None:
+                            return [(i,end,p)]+tail
+                failed.add(state)
                 return None
 
-            best=sorted(best,key=lambda p:(counts[p],len(days[p]),p))
-            gene=keys[(gi+len(result)) % len(keys)] if keys else 0.0
-            width=max(1,(len(best)+1)//2)
-            pid=best[min(width-1,int(gene*width))]
-
-            segment=list(tour[i:i+best_len])
-            result.append((i,i+best_len,pid))
-            planned[pid].extend(segment)
-            previous_pid=pid
-            i+=best_len
-
-        return result
+            result=search(0,None,max_segments)
+            if result is not None:
+                return result
+        return None
 
     for reg,tour in build_tours(missions):
         # -------- FAST PATH: one crew for the entire tour --------
@@ -608,23 +626,40 @@ def build_crew_actions(assign, missions, handover_meta):
         })
     return actions
 
-def split_duty_metadata(missions):
-    """Map the mission immediately after each used split to GUI metadata."""
+def split_duty_metadata(assign, missions):
+    """Return split-duty metadata for the *assigned pilot rosters*.
+
+    Split duty is a crew/FDP property, not an aircraft-fleet property.  The old
+    implementation passed every mission in the schedule through one synthetic
+    duty stream, which could create impossible multi-aircraft FDPs and miss the
+    real M044/M045 split.
+    """
+    by_pilot={}
+    for m in missions:
+        pair=assign[m.id]
+        by_pilot.setdefault(pair['captain'],[]).append(m)
+        by_pilot.setdefault(pair['fo'],[]).append(m)
     result={}
-    for duty in duty_periods_for_missions(missions):
-        basic,allowed,split=fdp_limit_for_period(duty['missions'])
-        if not split or duty['duty_min'] <= basic:
-            continue
-        # A split is marked as 'used' only when the basic FDP would be exceeded.
-        info=dict(split)
-        info.update({'basic_max_fdp_min':basic,'adjusted_max_fdp_min':allowed,
-                     'actual_fdp_min':duty['duty_min']})
-        result[split['before_mission']]=info
+    for pid, roster in by_pilot.items():
+        for duty in duty_periods_for_missions(roster):
+            basic,allowed,split=fdp_limit_for_period(duty['missions'])
+            if not split or duty['duty_min'] <= basic:
+                continue
+            info=dict(split)
+            info.update({'basic_max_fdp_min':basic,'adjusted_max_fdp_min':allowed,
+                         'actual_fdp_min':duty['duty_min']})
+            key=split['before_mission']
+            existing=result.get(key)
+            if existing is None:
+                info['pilots']=[pid]
+                result[key]=info
+            else:
+                existing.setdefault('pilots',[]).append(pid)
     return result
 
 def make_solution(decoded,scorev,missions,pilots):
     assign,counts,days,meta=decoded; routes={}; movements={}; actions={}
-    split_meta=split_duty_metadata(missions)
+    split_meta=split_duty_metadata(assign,missions)
     for m in missions:
         reg=m.fixed_aircraft; routes.setdefault(reg,[]).append(m.id)
         actions.setdefault(reg,[]).append({'mission':m.id,'transition_mode':'FIXED'})
@@ -647,7 +682,8 @@ def make_solution(decoded,scorev,missions,pilots):
     return {'schedule_signature':sig,'pilot_days_by_pilot':pilot_days,
       'objectives':{'total_operational_cost_eur':float(charged*600),'complexity_score':int(base_swaps+out_events),
         'empty_legs':0,'charged_pilot_days':charged,'aircraft_parking_days':0,'crew_balance_score':round(balance,4),
-        'backup_shortage_days':int(reserve_short),'outstation_handovers':int(out_events)},
+        'backup_shortage_days':int(reserve_short),'outstation_handovers':int(out_events),
+        'outstation_changed_pilots':int(out_changed)},
       'cost_breakdown':{'pilot_cost_eur':float(charged*600),'commercial_flight_cost_eur':0.0,'empty_flight_cost_eur':0.0},
       'metrics':{'empty_nm':0.0,'empty_legs':0,'charged_pilot_days':charged,'aircraft_parking_days':0,
         'changed_pilot_count':int(changed_total),'nonhomebase_swap_events':int(out_events),

@@ -2137,6 +2137,7 @@ def _four_solution_choices(gallery: list[dict]) -> dict[str, dict]:
             gallery,
             key=lambda s: (
                 len(actual_outstation_swap_events(s)),
+                actual_outstation_changed_pilots(s),
                 obj(s, "complexity_score"),
                 metric(s, "charged_pilot_days"),
             ),
@@ -4300,7 +4301,13 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
 (() => {{
  const data={data_json}, header={header_json};
  const board=document.getElementById('board'), viewport=document.getElementById('viewport');
- const dayMs=86400000, baseDayW=112; let zoom=1;
+ const dayMs=86400000, baseDayW=112;
+ const zoomStorageKey='airline_optimizer_results_board_zoom_v1';
+ let zoom=1;
+ try {{
+   const savedZoom=Number(window.localStorage.getItem(zoomStorageKey));
+   if(Number.isFinite(savedZoom) && savedZoom>=.35 && savedZoom<=3) zoom=savedZoom;
+ }} catch (_) {{}}
  const first=new Date(data.dates[0]+'T00:00:00Z');
  const lastEnd=new Date(data.dates[data.dates.length-1]+'T00:00:00Z').getTime()+dayMs;
  document.getElementById('title').textContent=header.title;
@@ -4364,7 +4371,7 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
      if(el)el.textContent=`${{days.size}} flight day${{days.size===1?'':'s'}}`;
    }});
  }}
- function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;requestAnimationFrame(updateVisibleFlightDays);}}
+ function setZoom(z){{zoom=Math.max(.35,Math.min(3,z));document.documentElement.style.setProperty('--day-w',`${{baseDayW*zoom}}px`);document.getElementById('zoomTxt').textContent=`${{Math.round(zoom*100)}}%`;try {{ window.localStorage.setItem(zoomStorageKey,String(zoom)); }} catch (_) {{}}requestAnimationFrame(updateVisibleFlightDays);}}
  document.getElementById('minus').onclick=()=>setZoom(zoom/1.2);document.getElementById('plus').onclick=()=>setZoom(zoom*1.2);document.getElementById('startBtn').onclick=()=>{{viewport.scrollTo({{left:0,behavior:'smooth'}});requestAnimationFrame(updateVisibleFlightDays);setTimeout(updateVisibleFlightDays,400);}};document.getElementById('fit').onclick=()=>{{const avail=Math.max(300,viewport.clientWidth-120);setZoom(Math.max(.35,Math.min(1.2,avail/(data.dates.length*baseDayW))));viewport.scrollLeft=0;scheduleFlightDaysUpdate();}};
  viewport.addEventListener('wheel',e=>{{if(e.ctrlKey||e.metaKey){{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9));}}else if(e.shiftKey){{e.preventDefault();viewport.scrollLeft+=e.deltaY+e.deltaX;requestAnimationFrame(updateVisibleFlightDays);}}}},{{passive:false}});
 
@@ -4383,7 +4390,8 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
  window.addEventListener('resize', scheduleFlightDaysUpdate);
 
  render();
- setZoom(1);
+ // Preserve the user's board zoom when Streamlit rerenders after switching solution.
+ setZoom(zoom);
  requestAnimationFrame(updateVisibleFlightDays);
 }})();
 </script>
