@@ -2305,6 +2305,31 @@ def pilot_planning_page():
             "Pilot", pilot_ids, format_func=lambda pid: display.get(pid, pid),
             key="pilot_planning_selected",
         )
+        # Pilot experience is a permanent qualification, not a daily availability.
+        # Keep the flag in pilots.csv and expose it beside the pilot selector.
+        if "experienced" not in pilots.columns:
+            pilots["experienced"] = "TRUE"
+        pilot_row = pilots.loc[pilots["id"].astype(str) == str(selected)]
+        raw_experience = str(pilot_row.iloc[0].get("experienced", "TRUE")).strip().upper() if not pilot_row.empty else "TRUE"
+        experience_options = ["Experienced", "Inexperienced"]
+        current_experience = 1 if raw_experience in ("FALSE", "NO", "N", "0", "INEXPERIENCED") else 0
+        experience_choice = st.selectbox(
+            "Crew experience",
+            experience_options,
+            index=current_experience,
+            key=f"pilot_experience_{selected}_{current_experience}",
+            help="Every mission requires a CAPT and FO with at least one experienced pilot.",
+        )
+        if st.button("Save experience", key=f"save_pilot_experience_{selected}"):
+            fresh_pilots = load_csv(PILOTS)
+            if "experienced" not in fresh_pilots.columns:
+                fresh_pilots["experienced"] = "TRUE"
+            mask = fresh_pilots["id"].astype(str) == str(selected)
+            fresh_pilots.loc[mask, "experienced"] = "TRUE" if experience_choice == "Experienced" else "FALSE"
+            save_csv(fresh_pilots, PILOTS)
+            st.success(f"Experience saved for {display.get(selected, selected)}. Rerun the optimizer to refresh solutions.")
+            st.rerun()
+
         availability = load_csv(PILOT_AVAILABILITY)
 
         # Reload after a CSV replacement so calendar and editor always use the active file.

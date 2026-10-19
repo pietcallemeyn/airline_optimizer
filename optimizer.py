@@ -45,13 +45,22 @@ class Mission:
     id:str; origin:str; destination:str; departure:datetime; arrival:datetime; pax:int; fixed_aircraft:str
 @dataclass(frozen=True)
 class Pilot:
-    id:str; role:str; home_base:str; max_duty_min:int
+    id:str; role:str; home_base:str; max_duty_min:int; experienced:bool=True
+
+def parse_experienced(value):
+    """Backward-compatible: a missing column means experienced."""
+    value = str(value or "").strip().upper()
+    if value in {"", "TRUE", "YES", "Y", "1", "EXPERIENCED"}:
+        return True
+    if value in {"FALSE", "NO", "N", "0", "INEXPERIENCED"}:
+        return False
+    raise ValueError(f"Invalid experienced flag: {value!r}. Use TRUE or FALSE.")
 
 def dt(x): return datetime.fromisoformat(x)
 def load_data():
     pilots={}; avail={}; missions=[]
     with (DATA/'pilots.csv').open(newline='',encoding='utf-8') as f:
-        for r in csv.DictReader(f): pilots[r['id']]=Pilot(r['id'],r['role'].upper(),r['home_base'],int(r.get('max_duty_min') or 600))
+        for r in csv.DictReader(f): pilots[r['id']]=Pilot(r['id'],r['role'].upper(),r['home_base'],int(r.get('max_duty_min') or 600),parse_experienced(r.get('experienced')))
     p=DATA/'pilot_availability.csv'
     if p.exists():
         with p.open(newline='',encoding='utf-8') as f:
@@ -234,7 +243,7 @@ def ftl_ok_for_missions(ms, home_base=None):
 
 
 def diagnose_ftl_failure(missions, pilots, avail, caps, fos):
-    """Explain which complete aircraft tours are impossible under availability/FTL."""
+    """Report full-tour coverage limitations (relief may still be feasible)."""
     tours=build_tours(missions)
     mission_by_id = {m.id: m for m in missions}
     normalized_tours = []
@@ -327,10 +336,10 @@ def diagnose_ftl_failure(missions, pilots, avail, caps, fos):
                     if not common_ftl: print(f"    FO {pid}: " + "; ".join(reasons[:3]))
 
     if not impossible:
-        print("\nEvery tour has at least one individually feasible CAPT and FO.")
+        print("\nEvery tour has at least one individually feasible full-tour CAPT and FO.")
         print("The remaining failure is therefore caused by competition/overlap between tours.")
     else:
-        print(f"\n{impossible} tour(s) have no individually feasible CAPT and/or FO.")
+        print(f"\n{impossible} tour(s) lack a single-pilot full-tour CAPT and/or FO; coordinated relief may still work.")
     print("="*78)
 
 def precompute(missions,pilots,avail):
@@ -370,217 +379,208 @@ def build_tours(missions):
             tours.append((reg,current))
     return sorted(tours,key=lambda x:(x[1][0].departure,x[0]))
 
-def decode(keys,missions,feasible,caps,fos,avail,pilots,rng=None):
-    """Fast hybrid decoder.
+def decode(keys, missions, feasible, caps, fos, avail, pilots, rng=None, failure_stats=None):
+    """Assign experienced-compatible CAPT/FO pairs, with joint relief search.
 
-    Fast path: assign one CAPT + FO to the complete base-to-base aircraft tour.
-    Slow path: only if a complete tour cannot be covered legally, split that
-    specific tour into the minimum number of legal crew segments. Outstation
-    relief is therefore exceptional rather than evaluated on every sector.
+    Prefer one crew for a whole tour. If that is impossible, search coordinated
+    pair segments with iterative deepening in the number of handover events.
+    All candidates are checked against their accumulated pilot FTL rosters.
     """
-    assigned={p:[] for p in caps+fos}
-    counts={p:0 for p in caps+fos}; days={p:set() for p in caps+fos}
-    assign={}; meta={}; gi=0; last_crew={}
+    assigned = {p: [] for p in caps + fos}
+    counts = {p: 0 for p in caps + fos}
+    days = {p: set() for p in caps + fos}
+    assign, meta, last_crew = {}, {}, {}
+    gi = 0
 
-    # Cache within one decode. The same roster/segment tests recur heavily.
-    cache={}
-
-    def segment_available(pid,segment):
-        for m in segment:
-            d=m.departure.date()
-            while d<=m.arrival.date():
-                if avail.get((pid,d),'AVAILABLE') in BLOCKING: return False
-                d+=timedelta(days=1)
-        return True
-
-    def no_overlap(pid,segment):
-        old=assigned.get(pid,[])
-        return all(not (m.departure < x.arrival and x.departure < m.arrival)
-                   for m in segment for x in old)
-
-    def legal(pid,role,segment):
-        if not segment: return False
-        # Assigned mission ids are part of the key because FTL is roster-wide.
-        key=(pid,role,tuple(x.id for x in assigned.get(pid,[])),
-             tuple(x.id for x in segment))
-        if key in cache: return cache[key]
-        ok=(all(pid in feasible[m.id][role] for m in segment)
-            and segment_available(pid,segment)
-            and no_overlap(pid,segment)
-            and ftl_ok_for_missions(assigned.get(pid,[])+list(segment),
-                                    pilots[pid].home_base))
-        cache[key]=ok
-        return ok
-
-    def choose(role,pool,segment):
+    def pair_order(pairs):
         nonlocal gi
-        candidates=[p for p in pool if legal(p,role,segment)]
-        if not candidates: return None
-        candidates=sorted(candidates,key=lambda p:(counts[p],len(days[p]),p))
-        gene=keys[gi % len(keys)] if keys else 0.0; gi+=1
-        width=max(1,(len(candidates)+1)//2)
-        return candidates[min(width-1,int(gene*width))]
+        pairs = sorted(pairs, key=lambda pair: (
+            counts[pair[0]] + counts[pair[1]],
+            len(days[pair[0]]) + len(days[pair[1]]), pair))
+        if keys and len(pairs) > 1:
+            # Vary ties and near-ties between GA chromosomes.
+            width = max(1, (len(pairs) + 1) // 2)
+            shift = min(width - 1, int(keys[gi % len(keys)] * width))
+            gi += 1
+            pairs = pairs[shift:] + pairs[:shift]
+        return pairs
 
-    def longest_prefix(role,pool,tour,start):
-        """Find replacement + longest legal prefix; invoked only on slow path."""
-        best_len=0; best=[]
-        for p in pool:
-            lo=0
-            # Tours are short, so linear extension is cheap here and stops at
-            # the first illegal prefix.
-            for end in range(start+1,len(tour)+1):
-                if legal(p,role,tour[start:end]): lo=end-start
-                else: break
-            if lo>best_len: best_len=lo; best=[p]
-            elif lo and lo==best_len: best.append(p)
-        if not best_len: return None,0
-        best=sorted(best,key=lambda p:(counts[p],len(days[p]),p))
-        return best[0],best_len
-
-    def minimum_segments(role,pool,tour):
-        """Return a minimum-segment legal relief plan without exhaustive DP.
-
-        The previous exact DP explored *all* legal segmentations before choosing
-        the shortest one.  That is mathematically correct but very expensive in
-        a GA because decode() runs thousands of times.  This version uses
-        iterative deepening: try to cover the tour with 1 segment, then 2, then
-        3, ... and stop at the first feasible plan.  Therefore the first result
-        still has the minimum possible number of crew segments, while the
-        common 2-segment relief case returns as soon as one valid plan is found.
-
-        Planned segments are included immediately in each pilot's FTL roster,
-        preserving the hard invariant that a pilot reused later in the same
-        tour is validated against his/her complete planned history.
-        """
-        planned={p:[] for p in pool}
-        # Cache the expensive roster-wide FTL check for this slow-path call.
-        local_legal_cache={}
-
-        def planned_legal(p,i,end):
-            segment=list(tour[i:end])
-            roster=assigned.get(p,[])+planned[p]
-            key=(p,tuple(m.id for m in planned[p]),i,end)
-            if key in local_legal_cache:
-                return local_legal_cache[key]
-            ok=(all(p in feasible[m.id][role] for m in segment)
-                and segment_available(p,segment)
-                and not any(m.departure < x.arrival and x.departure < m.arrival
-                            for m in segment for x in roster)
-                and ftl_ok_for_missions(roster+segment,pilots[p].home_base))
-            local_legal_cache[key]=ok
-            return ok
-
-        # One segment was already attempted by the fast path.  Start at two.
-        for max_segments in range(2,len(tour)+1):
-            failed=set()
-
-            def search(i,previous_pid,segments_left):
-                if i >= len(tour):
-                    return []
-                if segments_left <= 0:
-                    return None
-                # At least one mission must remain for every later segment.
-                if len(tour)-i < 1:
-                    return None
-                state=(i,previous_pid,segments_left,tuple(
-                    (p,tuple(m.id for m in planned[p])) for p in sorted(pool)
-                ))
-                if state in failed:
-                    return None
-
-                # Operational tie-breaks only affect which minimum solution is
-                # returned, not the guaranteed minimum number of segments.
-                ordered=sorted(pool,key=lambda p:(counts[p],len(days[p]),p))
-                for p in ordered:
-                    if p == previous_pid:
-                        continue
-                    # Longest prefix first: most 2-segment reliefs terminate on
-                    # the first successful branch instead of enumerating every
-                    # alternative segmentation.
-                    latest_end=len(tour)-(segments_left-1)
-                    for end in range(latest_end,i,-1):
-                        if not planned_legal(p,i,end):
-                            continue
-                        segment=list(tour[i:end])
-                        planned[p].extend(segment)
-                        tail=search(end,p,segments_left-1)
-                        del planned[p][-len(segment):]
-                        if tail is not None:
-                            return [(i,end,p)]+tail
-                failed.add(state)
+    for reg, tour in build_tours(missions):
+        n = len(tour)
+        # Availability and experience are immutable for this tour.
+        possible = []
+        for m in tour:
+            cs = feasible[m.id]['CAPT']
+            fs = feasible[m.id]['FO']
+            possible.append([(c, f) for c in cs for f in fs
+                             if pilots[c].experienced or pilots[f].experienced])
+            if not possible[-1]:
+                if failure_stats is not None:
+                    failure_stats[(reg, "NO_EXPERIENCED_PAIR", m.id)] = failure_stats.get((reg, "NO_EXPERIENCED_PAIR", m.id), 0) + 1
                 return None
 
-            result=search(0,None,max_segments)
-            if result is not None:
-                return result
-        return None
+        planned = {p: [] for p in caps + fos}
+        legal_cache = {}
 
-    for reg,tour in build_tours(missions):
-        # -------- FAST PATH: one crew for the entire tour --------
-        captain=choose('CAPT',caps,tour)
-        fo=choose('FO',fos,tour)
+        def legal_segment(pid, role, start, end):
+            segment = tour[start:end]
+            old = assigned[pid] + planned[pid]
+            key = (pid, role, start, end, tuple(x.id for x in planned[pid]))
+            if key in legal_cache:
+                return legal_cache[key]
+            ok = (all(pid in feasible[m.id][role] for m in segment)
+                  and all(available(pid, m, avail) for m in segment)
+                  and all(not (a.departure < b.arrival and b.departure < a.arrival)
+                          for j, a in enumerate(segment) for b in segment[j+1:])
+                  and all(not (m.departure < x.arrival and x.departure < m.arrival)
+                          for m in segment for x in old)
+                  and ftl_ok_for_missions(old + segment, pilots[pid].home_base))
+            legal_cache[key] = ok
+            return ok
 
-        if captain is not None and fo is not None:
-            segments_c=[(0,len(tour),captain)]
-            segments_f=[(0,len(tour),fo)]
+        def legal_pair(pair, start, end):
+            c, f = pair
+            return (legal_segment(c, 'CAPT', start, end)
+                    and legal_segment(f, 'FO', start, end))
+
+        # Fast path: find a complete-tour pair before attempting any relief.
+        common = set(possible[0])
+        for options in possible[1:]:
+            common.intersection_update(options)
+        full = [pair for pair in pair_order(common) if legal_pair(pair, 0, n)]
+        if full:
+            segments = [(0, n, full[0])]
         else:
-            # -------- SLOW PATH: only this infeasible tour --------
-            segments_c=(minimum_segments('CAPT',caps,tour)
-                        if captain is None else [(0,len(tour),captain)])
-            segments_f=(minimum_segments('FO',fos,tour)
-                        if fo is None else [(0,len(tour),fo)])
-            if segments_c is None or segments_f is None: return None
+            # Search pair segments jointly. Either role or both can change.
+            # Cap expensive searches per tour so a difficult GA chromosome
+            # cannot stall an entire optimization run.
+            node_budget = 100000
+            nodes = 0
+            segments = None
+            aborted = False
 
-        cap_at={}
-        fo_at={}
-        for s,e,p in segments_c:
-            for i in range(s,e): cap_at[i]=p
-        for s,e,p in segments_f:
-            for i in range(s,e): fo_at[i]=p
+            for max_events in range(1, n):
+                nodes = 0  # Reset the search allowance for each relief depth.
+                failed = set()
 
-        previous=last_crew.get(reg)
-        for i,m in enumerate(tour):
-            c=cap_at[i]; f=fo_at[i]
-            if i==0:
-                changed_c=previous is not None and c!=previous[0]
-                changed_f=previous is not None and f!=previous[1]
+                def search(start, previous_pair, events_left):
+                    nonlocal nodes, aborted
+                    nodes += 1
+                    if nodes > node_budget:
+                        aborted = True
+                        return None
+                    if start == n:
+                        return []
+                    if events_left < 0:
+                        return None
+                    state = (start, previous_pair, events_left,
+                             tuple((p, tuple(m.id for m in planned[p]))
+                                   for p in sorted(planned) if planned[p]))
+                    if state in failed:
+                        return None
+
+                    # Longest segments first to minimize handover events.
+                    for end in range(n, start, -1):
+                        options = set(possible[start])
+                        for j in range(start + 1, end):
+                            options.intersection_update(possible[j])
+                            if not options:
+                                break
+                        if not options:
+                            continue
+                        if end < n and events_left == 0:
+                            continue
+                        for pair in pair_order(options):
+                            if pair == previous_pair:
+                                continue
+                            if not legal_pair(pair, start, end):
+                                continue
+                            c, f = pair
+                            segment = tour[start:end]
+                            planned[c].extend(segment)
+                            planned[f].extend(segment)
+                            tail = search(end, pair, events_left - (end < n))
+                            del planned[c][-len(segment):]
+                            del planned[f][-len(segment):]
+                            if tail is not None:
+                                return [(start, end, pair)] + tail
+                            if aborted:
+                                return None
+                    failed.add(state)
+                    return None
+
+                segments = search(0, None, max_events)
+                if segments is not None or aborted:
+                    break
+            if segments is None:
+                if failure_stats is not None:
+                    reason = "RELIEF_SEARCH_LIMIT" if aborted else "NO_LEGAL_RELIEF"
+                    failure_stats[(reg, reason, str(n))] = failure_stats.get((reg, reason, str(n)), 0) + 1
+                return None
+
+        cap_at, fo_at = {}, {}
+        for start, end, (c, f) in segments:
+            for i in range(start, end):
+                cap_at[i], fo_at[i] = c, f
+
+        previous = last_crew.get(reg)
+        for i, m in enumerate(tour):
+            c, f = cap_at[i], fo_at[i]
+            if not (pilots[c].experienced or pilots[f].experienced):
+                return None
+            if i == 0:
+                changed_c = previous is not None and c != previous[0]
+                changed_f = previous is not None and f != previous[1]
                 if previous is None:
-                    action='INITIAL_ATTACH'; handover=None; changed=0; outstation=False
+                    action, handover, changed, outstation = 'INITIAL_ATTACH', None, 0, False
                 elif not changed_c and not changed_f:
-                    action='CONTINUE'; handover=None; changed=0; outstation=False
+                    action, handover, changed, outstation = 'CONTINUE', None, 0, False
                 else:
-                    action=('BASE_FULL_CREW_SWAP' if changed_c and changed_f
-                            else 'BASE_CAPT_SWAP' if changed_c else 'BASE_FO_SWAP')
-                    handover=m.origin; changed=int(changed_c)+int(changed_f); outstation=False
+                    action = ('BASE_FULL_CREW_SWAP' if changed_c and changed_f
+                              else 'BASE_CAPT_SWAP' if changed_c else 'BASE_FO_SWAP')
+                    handover, changed, outstation = m.origin, int(changed_c) + int(changed_f), False
             else:
-                pc=cap_at[i-1]; pf=fo_at[i-1]
-                changed_c=(c!=pc); changed_f=(f!=pf)
-                changed=int(changed_c)+int(changed_f)
+                pc, pf = cap_at[i - 1], fo_at[i - 1]
+                changed_c, changed_f = c != pc, f != pf
+                changed = int(changed_c) + int(changed_f)
                 if not changed:
-                    action='CONTINUE'; handover=None; outstation=False
+                    action, handover, outstation = 'CONTINUE', None, False
                 else:
-                    outstation=m.origin not in BASES
-                    prefix='OUTSTATION' if outstation else 'BASE'
-                    action=(f'{prefix}_FULL_CREW_SWAP' if changed_c and changed_f
-                            else f'{prefix}_CAPT_SWAP' if changed_c else f'{prefix}_FO_SWAP')
-                    handover=m.origin
-
-            assign[m.id]={'captain':c,'fo':f}
-            meta[m.id]={'action':action,'handover_airport':handover,
-                        'outstation':bool(outstation),'changed_pilots':changed,
-                        'reason':'FTL_REQUIRED' if outstation else None}
-            for pid in (c,f):
+                    outstation = m.origin not in BASES
+                    prefix = 'OUTSTATION' if outstation else 'BASE'
+                    action = (f'{prefix}_FULL_CREW_SWAP' if changed_c and changed_f
+                              else f'{prefix}_CAPT_SWAP' if changed_c else f'{prefix}_FO_SWAP')
+                    handover = m.origin
+            assign[m.id] = {'captain': c, 'fo': f}
+            meta[m.id] = {'action': action, 'handover_airport': handover,
+                          'outstation': bool(outstation), 'changed_pilots': changed,
+                          'reason': 'FTL_REQUIRED' if outstation else None}
+            for pid in (c, f):
                 assigned[pid].append(m)
-                counts[pid]+=1; days[pid].add(m.departure.date())
+                counts[pid] += 1
+                days[pid].add(m.departure.date())
+        last_crew[reg] = (cap_at[n - 1], fo_at[n - 1])
 
-        last_crew[reg]=(cap_at[len(tour)-1],fo_at[len(tour)-1])
-
-    # Hard final validation: an illegal pilot roster can never become a solution.
-    for pid, roster in assigned.items():
-        if roster and not ftl_ok_for_missions(roster, pilots[pid].home_base):
+    # Mandatory final validation of experience, FTL and conflicting duties.
+    for pair in assign.values():
+        if not (pilots[pair['captain']].experienced or pilots[pair['fo']].experienced):
             return None
-
-    return assign,counts,days,meta
+    for pid, roster in assigned.items():
+        if not ftl_ok_for_missions(roster, pilots[pid].home_base):
+            return None
+        # Adjacent sectors of the SAME duty legitimately have overlapping
+        # per-sector report/release windows.  Those windows are not separate
+        # duties.  Reject actual flight overlaps here; cross-tour duty
+        # conflicts have already been checked by legal_segment().
+        for i, first in enumerate(roster):
+            if any(first.departure < second.arrival
+                   and second.departure < first.arrival
+                   for second in roster[i + 1:]):
+                if failure_stats is not None:
+                    key = ('FINAL', 'FLIGHT_OVERLAP', pid)
+                    failure_stats[key] = failure_stats.get(key, 0) + 1
+                return None
+    return assign, counts, days, meta
 
 def score(decoded,missions,pilots,avail,caps,fos):
     assign,counts,days,meta=decoded
@@ -717,7 +717,7 @@ def make_solution(decoded,scorev,missions,pilots,avail,caps,fos):
         'backup_shortage_days':int(reserve_short),'backup_slots':int(-neg_reserve),'backup_coverage_issues':backup_details,'mission_count_by_pilot':counts},
       'routes':routes,'aircraft_movements':movements,'aircraft_actions':actions,'crew_assignments':assign,
       'crew_actions':build_crew_actions(assign, missions, meta),'final_crew_decisions':[],
-      'validation':{'fixed_aircraft':True,'pilot_availability_valid':True,'pilot_overlap_valid':True,
+      'validation':{'fixed_aircraft':True,'pilot_availability_valid':True,'pilot_overlap_valid':True,'crew_experience_valid':True,
         'ftl_daily_fdp_valid':True,'ftl_split_duty_applied':bool(split_meta),'ftl_min_rest_valid':True,'ftl_rolling_duty_valid':True,'ftl_rolling_flight_valid':True},
       'split_duties':split_meta}
 
@@ -760,35 +760,74 @@ def save(solutions,stats):
     if unique: (OUTPUT/'cheapest.json').write_text(json.dumps(unique[0],indent=2),encoding='utf-8')
     (OUTPUT/'run_summary.json').write_text(json.dumps(stats|{'solutions':len(unique),'optimizer':'LEAN_CREW_GA'},indent=2),encoding='utf-8')
 
+
+def validate_aircraft_missions(missions):
+    """Reject physically impossible fixed-aircraft inputs before GA search."""
+    by_aircraft = {}
+    for mission in missions:
+        if mission.arrival <= mission.departure:
+            raise ValueError(f"Mission {mission.id}: arrival must be after departure")
+        by_aircraft.setdefault(mission.fixed_aircraft, []).append(mission)
+    conflicts = []
+    for registration, group in by_aircraft.items():
+        group.sort(key=lambda m: (m.departure, m.id))
+        for index, first in enumerate(group):
+            for second in group[index + 1:]:
+                if second.departure >= first.arrival:
+                    break
+                conflicts.append((registration, first, second))
+    if conflicts:
+        print("\nINPUT DATA ERROR: overlapping flights on the same fixed aircraft.")
+        print(f"Found {len(conflicts)} conflicting mission pair(s) on "
+              f"{len(set(reg for reg, _, _ in conflicts))} aircraft.")
+        print("A crew optimizer cannot repair aircraft overlaps while aircraft assignments are fixed.")
+        print("Check departure/arrival timestamps and fixed_aircraft in data/missions.csv "
+              "and data/missions_with_estimates.csv.")
+        print("Conflicting missions (shown only in your local console):")
+        for registration, first, second in conflicts[:20]:
+            print(f"  {registration}: {first.id} [{first.departure:%Y-%m-%d %H:%M}–"
+                  f"{first.arrival:%Y-%m-%d %H:%M}] overlaps "
+                  f"{second.id} [{second.departure:%Y-%m-%d %H:%M}–"
+                  f"{second.arrival:%Y-%m-%d %H:%M}]")
+        return False
+    return True
+
 def main():
     ap=argparse.ArgumentParser(description='Lean GA: fixed missions/aircraft, optimize crew balance and reserve coverage.')
     ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
-    a=ap.parse_args(); missions,pilots,avail=load_data(); feasible,caps,fos=precompute(missions,pilots,avail)
+    a=ap.parse_args(); missions,pilots,avail=load_data()
+    if not validate_aircraft_missions(missions): return 2
+    feasible,caps,fos=precompute(missions,pilots,avail)
     print(f'LEAN CREW GA · missions={len(missions)} fixed aircraft · captains={len(caps)} · FOs={len(fos)}')
     print('Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers')
-    archive={}; start=time.perf_counter(); evals=0
+    archive={}; start=time.perf_counter(); evals=0; valid_evals=0; failure_stats={}
     for run in range(a.runs):
         rng=random.Random(a.seed+run*10007); n=max(2,len(missions)*2)
         pop=[]
         for _ in range(a.population):
-            genes=[rng.random() for _ in range(n)]; dec=decode(genes,missions,feasible,caps,fos,avail,pilots,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); pop.append({'genes':genes,'decoded':dec,'score':sc}); evals+=1
+            genes=[rng.random() for _ in range(n)]; dec=decode(genes,missions,feasible,caps,fos,avail,pilots,rng,failure_stats); valid_evals+=int(dec is not None); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); pop.append({'genes':genes,'decoded':dec,'score':sc}); evals+=1
         for gen in range(a.generations):
             children=[]
             while len(children)<a.population:
                 p1=tournament(pop,rng); p2=tournament(pop,rng); cut=rng.randrange(n) if n else 0; g=p1['genes'][:cut]+p2['genes'][cut:]
                 for _ in range(1+(rng.random()<0.25)):
                     if n: g[rng.randrange(n)]=rng.random()
-                dec=decode(g,missions,feasible,caps,fos,avail,pilots,rng); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); children.append({'genes':g,'decoded':dec,'score':sc}); evals+=1
+                if not any(x['decoded'] is not None for x in pop) and rng.random() < 0.50:
+                    g=[rng.random() for _ in range(n)]  # Random restart: all-invalid parents give no selection signal.
+                dec=decode(g,missions,feasible,caps,fos,avail,pilots,rng,failure_stats); valid_evals+=int(dec is not None); sc=score(dec,missions,pilots,avail,caps,fos) if dec else (10**9,10**9,10**9,10**9,10**9,0); children.append({'genes':g,'decoded':dec,'score':sc}); evals+=1
             pop=sorted(pop+children,key=lambda x:x['score'])[:a.population]
             if a.verbose and (gen%5==0 or gen==a.generations-1):
-                b=pop[0]['score']; print(f'run={run+1}/{a.runs} gen={gen+1}/{a.generations} outstation={b[0]} balance={b[2]:.3f} backup_shortage={b[3]} base_handovers={b[4]} elapsed={time.perf_counter()-start:.1f}s',flush=True)
+                b=pop[0]['score']; print(f'run={run+1}/{a.runs} gen={gen+1}/{a.generations} outstation={b[0]} balance={b[2]:.3f} backup_shortage={b[3]} base_handovers={b[4]} valid={valid_evals}/{evals} elapsed={time.perf_counter()-start:.1f}s',flush=True)
         for x in pop[:20]:
             if x['decoded']:
                 s=make_solution(x['decoded'],x['score'],missions,pilots,avail,caps,fos); archive[s['schedule_signature']]=s
-    save(list(archive.values()),{'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
+    save(list(archive.values()),{'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'valid_evaluations':valid_evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
     if not archive:
         print('NO FEASIBLE CREW SCHEDULE FOUND.')
-        print('Outstation crew continuity is mandatory: one CAPT + FO must cover each complete tour until EBAW/EBLG.')
+        print('Crew relief is permitted where legal; each CAPT/FO pair must include an experienced pilot.')
+        print('Decoder rejection summary (all evaluations):')
+        for (reg, reason, detail), count in sorted(failure_stats.items(), key=lambda item: -item[1])[:15]:
+            print(f'  aircraft={reg} reason={reason} detail={detail} rejected={count}')
         print('Running diagnostic to identify the actual blocking tours/constraints...')
         diagnose_ftl_failure(missions,pilots,avail,caps,fos)
         return 2

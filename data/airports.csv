@@ -3,6 +3,7 @@ EBAW,Antwerp,51.1894,4.4603
 EBBR,Brussels Airport,50.901402,4.48444
 EBKT,Kortrijk-Wevelgem International Airport,50.818878,3.209551
 EBLG,Liege,50.6374,5.4432
+EBMB,Melsbroek Air Base,50.913419,4.491005
 EBOS,Ostend-Bruges International Airport,51.1998,2.874673
 EDDB,Berlin Brandenburg Airport,52.361738,13.502341
 EDDC,Dresden Airport,51.134123,13.767831
@@ -17,6 +18,7 @@ EDDV,Hannover Airport,52.461102,9.68508
 EDJA,Memmingen Allgau Airport,47.988092,10.238248
 EDLV,Weeze (Niederrhein) Airport,51.601362,6.141228
 EDMO,Oberpfaffenhofen Airport,48.081402,11.2831
+EDNY,Bodensee Airport Friedrichshafen,47.671299,9.51149
 EDSB,Karlsruhe Baden-Baden Airport,48.7794,8.0805
 EDVE,Braunschweig-Wolfsburg Airport,52.319199,10.5561
 EFHK,Helsinki Vantaa Airport,60.318363,24.963341
@@ -40,6 +42,7 @@ EGPH,Edinburgh Airport,55.950145,-3.372288
 EGSS,London Stansted Airport,51.884998,0.235
 EGTC,Cranfield,52.0722,-0.6167
 EGTK,London Oxford Airport,51.836899,-1.32
+EGWU,RAF Northolt,51.553001,-0.418167
 EHAM,Amsterdam Airport Schiphol,52.308601,4.76389
 EHBK,Maastricht Aachen Airport,50.911087,5.769401
 EHGG,Groningen Airport Eelde,53.119107,6.577652
@@ -70,6 +73,7 @@ ESSB,Stockholm-Bromma Airport,59.354401,17.9417
 ETNG,Geilenkirchen Air Base,50.9608,6.04242
 EVRA,Riga International Airport,56.920752,23.970711
 EYSA,Šiauliai International Airport,55.89390182495117,23.395000457763672
+GMFK,Moulay Ali Cherif Airport,31.9475002289,-4.39833021164
 LATI,Tirana International Airport Mother Teresa,41.4147,19.7206
 LBPD,Plovdiv International Airport,42.067799,24.8508
 LBSF,Sofia,42.6952,23.4062
@@ -133,6 +137,7 @@ LIRZ,Perugia San Francesco d'Assisi – Umbria International Airport,43.095901,1
 LJLJ,Ljubljana Jože Pučnik Airport,46.223701,14.4576
 LKPR,Václav Havel Airport Prague,50.100874,14.259911
 LMML,Malta International Airport,35.845932,14.491546
+LOWS,Salzburg Airport,47.793301,13.0043
 LOWW,Vienna International Airport,48.110298,16.5697
 LPPR,Francisco de Sá Carneiro Airport,41.2481002808,-8.68138980865
 LQBK,Banja Luka International Airport,44.941399,17.297501
