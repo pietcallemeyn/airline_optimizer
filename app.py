@@ -1676,6 +1676,13 @@ def _ensure_pilot_planning_files() -> None:
         save_csv(pd.DataFrame(columns=["pilot_id", "date", "status", "note"]), PILOT_AVAILABILITY)
 
 
+def _pilot_experience_status(value) -> str:
+    """Match the optimizer's experienced field, including its missing-value default."""
+    if value is None or pd.isna(value) or str(value).strip() == "":
+        return "Experienced"
+    return "Experienced" if str(value).strip().lower() in {"true", "1", "yes", "y"} else "Inexperienced"
+
+
 def _pilot_display_lookup() -> dict[str, str]:
     pilots = load_csv(PILOTS)
     result = {}
@@ -1684,8 +1691,10 @@ def _pilot_display_lookup() -> dict[str, str]:
         name = str(row.get("name", "")).strip()
         role = str(row.get("role", "")).strip()
         base = str(row.get("home_base", "")).strip()
+        trigram = str(row.get("trigram", "")).strip().upper() or pid
+        experience = _pilot_experience_status(row.get("experienced"))
         if pid:
-            result[pid] = f"{pid} · {name} · {role} · {base}"
+            result[pid] = f"{trigram} · {name} · {role} · {base} · {experience}"
     return result
 
 
@@ -2205,6 +2214,19 @@ def pilot_planning_page():
 
     display = _pilot_display_lookup()
     pilot_ids = [pid for pid in pilots["id"].astype(str).tolist() if pid]
+    # Read-only roster summary: this uses the same pilots.csv experience flag as the optimizer.
+    with st.expander("Pilot roster · experience status", expanded=False):
+        roster_view = pilots.copy()
+        roster_view["Experience"] = roster_view.apply(
+            lambda row: _pilot_experience_status(row.get("experienced")), axis=1
+        )
+        roster_view["Trigram"] = roster_view.get("trigram", roster_view["id"])
+        roster_view["Pilot"] = roster_view.get("name", roster_view["id"])
+        roster_view["Role"] = roster_view.get("role", "")
+        roster_view["Home base"] = roster_view.get("home_base", "")
+        st.dataframe(roster_view[["Trigram", "Pilot", "Role", "Home base", "Experience"]],
+                     hide_index=True, use_container_width=True)
+    st.caption("Experience rule: each assigned CAPT/FO pair must include at least one experienced pilot.")
     timeline_tab, load_tab, table_tab, detailed_tab = st.tabs([
         "Timeline",
         "Load XLS",
@@ -2305,6 +2327,12 @@ def pilot_planning_page():
             "Pilot", pilot_ids, format_func=lambda pid: display.get(pid, pid),
             key="pilot_planning_selected",
         )
+        pilot_row = pilots.loc[pilots["id"].astype(str) == str(selected)]
+        if not pilot_row.empty:
+            selected_pilot = pilot_row.iloc[0]
+            experience = _pilot_experience_status(selected_pilot.get("experienced"))
+            st.markdown(f"**Experience status:** {experience}")
+            st.caption("Source: data/pilots.csv · experienced")
         availability = load_csv(PILOT_AVAILABILITY)
 
         # Reload after a CSV replacement so calendar and editor always use the active file.
@@ -3958,7 +3986,9 @@ def operations_board_payload(
                         "day": day,
                     })
             cards.sort(key=lambda x: x.get("start_iso", ""))
-            pilot_rows.append({"id": pid, "display": pilot_label(pid), "name": name, "role": role, "cards": cards})
+            pilot_rows.append({"id": pid, "display": pilot_label(pid), "name": name,
+                               "role": role, "experience": _pilot_experience_status(prow.get("experienced")),
+                               "cards": cards})
 
     role_order = {"CAPT": 0, "CAPTAIN": 0, "FO": 1, "F/O": 1, "FIRST OFFICER": 1}
     pilot_rows.sort(key=lambda r: (role_order.get(r["role"], 9), r["name"] or r["id"]))
@@ -4136,10 +4166,10 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
   }});
   if((data.pilots||[]).length){{
     if(!pilotsOnly){{ const sep=document.createElement('div');sep.className='section-row';const sl=document.createElement('div');sl.className='section-label';sl.textContent='Crew planning';sep.appendChild(sl);board.appendChild(sep); }}
-    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.display||p.id)}}</b><span>${{esc(p.role)}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
+    data.pilots.forEach(p=>{{const line=document.createElement('div');line.className='row crew-row';const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{esc(p.display||p.id)}}</b><span>${{esc(p.role)}} · ${{esc(p.experience||'Unknown')}} · <strong class="flight-days" data-pilot="${{esc(p.id)}}">0 flight days</strong></span>`;line.appendChild(lab);addGrid(line);
       (p.cards||[]).forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('div');let cls='other';if(c.kind==='crewmission')cls='mission';else if(c.status==='UNAVAILABLE')cls='unavailable';else if(c.status==='LEAVE')cls='leave';else if(c.status==='TRAINING')cls='training';el.className=`crew-block ${{cls}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=c.kind==='availability'?`${{widthPct(c.start_iso,c.end_iso)}}%`:`max(7px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;
         if(c.kind==='crewmission')el.innerHTML=`<div class="cb-title">${{esc(c.label)}} · ${{esc(c.aircraft)}}</div><div class="cb-meta">${{esc(c.route)}}</div>`;else el.innerHTML=`<div class="cb-title">${{esc(c.label)}}</div><div class="cb-meta">${{esc(c.note||'')}}</div>`;
-        el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.display||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}}`:`<b>${{esc(p.display||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
+        el.onmouseenter=(e)=>showTip(c.kind==='crewmission'?`<b>${{esc(p.display||p.id)}} · ${{esc(c.label)}}</b><br>${{esc(c.route)}}<br>${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(c.aircraft)}} · ${{esc(c.role)}} · ${{esc(p.experience||'Unknown')}}`:`<b>${{esc(p.display||p.id)}} · ${{esc(c.status)}}</b><br>${{esc(c.day)}}<br>${{esc(c.note||'')}}`,e);el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});board.appendChild(line);}});
   }}
  }}
  function updateVisibleFlightDays(){{
