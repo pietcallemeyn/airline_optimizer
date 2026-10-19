@@ -3,9 +3,9 @@
   "population": 100,
   "generations": 10,
   "total_evaluations": 2200,
-  "valid_evaluations": 1956,
+  "valid_evaluations": 2127,
   "seed": 42,
-  "elapsed_seconds": 52.02,
-  "solutions": 8,
+  "elapsed_seconds": 148.26,
+  "solutions": 3,
   "optimizer": "LEAN_CREW_GA"
 }

@@ -2305,31 +2305,6 @@ def pilot_planning_page():
             "Pilot", pilot_ids, format_func=lambda pid: display.get(pid, pid),
             key="pilot_planning_selected",
         )
-        # Pilot experience is a permanent qualification, not a daily availability.
-        # Keep the flag in pilots.csv and expose it beside the pilot selector.
-        if "experienced" not in pilots.columns:
-            pilots["experienced"] = "TRUE"
-        pilot_row = pilots.loc[pilots["id"].astype(str) == str(selected)]
-        raw_experience = str(pilot_row.iloc[0].get("experienced", "TRUE")).strip().upper() if not pilot_row.empty else "TRUE"
-        experience_options = ["Experienced", "Inexperienced"]
-        current_experience = 1 if raw_experience in ("FALSE", "NO", "N", "0", "INEXPERIENCED") else 0
-        experience_choice = st.selectbox(
-            "Crew experience",
-            experience_options,
-            index=current_experience,
-            key=f"pilot_experience_{selected}_{current_experience}",
-            help="Every mission requires a CAPT and FO with at least one experienced pilot.",
-        )
-        if st.button("Save experience", key=f"save_pilot_experience_{selected}"):
-            fresh_pilots = load_csv(PILOTS)
-            if "experienced" not in fresh_pilots.columns:
-                fresh_pilots["experienced"] = "TRUE"
-            mask = fresh_pilots["id"].astype(str) == str(selected)
-            fresh_pilots.loc[mask, "experienced"] = "TRUE" if experience_choice == "Experienced" else "FALSE"
-            save_csv(fresh_pilots, PILOTS)
-            st.success(f"Experience saved for {display.get(selected, selected)}. Rerun the optimizer to refresh solutions.")
-            st.rerun()
-
         availability = load_csv(PILOT_AVAILABILITY)
 
         # Reload after a CSV replacement so calendar and editor always use the active file.
@@ -2349,6 +2324,63 @@ def pilot_planning_page():
             ),
         )
         selected_solution = solution_choices.get(selected_solution_label)
+
+        # Independent display-time recomputation from the selected solution's
+        # movements. Do not trust the optimizer's stored True validation flags.
+        st.markdown("#### Flight Time Limitations · Pilot Checklist")
+        if selected_solution:
+            try:
+                import optimizer as crew_optimizer
+                source_missions, source_pilots, source_availability = crew_optimizer.load_data()
+                mission_index = {m.id:m for m in source_missions}
+                roster = []
+                for movements in (selected_solution.get("aircraft_movements") or {}).values():
+                    for movement in movements or []:
+                        if str(movement.get("type", "")).upper() != "MISSION":
+                            continue
+                        if selected in (str(movement.get("captain", "")),str(movement.get("fo", ""))):
+                            mid = str(movement.get("mission", ""))
+                            if mid not in mission_index:
+                                raise ValueError(f"Mission {mid} is missing from the current source data")
+                            roster.append(mission_index[mid])
+                if selected not in source_pilots:
+                    raise ValueError("Pilot is missing from the current source data")
+                if not source_missions:
+                    raise ValueError("No missions found")
+                window_start = min(m.departure for m in source_missions)
+                window_end = max(m.arrival for m in source_missions)
+                audit = crew_optimizer.pilot_ftl_checklist(
+                    roster, source_pilots[selected], source_availability, window_start, window_end)
+                failures = [name for name, ok in audit['checks'].items() if not ok]
+                if audit['monthly_status'] == 'NIET OK':
+                    failures.append('Two 48-hour rest periods per complete calendar month')
+                not_assessed = audit['monthly_status'] not in ('OK', 'NIET OK')
+                if failures:
+                    st.error("FTL VALIDATION FAILED — This solution is invalid and must not be used operationally.")
+                    st.warning("Failed checks: " + "; ".join(failures))
+                else:
+                    st.success("FTL validation: all applicable checks passed")
+                if not_assessed:
+                    st.caption("Monthly 48-hour rest requirement: NOT ASSESSED (no complete calendar month in the flight window).")
+                st.caption(f"{audit['flights']} flights · {audit['duties']} duty periods · "
+                           f"window {window_start:%d-%m-%Y %H:%M} to {window_end:%d-%m-%Y %H:%M}. "
+                           "Local night assumed 22:00–06:00; no reserve duties; no pre-window history.")
+                with st.expander("Detailed FTL validation", expanded=bool(failures)):
+                    rows = [{"FTL Rule": name, "Status": "PASS" if ok else "FAIL"}
+                            for name, ok in audit['checks'].items()]
+                    rows.append({"FTL Rule": "Two 48-hour rest periods per complete calendar month",
+                                 "Status": ("PASS" if audit['monthly_status'] == 'OK' else
+                                            "FAIL" if audit['monthly_status'] == 'NIET OK' else
+                                            "NOT ASSESSED")})
+                    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                saved_audit = (selected_solution.get('pilot_ftl_audit') or {}).get(selected)
+                if saved_audit and (saved_audit.get('checks') != audit['checks'] or
+                                    saved_audit.get('monthly_status') != audit['monthly_status']):
+                    st.error("Saved FTL audit differs from the independently recalculated checklist.")
+            except Exception as exc:
+                st.warning(f"FTL checklist could not be recalculated: {exc}")
+        else:
+            st.info("Select an optimizer solution to view the FTL checklist.")
 
         events = _pilot_availability_events(availability, selected)
         events.extend(_pilot_solution_events(selected_solution, selected, availability))
@@ -3333,6 +3365,66 @@ def actual_outstation_swap_events(solution, home_bases=("EBAW", "EBLG")):
 
     return events
 
+
+
+def render_outstation_swap_details(solution):
+    """One row per physical outstation handover, with crew trigrams."""
+    events = actual_outstation_swap_events(solution)
+    with st.expander(f"Outstation crew swaps · {len(events)} events", expanded=False):
+        if not events:
+            st.info("No outstation crew swaps in the selected solution.")
+            return
+
+        rows = []
+        pilot_changes = 0
+        for event in events:
+            aircraft = event["aircraft"]
+            airport = event["airport"]
+            movements = sorted(
+                (solution.get("aircraft_movements") or {}).get(aircraft, []),
+                key=lambda m: pd.to_datetime(m.get("start")),
+            )
+            previous = next(
+                (m for m in movements if m.get("mission") == event["previous_mission"]),
+                {},
+            )
+            upcoming = next(
+                (m for m in movements if m.get("mission") == event["next_mission"]),
+                {},
+            )
+            old_c, old_f = event["previous_crew"]
+            new_c, new_f = event["new_crew"]
+            pilot_changes += int(old_c != new_c) + int(old_f != new_f)
+
+            def crew_change(old, new):
+                return f"{pilot_label(old)} → {pilot_label(new)}" if old != new else "Unchanged"
+
+            def readable_datetime(value):
+                if value is None or str(value).strip() == "":
+                    return "—"
+                dt = pd.to_datetime(value, errors="coerce")
+                return dt.strftime("%d %b %Y · %H:%M") if not pd.isna(dt) else "—"
+
+            rows.append({
+                "#": len(rows) + 1,
+                "Aircraft": aircraft,
+                "Airport": airport,
+                "Captain change": crew_change(old_c, new_c),
+                "FO change": crew_change(old_f, new_f),
+                "Previous leg": f"{previous.get('from', '?')} → {airport}",
+                "Next leg": f"{airport} → {upcoming.get('to', '?')}",
+                "Previous arrival": readable_datetime(previous.get("end")),
+                "Next departure": readable_datetime(upcoming.get("start")),
+                "Previous mission": event["previous_mission"],
+                "Next mission": event["next_mission"],
+            })
+
+        st.caption(
+            f"{len(events)} outstation swap events · {pilot_changes} individual pilot changes. "
+            "One row per handover. Dates and times are DD Mon YYYY · HH:MM as recorded in the solution; "
+            "previous/next legs refer to the aircraft, not pilot positioning journeys."
+        )
+        st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
 
 def actual_outstation_changed_pilots(solution, home_bases=("EBAW", "EBLG")):
@@ -4489,6 +4581,7 @@ def render_timeline_browser():
             missions,
             f'ALTERNATIVE {index + 1} / {len(gallery)}',
         )
+        render_outstation_swap_details(solution)
         return
 
     mode = st.session_state.timeline_mode
@@ -4517,6 +4610,7 @@ def render_timeline_browser():
         missions,
         mode,
     )
+    render_outstation_swap_details(solution)
 
 
 

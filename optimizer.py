@@ -242,6 +242,119 @@ def ftl_ok_for_missions(ms, home_base=None):
 
 
 
+
+# Flight-window policy: no prior duty history and no reserve duty.
+# Timestamps are local wall-clock values; the input must use one consistent
+# local clock. Protected local night: 22:00-06:00 (configurable assumption).
+RECOVERY_HOURS = 36
+RECOVERY_MAX_INTERVAL_HOURS = 168
+LOCAL_NIGHT_START = 22
+LOCAL_NIGHT_END = 6
+
+def _local_nights(start, end):
+    day = start.date() - timedelta(days=1)
+    count = 0
+    while datetime.combine(day, datetime.min.time()) <= end:
+        night = datetime.combine(day, datetime.min.time()).replace(hour=LOCAL_NIGHT_START)
+        night_end = night + timedelta(hours=(24-LOCAL_NIGHT_START+LOCAL_NIGHT_END))
+        if start <= night and night_end <= end:
+            count += 1
+        day += timedelta(days=1)
+    return count
+
+def _month_next(month):
+    return (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+def recovery_rest_checks(roster, window_start, window_end):
+    """Return independently displayable recovery checks for a complete roster.
+
+    Initial 168-hour clock is reset at the first flight-window departure.
+    An eligible 36-hour recovery rest must START within 168h of the last
+    eligible recovery rest END; no prior-window history is assumed.
+    """
+    duties = duty_periods_for_missions(roster)
+    rest = []
+    cursor = window_start
+    for duty in duties:
+        begin, finish = duty['start'], duty['end']
+        if finish <= window_start or begin >= window_end:
+            continue
+        if begin > cursor:
+            rest.append((cursor, min(begin, window_end)))
+        cursor = max(cursor, min(finish, window_end))
+    if cursor < window_end:
+        rest.append((cursor, window_end))
+    qualifying = [(a,b) for a,b in rest if (b-a)>=timedelta(hours=RECOVERY_HOURS) and _local_nights(a,b)>=2]
+    last_end = window_start
+    max_gap = timedelta(hours=RECOVERY_MAX_INTERVAL_HOURS)
+    recurrence = True
+    for a,b in qualifying:
+        if a-last_end > max_gap:
+            recurrence = False
+        last_end = b
+    if window_end-last_end > max_gap:
+        recurrence = False
+    # A partial month is NOT assessed; only a fully enclosed calendar month.
+    month = window_start.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
+    monthly = []
+    while month < window_end:
+        next_month = _month_next(month)
+        if window_start <= month and next_month <= window_end:
+            # Two separate, nonoverlapping 48h blocks, each spanning two full
+            # local calendar days, within this calendar month.
+            blocks = []
+            for a,b in rest:
+                left,right = max(a,month),min(b,next_month)
+                midnight = datetime.combine(left.date(),datetime.min.time())
+                if midnight < left:
+                    midnight += timedelta(days=1)
+                while midnight + timedelta(days=2) <= right:
+                    blocks.append((midnight,midnight+timedelta(days=2)))
+                    midnight += timedelta(days=2)
+            blocks.sort()
+            chosen=[]
+            for a,b in blocks:
+                if not chosen or a >= chosen[-1][1]:
+                    chosen.append((a,b))
+            monthly.append({'month':month.strftime('%Y-%m'),'passed':len(chosen)>=2,'count':len(chosen)})
+        month = next_month
+    return {'recurrent_36h_2_local_nights_168h':recurrence,
+            'monthly_two_48h_rest':all(x['passed'] for x in monthly),
+            'monthly_assessed':bool(monthly), 'monthly_details':monthly,
+            'qualifying_rests':len(qualifying)}
+
+def pilot_ftl_checklist(roster, pilot, availability, window_start, window_end, assignments=None):
+    """Recalculate FTL and eligibility for one pilot from saved movements."""
+    duties = duty_periods_for_missions(roster)
+    fdp_ok = all(x['sectors']<=10 and x['duty_min']<=fdp_limit_for_period(x['missions'])[1] for x in duties)
+    rest_ok = True
+    for prev,nxt in zip(duties,duties[1:]):
+        gap = int((nxt['start']-prev['end']).total_seconds()//60)
+        home = nxt['missions'][0].origin == pilot.home_base
+        if gap < max(prev['duty_min'],720 if home else 600):
+            rest_ok = False
+    no_overlap = all(not (a.departure < b.arrival and b.departure < a.arrival)
+                     for i,a in enumerate(roster) for b in roster[i+1:])
+    recovery = recovery_rest_checks(roster,window_start,window_end)
+    checks = {
+        'Pilot availability':all(available(pilot.id,m,availability) for m in roster),
+        'No overlapping flights':no_overlap,
+        'Daily FDP and sector limits':fdp_ok,
+        'Minimum rest between duty periods':rest_ok,
+        'Duty time: max. 60 hours / 7 days':_rolling_limit_ok(duties,'duty_min',7,MAX_DUTY_7D_MIN),
+        'Duty time: max. 110 hours / 14 days':_rolling_limit_ok(duties,'duty_min',14,MAX_DUTY_14D_MIN),
+        'Duty time: max. 190 hours / 28 days':_rolling_limit_ok(duties,'duty_min',28,MAX_DUTY_28D_MIN),
+        'Flight time: max. 100 hours / 28 days':_rolling_limit_ok(duties,'flight_min',28,MAX_FLIGHT_28D_MIN),
+        'Extended recovery rest: 36 hours, 2 local nights, max. 168 hours':recovery['recurrent_36h_2_local_nights_168h'],
+    }
+    if assignments is not None:
+        checks['Experienced pilot in each crew']=all(assignments.get(m.id,{}).get('experienced_pair',False) for m in roster)
+    monthly_status = 'PASS' if recovery['monthly_two_48h_rest'] else 'FAIL'
+    if not recovery['monthly_assessed']:
+        monthly_status = 'NOT ASSESSED (no complete calendar month)'
+    return {'checks':checks,'monthly_status':monthly_status,'recovery':recovery,
+            'duties':len(duties),'flights':len(roster)}
+
 def diagnose_ftl_failure(missions, pilots, avail, caps, fos):
     """Report full-tour coverage limitations (relief may still be feasible)."""
     tours=build_tours(missions)
@@ -580,6 +693,18 @@ def decode(keys, missions, feasible, caps, fos, avail, pilots, rng=None, failure
                     key = ('FINAL', 'FLIGHT_OVERLAP', pid)
                     failure_stats[key] = failure_stats.get(key, 0) + 1
                 return None
+    window_start = min(m.departure for m in missions)
+    window_end = max(m.arrival for m in missions)
+    for pid, roster in assigned.items():
+        audit = pilot_ftl_checklist(roster, pilots[pid], avail, window_start, window_end)
+        if not all(audit['checks'].values()) or audit['monthly_status'] == 'NIET OK':
+            if failure_stats is not None:
+                failed = [name for name,ok in audit['checks'].items() if not ok]
+                if audit['monthly_status'] == 'NIET OK':
+                    failed.append('monthly_two_48h_rest')
+                key = ('FINAL', 'FTL_RECOVERY_OR_OTHER', '; '.join(failed))
+                failure_stats[key] = failure_stats.get(key,0)+1
+            return None
     return assign, counts, days, meta
 
 def score(decoded,missions,pilots,avail,caps,fos):
@@ -704,7 +829,18 @@ def make_solution(decoded,scorev,missions,pilots,avail,caps,fos):
     charged=sum(len(x) for x in days.values())
     out_events,out_changed,balance,reserve_short,base_swaps,neg_reserve=scorev
     changed_total=sum(x['changed_pilots'] for x in meta.values())
+    window_start = min(m.departure for m in missions)
+    window_end = max(m.arrival for m in missions)
+    pilot_audit = {}
+    for pid, pilot in pilots.items():
+        roster = [m for m in missions if pid in (assign[m.id]['captain'],assign[m.id]['fo'])]
+        checks = pilot_ftl_checklist(roster,pilot,avail,window_start,window_end)
+        pilot_audit[pid] = {'checks':checks['checks'], 'monthly_status':checks['monthly_status'],
+                            'monthly_details':checks['recovery']['monthly_details'],
+                            'qualifying_rests':checks['recovery']['qualifying_rests'],
+                            'duties':checks['duties'],'flights':checks['flights']}
     return {'schedule_signature':sig,'pilot_days_by_pilot':pilot_days,
+      'pilot_ftl_audit':pilot_audit,'ftl_window':{'start':window_start.isoformat(),'end':window_end.isoformat()},
       'objectives':{'total_operational_cost_eur':float(charged*600),'complexity_score':int(base_swaps+out_events),
         'empty_legs':0,'charged_pilot_days':charged,'aircraft_parking_days':0,'crew_balance_score':round(balance,4),
         'backup_shortage_days':int(reserve_short),'outstation_handovers':int(out_events),
@@ -718,7 +854,7 @@ def make_solution(decoded,scorev,missions,pilots,avail,caps,fos):
       'routes':routes,'aircraft_movements':movements,'aircraft_actions':actions,'crew_assignments':assign,
       'crew_actions':build_crew_actions(assign, missions, meta),'final_crew_decisions':[],
       'validation':{'fixed_aircraft':True,'pilot_availability_valid':True,'pilot_overlap_valid':True,'crew_experience_valid':True,
-        'ftl_daily_fdp_valid':True,'ftl_split_duty_applied':bool(split_meta),'ftl_min_rest_valid':True,'ftl_rolling_duty_valid':True,'ftl_rolling_flight_valid':True},
+        'ftl_daily_fdp_valid':True,'ftl_split_duty_applied':bool(split_meta),'ftl_min_rest_valid':True,'ftl_rolling_duty_valid':True,'ftl_rolling_flight_valid':True,'ftl_recurrent_recovery_rest_valid':True,'ftl_monthly_extended_rest_checked_when_full_month':True},
       'split_duties':split_meta}
 
 def tournament(pop,rng):
