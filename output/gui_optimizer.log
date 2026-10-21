@@ -1,9 +1,15 @@
 LEAN CREW GA · missions=93 fixed aircraft · captains=11 · FOs=8
 Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers
-run=1/2 gen=1/10 outstation=9 balance=29.128 backup_shortage=3 base_handovers=17 valid=179/200 elapsed=13.5s
-run=1/2 gen=6/10 outstation=9 balance=29.128 backup_shortage=3 base_handovers=17 valid=661/700 elapsed=47.1s
-run=1/2 gen=10/10 outstation=9 balance=25.158 backup_shortage=3 base_handovers=17 valid=1061/1100 elapsed=74.0s
-run=2/2 gen=1/10 outstation=9 balance=33.071 backup_shortage=3 base_handovers=17 valid=1235/1300 elapsed=87.5s
-run=2/2 gen=6/10 outstation=9 balance=35.878 backup_shortage=3 base_handovers=17 valid=1730/1800 elapsed=121.1s
-run=2/2 gen=10/10 outstation=9 balance=35.878 backup_shortage=3 base_handovers=17 valid=2127/2200 elapsed=148.2s
-DONE · outstation=9 · balance=25.1579 · backup shortage=3 · handovers=26 · 148.3s
+run=1/2 gen=1/10 outstation=8 balance=46.437 backup_shortage=3 base_handovers=17 valid=187/200 elapsed=14.1s
+run=1/2 gen=6/10 outstation=8 balance=30.771 backup_shortage=3 base_handovers=17 valid=681/700 elapsed=50.3s
+run=1/2 gen=10/10 outstation=8 balance=29.573 backup_shortage=3 base_handovers=16 valid=1081/1100 elapsed=79.1s
+run=2/2 gen=1/10 outstation=8 balance=35.807 backup_shortage=3 base_handovers=17 valid=1267/1300 elapsed=93.7s
+run=2/2 gen=6/10 outstation=8 balance=28.623 backup_shortage=3 base_handovers=17 valid=1761/1800 elapsed=129.1s
+run=2/2 gen=10/10 outstation=8 balance=26.719 backup_shortage=3 base_handovers=17 valid=2159/2200 elapsed=157.6s
+LNS starting · 150 attempts per seed · seeds=3
+LNS improvement 13/150: outstation=8 pilot_changes=14 balance=25.901
+LNS improvement 48/150: outstation=8 pilot_changes=14 balance=24.265
+LNS improvement 58/150: outstation=8 pilot_changes=14 balance=26.077
+LNS improvement 123/150: outstation=8 pilot_changes=14 balance=25.895
+LNS finished · outstation before=8 after=8 · attempts=450 feasible=43 improvements=4
+DONE · outstation=8 · balance=24.2648 · backup shortage=3 · handovers=25 · 178.6s

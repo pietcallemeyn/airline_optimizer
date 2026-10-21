@@ -1,31 +1,26 @@
 {
-  "schedule_signature": "d5e2058ff70f",
+  "schedule_signature": "c67bc79b9457",
   "pilot_days_by_pilot": {
     "C01": [
       "2026-11-05",
       "2026-11-06",
       "2026-11-07",
-      "2026-11-09",
-      "2026-11-11",
       "2026-11-20"
     ],
     "C02": [
-      "2026-11-13",
       "2026-11-15",
       "2026-11-17",
-      "2026-11-20",
-      "2026-11-21",
-      "2026-11-22"
+      "2026-11-20"
     ],
     "C03": [
       "2026-11-15",
       "2026-11-16",
-      "2026-11-19",
       "2026-11-29",
       "2026-11-30"
     ],
     "C04": [
       "2026-11-08",
+      "2026-11-09",
       "2026-11-11",
       "2026-11-12"
     ],
@@ -44,14 +39,18 @@
       "2026-11-16"
     ],
     "C07": [
+      "2026-11-13",
+      "2026-11-16",
       "2026-11-20",
+      "2026-11-21",
+      "2026-11-22",
       "2026-11-27",
       "2026-11-28"
     ],
     "C08": [
       "2026-11-13",
       "2026-11-15",
-      "2026-11-16"
+      "2026-11-19"
     ],
     "C09": [
       "2026-11-02",
@@ -60,11 +59,9 @@
       "2026-11-07",
       "2026-11-08",
       "2026-11-14",
-      "2026-11-15",
-      "2026-11-18"
+      "2026-11-15"
     ],
     "C10": [
-      "2026-11-16",
       "2026-11-17",
       "2026-11-26",
       "2026-11-27",
@@ -73,15 +70,15 @@
       "2026-11-30"
     ],
     "C11": [
+      "2026-11-16",
       "2026-11-17",
       "2026-11-18",
       "2026-11-29",
       "2026-11-30"
     ],
     "F01": [
-      "2026-11-09",
-      "2026-11-11",
-      "2026-11-13",
+      "2026-11-07",
+      "2026-11-08",
       "2026-11-20",
       "2026-11-21",
       "2026-11-22",
@@ -90,7 +87,8 @@
     ],
     "F02": [
       "2026-11-17",
-      "2026-11-18",
+      "2026-11-27",
+      "2026-11-28",
       "2026-11-29",
       "2026-11-30"
     ],
@@ -107,27 +105,23 @@
       "2026-11-30"
     ],
     "F04": [
-      "2026-11-10",
+      "2026-11-09",
       "2026-11-11",
-      "2026-11-16",
-      "2026-11-20"
+      "2026-11-13",
+      "2026-11-16"
     ],
     "F05": [
-      "2026-11-07",
-      "2026-11-08",
       "2026-11-14",
       "2026-11-15",
-      "2026-11-18",
-      "2026-11-27",
-      "2026-11-28"
+      "2026-11-18"
     ],
     "F06": [
       "2026-11-02",
       "2026-11-03",
       "2026-11-06",
       "2026-11-07",
-      "2026-11-16",
-      "2026-11-17"
+      "2026-11-17",
+      "2026-11-20"
     ],
     "F07": [
       "2026-11-01",
@@ -146,6 +140,8 @@
       "2026-11-05",
       "2026-11-06",
       "2026-11-07",
+      "2026-11-10",
+      "2026-11-11",
       "2026-11-15",
       "2026-11-16"
     ]
@@ -165,9 +161,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 5,
-      "duties": 6,
-      "flights": 12
+      "qualifying_rests": 3,
+      "duties": 4,
+      "flights": 7
     },
     "C02": {
       "checks": {
@@ -183,9 +179,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 4,
-      "duties": 5,
-      "flights": 10
+      "qualifying_rests": 3,
+      "duties": 3,
+      "flights": 7
     },
     "C03": {
       "checks": {
@@ -201,9 +197,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 3,
-      "duties": 5,
-      "flights": 8
+      "qualifying_rests": 2,
+      "duties": 4,
+      "flights": 6
     },
     "C04": {
       "checks": {
@@ -220,8 +216,8 @@
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
       "qualifying_rests": 3,
-      "duties": 3,
-      "flights": 4
+      "duties": 4,
+      "flights": 8
     },
     "C05": {
       "checks": {
@@ -273,9 +269,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 2,
-      "duties": 3,
-      "flights": 6
+      "qualifying_rests": 4,
+      "duties": 6,
+      "flights": 13
     },
     "C08": {
       "checks": {
@@ -291,9 +287,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 3,
+      "qualifying_rests": 4,
       "duties": 3,
-      "flights": 6
+      "flights": 5
     },
     "C09": {
       "checks": {
@@ -310,8 +306,8 @@
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
       "qualifying_rests": 3,
-      "duties": 9,
-      "flights": 14
+      "duties": 8,
+      "flights": 12
     },
     "C10": {
       "checks": {
@@ -328,8 +324,8 @@
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
       "qualifying_rests": 2,
-      "duties": 7,
-      "flights": 12
+      "duties": 6,
+      "flights": 11
     },
     "C11": {
       "checks": {
@@ -346,8 +342,8 @@
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
       "qualifying_rests": 2,
-      "duties": 4,
-      "flights": 6
+      "duties": 5,
+      "flights": 9
     },
     "F01": {
       "checks": {
@@ -363,9 +359,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 5,
-      "duties": 7,
-      "flights": 18
+      "qualifying_rests": 4,
+      "duties": 6,
+      "flights": 14
     },
     "F02": {
       "checks": {
@@ -382,8 +378,8 @@
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
       "qualifying_rests": 2,
-      "duties": 4,
-      "flights": 7
+      "duties": 5,
+      "flights": 9
     },
     "F03": {
       "checks": {
@@ -419,7 +415,7 @@
       "monthly_details": [],
       "qualifying_rests": 4,
       "duties": 4,
-      "flights": 9
+      "flights": 10
     },
     "F05": {
       "checks": {
@@ -435,9 +431,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 4,
-      "duties": 7,
-      "flights": 11
+      "qualifying_rests": 2,
+      "duties": 3,
+      "flights": 7
     },
     "F06": {
       "checks": {
@@ -453,9 +449,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 3,
+      "qualifying_rests": 4,
       "duties": 6,
-      "flights": 10
+      "flights": 11
     },
     "F07": {
       "checks": {
@@ -489,9 +485,9 @@
       },
       "monthly_status": "NOT ASSESSED (no complete calendar month)",
       "monthly_details": [],
-      "qualifying_rests": 3,
-      "duties": 5,
-      "flights": 8
+      "qualifying_rests": 4,
+      "duties": 7,
+      "flights": 12
     }
   },
   "ftl_window": {
@@ -499,35 +495,35 @@
     "end": "2026-11-30T21:10:00"
   },
   "objectives": {
-    "total_operational_cost_eur": 66000.0,
-    "complexity_score": 26,
+    "total_operational_cost_eur": 63600.0,
+    "complexity_score": 25,
     "empty_legs": 0,
-    "charged_pilot_days": 110,
+    "charged_pilot_days": 106,
     "aircraft_parking_days": 0,
-    "crew_balance_score": 35.8779,
+    "crew_balance_score": 26.7193,
     "backup_shortage_days": 3,
-    "outstation_handovers": 9,
-    "outstation_changed_pilots": 15
+    "outstation_handovers": 8,
+    "outstation_changed_pilots": 14
   },
   "cost_breakdown": {
-    "pilot_cost_eur": 66000.0,
+    "pilot_cost_eur": 63600.0,
     "commercial_flight_cost_eur": 0.0,
     "empty_flight_cost_eur": 0.0
   },
   "metrics": {
     "empty_nm": 0.0,
     "empty_legs": 0,
-    "charged_pilot_days": 110,
+    "charged_pilot_days": 106,
     "aircraft_parking_days": 0,
     "changed_pilot_count": 46,
-    "nonhomebase_swap_events": 9,
-    "outstation_changed_pilots": 15,
+    "nonhomebase_swap_events": 8,
+    "outstation_changed_pilots": 14,
     "base_handovers": 17,
     "crew_return_pilots": 0,
     "inbound_crew_deadhead_pilots": 0,
-    "crew_balance_score": 35.8779,
+    "crew_balance_score": 26.7193,
     "backup_shortage_days": 3,
-    "backup_slots": 136,
+    "backup_slots": 140,
     "backup_coverage_issues": [
       {
         "date": "2026-11-08",
@@ -539,7 +535,7 @@
         "available_fos": 4,
         "active_fos": 2,
         "reserve_fos": [
-          "F01",
+          "F05",
           "F06"
         ],
         "missions": [
@@ -595,25 +591,25 @@
       }
     ],
     "mission_count_by_pilot": {
-      "C01": 12,
-      "C02": 10,
-      "C03": 8,
-      "C04": 4,
+      "C01": 7,
+      "C02": 7,
+      "C03": 6,
+      "C04": 8,
       "C05": 1,
       "C06": 14,
-      "C07": 6,
-      "C08": 6,
-      "C09": 14,
-      "C10": 12,
-      "C11": 6,
-      "F01": 18,
-      "F02": 7,
+      "C07": 13,
+      "C08": 5,
+      "C09": 12,
+      "C10": 11,
+      "C11": 9,
+      "F01": 14,
+      "F02": 9,
       "F03": 15,
-      "F04": 9,
-      "F05": 11,
-      "F06": 10,
+      "F04": 10,
+      "F05": 7,
+      "F06": 11,
       "F07": 15,
-      "F08": 8
+      "F08": 12
     }
   },
   "routes": {
@@ -809,7 +805,7 @@
         "pax": 9,
         "purpose": "CUSTOMER",
         "captain": "C09",
-        "fo": "F05",
+        "fo": "F01",
         "crew_action": "OUTSTATION_FULL_CREW_SWAP",
         "handover_airport": "EDDF",
         "outstation_swap": true,
@@ -828,7 +824,7 @@
         "pax": 9,
         "purpose": "CUSTOMER",
         "captain": "C09",
-        "fo": "F05",
+        "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1187,9 +1183,14 @@
           "protected_break_min": 565,
           "creditable_break_min": 360,
           "extension_min": 180,
-          "basic_max_fdp_min": 735,
-          "adjusted_max_fdp_min": 915,
-          "actual_fdp_min": 890,
+          "fdp_start_utc": "05:15",
+          "fdp_start_reference": "06:15",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
+          "basic_max_fdp_min": 780,
+          "adjusted_max_fdp_min": 960,
+          "actual_fdp_min": 860,
+          "actual_duty_min": 890,
           "pilots": [
             "F07",
             "C04"
@@ -1205,8 +1206,8 @@
         "end": "2026-11-13T05:40:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
-        "fo": "F01",
+        "captain": "C07",
+        "fo": "F04",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
         "outstation_swap": false,
@@ -1224,8 +1225,8 @@
         "end": "2026-11-13T10:20:00",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C02",
-        "fo": "F01",
+        "captain": "C07",
+        "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1245,10 +1246,10 @@
         "purpose": "CUSTOMER",
         "captain": "C02",
         "fo": "F07",
-        "crew_action": "OUTSTATION_FO_SWAP",
+        "crew_action": "OUTSTATION_FULL_CREW_SWAP",
         "handover_airport": "EFKT",
         "outstation_swap": true,
-        "changed_pilots": 1,
+        "changed_pilots": 2,
         "crew_change_reason": "FTL_REQUIRED",
         "split_duty": false,
         "split_duty_info": null
@@ -1281,8 +1282,8 @@
         "end": "2026-11-16T06:00:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C10",
-        "fo": "F06",
+        "captain": "C11",
+        "fo": "F04",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBAW",
         "outstation_swap": false,
@@ -1435,7 +1436,7 @@
         "end": "2026-11-17T06:44:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F02",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -1454,7 +1455,7 @@
         "end": "2026-11-17T08:44:00",
         "pax": 37,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C11",
         "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -1473,12 +1474,12 @@
         "end": "2026-11-20T14:50:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C07",
         "fo": "F01",
-        "crew_action": "BASE_FO_SWAP",
+        "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBKT",
         "outstation_swap": false,
-        "changed_pilots": 1,
+        "changed_pilots": 2,
         "crew_change_reason": null,
         "split_duty": false,
         "split_duty_info": null
@@ -1492,7 +1493,7 @@
         "end": "2026-11-20T17:00:00",
         "pax": 37,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C07",
         "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -1511,7 +1512,7 @@
         "end": "2026-11-21T23:55:00",
         "pax": 37,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C07",
         "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -1530,7 +1531,7 @@
         "end": "2026-11-22T02:09:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C02",
+        "captain": "C07",
         "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -1722,8 +1723,8 @@
         "end": "2026-11-09T12:37:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F01",
+        "captain": "C04",
+        "fo": "F04",
         "crew_action": "INITIAL_ATTACH",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1741,8 +1742,8 @@
         "end": "2026-11-09T14:55:00",
         "pax": 49,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F01",
+        "captain": "C04",
+        "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1760,8 +1761,8 @@
         "end": "2026-11-11T11:10:00",
         "pax": 49,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F01",
+        "captain": "C04",
+        "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1779,8 +1780,8 @@
         "end": "2026-11-11T13:07:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
-        "fo": "F01",
+        "captain": "C04",
+        "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1852,9 +1853,14 @@
           "protected_break_min": 448,
           "creditable_break_min": 360,
           "extension_min": 180,
+          "fdp_start_utc": "06:00",
+          "fdp_start_reference": "07:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
           "basic_max_fdp_min": 780,
           "adjusted_max_fdp_min": 960,
-          "actual_fdp_min": 820,
+          "actual_fdp_min": 790,
+          "actual_duty_min": 820,
           "pilots": [
             "F08",
             "C03"
@@ -1870,7 +1876,7 @@
         "end": "2026-11-17T07:25:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C11",
+        "captain": "C02",
         "fo": "F06",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -1889,7 +1895,7 @@
         "end": "2026-11-17T19:10:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C11",
+        "captain": "C02",
         "fo": "F06",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -1905,12 +1911,17 @@
           "protected_break_min": 545,
           "creditable_break_min": 360,
           "extension_min": 180,
-          "basic_max_fdp_min": 720,
-          "adjusted_max_fdp_min": 900,
-          "actual_fdp_min": 880,
+          "fdp_start_utc": "05:00",
+          "fdp_start_reference": "06:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
+          "basic_max_fdp_min": 780,
+          "adjusted_max_fdp_min": 960,
+          "actual_fdp_min": 850,
+          "actual_duty_min": 880,
           "pilots": [
             "F06",
-            "C11"
+            "C02"
           ]
         }
       },
@@ -1961,8 +1972,8 @@
         "end": "2026-11-18T07:50:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F02",
+        "captain": "C11",
+        "fo": "F05",
         "crew_action": "OUTSTATION_FULL_CREW_SWAP",
         "handover_airport": "EBOS",
         "outstation_swap": true,
@@ -1980,8 +1991,8 @@
         "end": "2026-11-18T19:20:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C09",
-        "fo": "F02",
+        "captain": "C11",
+        "fo": "F05",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -1996,12 +2007,17 @@
           "protected_break_min": 520,
           "creditable_break_min": 360,
           "extension_min": 180,
-          "basic_max_fdp_min": 735,
-          "adjusted_max_fdp_min": 915,
-          "actual_fdp_min": 875,
+          "fdp_start_utc": "05:15",
+          "fdp_start_reference": "06:15",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 3,
+          "basic_max_fdp_min": 750,
+          "adjusted_max_fdp_min": 930,
+          "actual_fdp_min": 910,
+          "actual_duty_min": 940,
           "pilots": [
-            "C09",
-            "F02"
+            "F05",
+            "C11"
           ]
         }
       },
@@ -2016,11 +2032,11 @@
         "purpose": "CUSTOMER",
         "captain": "C11",
         "fo": "F05",
-        "crew_action": "OUTSTATION_FULL_CREW_SWAP",
-        "handover_airport": "EBOS",
-        "outstation_swap": true,
-        "changed_pilots": 2,
-        "crew_change_reason": "FTL_REQUIRED",
+        "crew_action": "CONTINUE",
+        "handover_airport": null,
+        "outstation_swap": false,
+        "changed_pilots": 0,
+        "crew_change_reason": null,
         "split_duty": false,
         "split_duty_info": null
       },
@@ -2033,7 +2049,7 @@
         "end": "2026-11-19T07:25:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C03",
+        "captain": "C08",
         "fo": "F07",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -2052,7 +2068,7 @@
         "end": "2026-11-19T19:10:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C03",
+        "captain": "C08",
         "fo": "F07",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2068,12 +2084,17 @@
           "protected_break_min": 545,
           "creditable_break_min": 360,
           "extension_min": 180,
-          "basic_max_fdp_min": 720,
-          "adjusted_max_fdp_min": 900,
-          "actual_fdp_min": 880,
+          "fdp_start_utc": "05:00",
+          "fdp_start_reference": "06:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
+          "basic_max_fdp_min": 780,
+          "adjusted_max_fdp_min": 960,
+          "actual_fdp_min": 850,
+          "actual_duty_min": 880,
           "pilots": [
             "F07",
-            "C03"
+            "C08"
           ]
         }
       },
@@ -2086,8 +2107,8 @@
         "end": "2026-11-20T07:25:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C07",
-        "fo": "F04",
+        "captain": "C01",
+        "fo": "F06",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
         "outstation_swap": false,
@@ -2105,8 +2126,8 @@
         "end": "2026-11-20T19:10:00",
         "pax": 48,
         "purpose": "CUSTOMER",
-        "captain": "C07",
-        "fo": "F04",
+        "captain": "C01",
+        "fo": "F06",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2121,12 +2142,17 @@
           "protected_break_min": 545,
           "creditable_break_min": 360,
           "extension_min": 180,
-          "basic_max_fdp_min": 720,
-          "adjusted_max_fdp_min": 900,
-          "actual_fdp_min": 880,
+          "fdp_start_utc": "05:00",
+          "fdp_start_reference": "06:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
+          "basic_max_fdp_min": 780,
+          "adjusted_max_fdp_min": 960,
+          "actual_fdp_min": 850,
+          "actual_duty_min": 880,
           "pilots": [
-            "F04",
-            "C07"
+            "F06",
+            "C01"
           ]
         }
       },
@@ -2140,11 +2166,11 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F05",
-        "crew_action": "BASE_FO_SWAP",
+        "fo": "F02",
+        "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
         "outstation_swap": false,
-        "changed_pilots": 1,
+        "changed_pilots": 2,
         "crew_change_reason": null,
         "split_duty": false,
         "split_duty_info": null
@@ -2159,7 +2185,7 @@
         "pax": 40,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F05",
+        "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2178,7 +2204,7 @@
         "pax": 40,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F05",
+        "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2197,7 +2223,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C07",
-        "fo": "F05",
+        "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2215,12 +2241,12 @@
         "end": "2026-11-29T12:10:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C11",
+        "captain": "C03",
         "fo": "F02",
-        "crew_action": "BASE_FULL_CREW_SWAP",
+        "crew_action": "BASE_CAPT_SWAP",
         "handover_airport": "LFQQ",
         "outstation_swap": false,
-        "changed_pilots": 2,
+        "changed_pilots": 1,
         "crew_change_reason": null,
         "split_duty": false,
         "split_duty_info": null
@@ -2234,7 +2260,7 @@
         "end": "2026-11-30T08:33:00",
         "pax": 32,
         "purpose": "CUSTOMER",
-        "captain": "C11",
+        "captain": "C03",
         "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2253,7 +2279,7 @@
         "end": "2026-11-30T21:10:00",
         "pax": 32,
         "purpose": "CUSTOMER",
-        "captain": "C11",
+        "captain": "C03",
         "fo": "F02",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2269,12 +2295,17 @@
           "protected_break_min": 567,
           "creditable_break_min": 360,
           "extension_min": 180,
+          "fdp_start_utc": "06:00",
+          "fdp_start_reference": "07:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
           "basic_max_fdp_min": 780,
           "adjusted_max_fdp_min": 960,
-          "actual_fdp_min": 940,
+          "actual_fdp_min": 910,
+          "actual_duty_min": 940,
           "pilots": [
-            "F02",
-            "C11"
+            "C03",
+            "F02"
           ]
         }
       }
@@ -2290,7 +2321,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C06",
-        "fo": "F04",
+        "fo": "F08",
         "crew_action": "INITIAL_ATTACH",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2309,7 +2340,7 @@
         "pax": 20,
         "purpose": "CUSTOMER",
         "captain": "C06",
-        "fo": "F04",
+        "fo": "F08",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2328,7 +2359,7 @@
         "pax": 20,
         "purpose": "CUSTOMER",
         "captain": "C06",
-        "fo": "F04",
+        "fo": "F08",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2347,7 +2378,7 @@
         "pax": 0,
         "purpose": "CUSTOMER",
         "captain": "C06",
-        "fo": "F04",
+        "fo": "F08",
         "crew_action": "CONTINUE",
         "handover_airport": null,
         "outstation_swap": false,
@@ -2441,7 +2472,7 @@
         "end": "2026-11-16T10:57:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
+        "captain": "C07",
         "fo": "F04",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -2460,7 +2491,7 @@
         "end": "2026-11-16T13:21:00",
         "pax": 25,
         "purpose": "CUSTOMER",
-        "captain": "C08",
+        "captain": "C07",
         "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2479,7 +2510,7 @@
         "end": "2026-11-16T15:24:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C08",
+        "captain": "C07",
         "fo": "F04",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2498,7 +2529,7 @@
         "end": "2026-11-20T08:14:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
+        "captain": "C02",
         "fo": "F01",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -2517,7 +2548,7 @@
         "end": "2026-11-20T10:21:00",
         "pax": 25,
         "purpose": "CUSTOMER",
-        "captain": "C01",
+        "captain": "C02",
         "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2536,7 +2567,7 @@
         "end": "2026-11-20T11:27:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C01",
+        "captain": "C02",
         "fo": "F01",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2555,7 +2586,7 @@
         "end": "2026-11-29T11:58:00",
         "pax": 0,
         "purpose": "CUSTOMER",
-        "captain": "C03",
+        "captain": "C11",
         "fo": "F07",
         "crew_action": "BASE_FULL_CREW_SWAP",
         "handover_airport": "EBLG",
@@ -2574,7 +2605,7 @@
         "end": "2026-11-30T08:38:00",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C03",
+        "captain": "C11",
         "fo": "F07",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2593,7 +2624,7 @@
         "end": "2026-11-30T21:10:00",
         "pax": 30,
         "purpose": "CUSTOMER",
-        "captain": "C03",
+        "captain": "C11",
         "fo": "F07",
         "crew_action": "CONTINUE",
         "handover_airport": null,
@@ -2609,12 +2640,17 @@
           "protected_break_min": 562,
           "creditable_break_min": 360,
           "extension_min": 180,
+          "fdp_start_utc": "06:00",
+          "fdp_start_reference": "07:00",
+          "fdp_reference_zone": "CET",
+          "fdp_sector_count": 2,
           "basic_max_fdp_min": 780,
           "adjusted_max_fdp_min": 960,
-          "actual_fdp_min": 940,
+          "actual_fdp_min": 910,
+          "actual_duty_min": 940,
           "pilots": [
             "F07",
-            "C03"
+            "C11"
           ]
         }
       }
@@ -3023,11 +3059,11 @@
     },
     "M015": {
       "captain": "C09",
-      "fo": "F05"
+      "fo": "F01"
     },
     "M018": {
       "captain": "C09",
-      "fo": "F05"
+      "fo": "F01"
     },
     "M024": {
       "captain": "C06",
@@ -3102,12 +3138,12 @@
       "fo": "F07"
     },
     "M033": {
-      "captain": "C02",
-      "fo": "F01"
+      "captain": "C07",
+      "fo": "F04"
     },
     "M034": {
-      "captain": "C02",
-      "fo": "F01"
+      "captain": "C07",
+      "fo": "F04"
     },
     "M041": {
       "captain": "C02",
@@ -3134,36 +3170,36 @@
       "fo": "F06"
     },
     "M020": {
-      "captain": "C01",
-      "fo": "F01"
+      "captain": "C04",
+      "fo": "F04"
     },
     "M021": {
-      "captain": "C01",
-      "fo": "F01"
+      "captain": "C04",
+      "fo": "F04"
     },
     "M025": {
-      "captain": "C01",
-      "fo": "F01"
+      "captain": "C04",
+      "fo": "F04"
     },
     "M026": {
-      "captain": "C01",
-      "fo": "F01"
+      "captain": "C04",
+      "fo": "F04"
     },
     "M022": {
       "captain": "C06",
-      "fo": "F04"
+      "fo": "F08"
     },
     "M023": {
       "captain": "C06",
-      "fo": "F04"
+      "fo": "F08"
     },
     "M028": {
       "captain": "C06",
-      "fo": "F04"
+      "fo": "F08"
     },
     "M030": {
       "captain": "C06",
-      "fo": "F04"
+      "fo": "F08"
     },
     "M036": {
       "captain": "C08",
@@ -3178,11 +3214,11 @@
       "fo": "F03"
     },
     "M055": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F02"
     },
     "M057": {
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F02"
     },
     "M038": {
@@ -3214,27 +3250,27 @@
       "fo": "F08"
     },
     "M047": {
-      "captain": "C10",
-      "fo": "F06"
+      "captain": "C11",
+      "fo": "F04"
     },
     "M049": {
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04"
     },
     "M050": {
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04"
     },
     "M052": {
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04"
     },
     "M056": {
-      "captain": "C11",
+      "captain": "C02",
       "fo": "F06"
     },
     "M058": {
-      "captain": "C11",
+      "captain": "C02",
       "fo": "F06"
     },
     "M059": {
@@ -3246,59 +3282,59 @@
       "fo": "F03"
     },
     "M061": {
-      "captain": "C09",
-      "fo": "F02"
+      "captain": "C11",
+      "fo": "F05"
     },
     "M062": {
-      "captain": "C09",
-      "fo": "F02"
+      "captain": "C11",
+      "fo": "F05"
     },
     "M063": {
       "captain": "C11",
       "fo": "F05"
     },
     "M064": {
-      "captain": "C03",
+      "captain": "C08",
       "fo": "F07"
     },
     "M065": {
-      "captain": "C03",
+      "captain": "C08",
       "fo": "F07"
     },
     "M066": {
-      "captain": "C07",
-      "fo": "F04"
+      "captain": "C01",
+      "fo": "F06"
     },
     "M072": {
-      "captain": "C07",
-      "fo": "F04"
+      "captain": "C01",
+      "fo": "F06"
     },
     "M067": {
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01"
     },
     "M068": {
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01"
     },
     "M069": {
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01"
     },
     "M070": {
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01"
     },
     "M071": {
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01"
     },
     "M073": {
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01"
     },
     "M074": {
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01"
     },
     "M075": {
@@ -3339,42 +3375,42 @@
     },
     "M079": {
       "captain": "C07",
-      "fo": "F05"
+      "fo": "F02"
     },
     "M081": {
       "captain": "C07",
-      "fo": "F05"
+      "fo": "F02"
     },
     "M082": {
       "captain": "C07",
-      "fo": "F05"
+      "fo": "F02"
     },
     "M084": {
       "captain": "C07",
-      "fo": "F05"
+      "fo": "F02"
     },
     "M087": {
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07"
     },
     "M089": {
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07"
     },
     "M092": {
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07"
     },
     "M086": {
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02"
     },
     "M088": {
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02"
     },
     "M093": {
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02"
     }
   },
@@ -3523,7 +3559,7 @@
       "mission": "M015",
       "aircraft": "PHDWC",
       "captain": "C09",
-      "fo": "F05",
+      "fo": "F01",
       "action": "OUTSTATION_FULL_CREW_SWAP",
       "handover_airport": "EDDF",
       "changed_pilots": 2,
@@ -3553,7 +3589,7 @@
       "mission": "M018",
       "aircraft": "PHDWC",
       "captain": "C09",
-      "fo": "F05",
+      "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3572,8 +3608,8 @@
     {
       "mission": "M020",
       "aircraft": "PHJSK",
-      "captain": "C01",
-      "fo": "F01",
+      "captain": "C04",
+      "fo": "F04",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3582,8 +3618,8 @@
     {
       "mission": "M021",
       "aircraft": "PHJSK",
-      "captain": "C01",
-      "fo": "F01",
+      "captain": "C04",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3593,7 +3629,7 @@
       "mission": "M022",
       "aircraft": "PHDWS",
       "captain": "C06",
-      "fo": "F04",
+      "fo": "F08",
       "action": "INITIAL_ATTACH",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3603,7 +3639,7 @@
       "mission": "M023",
       "aircraft": "PHDWS",
       "captain": "C06",
-      "fo": "F04",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3622,8 +3658,8 @@
     {
       "mission": "M025",
       "aircraft": "PHJSK",
-      "captain": "C01",
-      "fo": "F01",
+      "captain": "C04",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3632,8 +3668,8 @@
     {
       "mission": "M026",
       "aircraft": "PHJSK",
-      "captain": "C01",
-      "fo": "F01",
+      "captain": "C04",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3653,7 +3689,7 @@
       "mission": "M028",
       "aircraft": "PHDWS",
       "captain": "C06",
-      "fo": "F04",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3673,7 +3709,7 @@
       "mission": "M030",
       "aircraft": "PHDWS",
       "captain": "C06",
-      "fo": "F04",
+      "fo": "F08",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3702,8 +3738,8 @@
     {
       "mission": "M033",
       "aircraft": "PHDWA",
-      "captain": "C02",
-      "fo": "F01",
+      "captain": "C07",
+      "fo": "F04",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -3712,8 +3748,8 @@
     {
       "mission": "M034",
       "aircraft": "PHDWA",
-      "captain": "C02",
-      "fo": "F01",
+      "captain": "C07",
+      "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -3784,9 +3820,9 @@
       "aircraft": "PHDWA",
       "captain": "C02",
       "fo": "F07",
-      "action": "OUTSTATION_FO_SWAP",
+      "action": "OUTSTATION_FULL_CREW_SWAP",
       "handover_airport": "EFKT",
-      "changed_pilots": 1,
+      "changed_pilots": 2,
       "nonhome_swap_event": 1
     },
     {
@@ -3842,8 +3878,8 @@
     {
       "mission": "M047",
       "aircraft": "PHDWA",
-      "captain": "C10",
-      "fo": "F06",
+      "captain": "C11",
+      "fo": "F04",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBAW",
       "changed_pilots": 2,
@@ -3862,7 +3898,7 @@
     {
       "mission": "M049",
       "aircraft": "PHDWS",
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -3872,7 +3908,7 @@
     {
       "mission": "M050",
       "aircraft": "PHDWS",
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3892,7 +3928,7 @@
     {
       "mission": "M052",
       "aircraft": "PHDWS",
-      "captain": "C08",
+      "captain": "C07",
       "fo": "F04",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3922,7 +3958,7 @@
     {
       "mission": "M055",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F02",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -3932,7 +3968,7 @@
     {
       "mission": "M056",
       "aircraft": "PHJSK",
-      "captain": "C11",
+      "captain": "C02",
       "fo": "F06",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -3942,7 +3978,7 @@
     {
       "mission": "M057",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C11",
       "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3952,7 +3988,7 @@
     {
       "mission": "M058",
       "aircraft": "PHJSK",
-      "captain": "C11",
+      "captain": "C02",
       "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -3982,8 +4018,8 @@
     {
       "mission": "M061",
       "aircraft": "PHJSK",
-      "captain": "C09",
-      "fo": "F02",
+      "captain": "C11",
+      "fo": "F05",
       "action": "OUTSTATION_FULL_CREW_SWAP",
       "handover_airport": "EBOS",
       "changed_pilots": 2,
@@ -3992,8 +4028,8 @@
     {
       "mission": "M062",
       "aircraft": "PHJSK",
-      "captain": "C09",
-      "fo": "F02",
+      "captain": "C11",
+      "fo": "F05",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4004,15 +4040,15 @@
       "aircraft": "PHJSK",
       "captain": "C11",
       "fo": "F05",
-      "action": "OUTSTATION_FULL_CREW_SWAP",
-      "handover_airport": "EBOS",
-      "changed_pilots": 2,
-      "nonhome_swap_event": 1
+      "action": "CONTINUE",
+      "handover_airport": null,
+      "changed_pilots": 0,
+      "nonhome_swap_event": 0
     },
     {
       "mission": "M064",
       "aircraft": "PHJSK",
-      "captain": "C03",
+      "captain": "C08",
       "fo": "F07",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -4022,7 +4058,7 @@
     {
       "mission": "M065",
       "aircraft": "PHJSK",
-      "captain": "C03",
+      "captain": "C08",
       "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4032,8 +4068,8 @@
     {
       "mission": "M066",
       "aircraft": "PHJSK",
-      "captain": "C07",
-      "fo": "F04",
+      "captain": "C01",
+      "fo": "F06",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
       "changed_pilots": 2,
@@ -4042,7 +4078,7 @@
     {
       "mission": "M067",
       "aircraft": "PHDWS",
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -4052,7 +4088,7 @@
     {
       "mission": "M068",
       "aircraft": "PHDWS",
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4062,7 +4098,7 @@
     {
       "mission": "M069",
       "aircraft": "PHDWS",
-      "captain": "C01",
+      "captain": "C02",
       "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4072,17 +4108,17 @@
     {
       "mission": "M070",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01",
-      "action": "BASE_FO_SWAP",
+      "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBKT",
-      "changed_pilots": 1,
+      "changed_pilots": 2,
       "nonhome_swap_event": 0
     },
     {
       "mission": "M071",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4092,8 +4128,8 @@
     {
       "mission": "M072",
       "aircraft": "PHJSK",
-      "captain": "C07",
-      "fo": "F04",
+      "captain": "C01",
+      "fo": "F06",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4102,7 +4138,7 @@
     {
       "mission": "M073",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4112,7 +4148,7 @@
     {
       "mission": "M074",
       "aircraft": "PHDWP",
-      "captain": "C02",
+      "captain": "C07",
       "fo": "F01",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4163,10 +4199,10 @@
       "mission": "M079",
       "aircraft": "PHJSK",
       "captain": "C07",
-      "fo": "F05",
-      "action": "BASE_FO_SWAP",
+      "fo": "F02",
+      "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
-      "changed_pilots": 1,
+      "changed_pilots": 2,
       "nonhome_swap_event": 0
     },
     {
@@ -4183,7 +4219,7 @@
       "mission": "M081",
       "aircraft": "PHJSK",
       "captain": "C07",
-      "fo": "F05",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4193,7 +4229,7 @@
       "mission": "M082",
       "aircraft": "PHJSK",
       "captain": "C07",
-      "fo": "F05",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4213,7 +4249,7 @@
       "mission": "M084",
       "aircraft": "PHJSK",
       "captain": "C07",
-      "fo": "F05",
+      "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
       "changed_pilots": 0,
@@ -4232,17 +4268,17 @@
     {
       "mission": "M086",
       "aircraft": "PHJSK",
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02",
-      "action": "BASE_FULL_CREW_SWAP",
+      "action": "BASE_CAPT_SWAP",
       "handover_airport": "LFQQ",
-      "changed_pilots": 2,
+      "changed_pilots": 1,
       "nonhome_swap_event": 0
     },
     {
       "mission": "M087",
       "aircraft": "PHDWS",
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07",
       "action": "BASE_FULL_CREW_SWAP",
       "handover_airport": "EBLG",
@@ -4252,7 +4288,7 @@
     {
       "mission": "M088",
       "aircraft": "PHJSK",
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4262,7 +4298,7 @@
     {
       "mission": "M089",
       "aircraft": "PHDWS",
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4292,7 +4328,7 @@
     {
       "mission": "M092",
       "aircraft": "PHDWS",
-      "captain": "C03",
+      "captain": "C11",
       "fo": "F07",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4302,7 +4338,7 @@
     {
       "mission": "M093",
       "aircraft": "PHJSK",
-      "captain": "C11",
+      "captain": "C03",
       "fo": "F02",
       "action": "CONTINUE",
       "handover_airport": null,
@@ -4333,9 +4369,14 @@
       "protected_break_min": 565,
       "creditable_break_min": 360,
       "extension_min": 180,
-      "basic_max_fdp_min": 735,
-      "adjusted_max_fdp_min": 915,
-      "actual_fdp_min": 890,
+      "fdp_start_utc": "05:15",
+      "fdp_start_reference": "06:15",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
+      "basic_max_fdp_min": 780,
+      "adjusted_max_fdp_min": 960,
+      "actual_fdp_min": 860,
+      "actual_duty_min": 890,
       "pilots": [
         "F07",
         "C04"
@@ -4349,12 +4390,17 @@
       "protected_break_min": 545,
       "creditable_break_min": 360,
       "extension_min": 180,
-      "basic_max_fdp_min": 720,
-      "adjusted_max_fdp_min": 900,
-      "actual_fdp_min": 880,
+      "fdp_start_utc": "05:00",
+      "fdp_start_reference": "06:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
+      "basic_max_fdp_min": 780,
+      "adjusted_max_fdp_min": 960,
+      "actual_fdp_min": 850,
+      "actual_duty_min": 880,
       "pilots": [
         "F07",
-        "C03"
+        "C08"
       ]
     },
     "M092": {
@@ -4365,11 +4411,79 @@
       "protected_break_min": 562,
       "creditable_break_min": 360,
       "extension_min": 180,
+      "fdp_start_utc": "06:00",
+      "fdp_start_reference": "07:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
       "basic_max_fdp_min": 780,
       "adjusted_max_fdp_min": 960,
-      "actual_fdp_min": 940,
+      "actual_fdp_min": 910,
+      "actual_duty_min": 940,
       "pilots": [
         "F07",
+        "C11"
+      ]
+    },
+    "M058": {
+      "after_mission": "M056",
+      "before_mission": "M058",
+      "station": "EPPO",
+      "ground_break_min": 605,
+      "protected_break_min": 545,
+      "creditable_break_min": 360,
+      "extension_min": 180,
+      "fdp_start_utc": "05:00",
+      "fdp_start_reference": "06:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
+      "basic_max_fdp_min": 780,
+      "adjusted_max_fdp_min": 960,
+      "actual_fdp_min": 850,
+      "actual_duty_min": 880,
+      "pilots": [
+        "F06",
+        "C02"
+      ]
+    },
+    "M072": {
+      "after_mission": "M066",
+      "before_mission": "M072",
+      "station": "EPPO",
+      "ground_break_min": 605,
+      "protected_break_min": 545,
+      "creditable_break_min": 360,
+      "extension_min": 180,
+      "fdp_start_utc": "05:00",
+      "fdp_start_reference": "06:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
+      "basic_max_fdp_min": 780,
+      "adjusted_max_fdp_min": 960,
+      "actual_fdp_min": 850,
+      "actual_duty_min": 880,
+      "pilots": [
+        "F06",
+        "C01"
+      ]
+    },
+    "M054": {
+      "after_mission": "M048",
+      "before_mission": "M054",
+      "station": "EPPO",
+      "ground_break_min": 508,
+      "protected_break_min": 448,
+      "creditable_break_min": 360,
+      "extension_min": 180,
+      "fdp_start_utc": "06:00",
+      "fdp_start_reference": "07:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
+      "basic_max_fdp_min": 780,
+      "adjusted_max_fdp_min": 960,
+      "actual_fdp_min": 790,
+      "actual_duty_min": 820,
+      "pilots": [
+        "F08",
         "C03"
       ]
     },
@@ -4381,60 +4495,17 @@
       "protected_break_min": 520,
       "creditable_break_min": 360,
       "extension_min": 180,
-      "basic_max_fdp_min": 735,
-      "adjusted_max_fdp_min": 915,
-      "actual_fdp_min": 875,
+      "fdp_start_utc": "05:15",
+      "fdp_start_reference": "06:15",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 3,
+      "basic_max_fdp_min": 750,
+      "adjusted_max_fdp_min": 930,
+      "actual_fdp_min": 910,
+      "actual_duty_min": 940,
       "pilots": [
-        "C09",
-        "F02"
-      ]
-    },
-    "M058": {
-      "after_mission": "M056",
-      "before_mission": "M058",
-      "station": "EPPO",
-      "ground_break_min": 605,
-      "protected_break_min": 545,
-      "creditable_break_min": 360,
-      "extension_min": 180,
-      "basic_max_fdp_min": 720,
-      "adjusted_max_fdp_min": 900,
-      "actual_fdp_min": 880,
-      "pilots": [
-        "F06",
+        "F05",
         "C11"
-      ]
-    },
-    "M054": {
-      "after_mission": "M048",
-      "before_mission": "M054",
-      "station": "EPPO",
-      "ground_break_min": 508,
-      "protected_break_min": 448,
-      "creditable_break_min": 360,
-      "extension_min": 180,
-      "basic_max_fdp_min": 780,
-      "adjusted_max_fdp_min": 960,
-      "actual_fdp_min": 820,
-      "pilots": [
-        "F08",
-        "C03"
-      ]
-    },
-    "M072": {
-      "after_mission": "M066",
-      "before_mission": "M072",
-      "station": "EPPO",
-      "ground_break_min": 605,
-      "protected_break_min": 545,
-      "creditable_break_min": 360,
-      "extension_min": 180,
-      "basic_max_fdp_min": 720,
-      "adjusted_max_fdp_min": 900,
-      "actual_fdp_min": 880,
-      "pilots": [
-        "F04",
-        "C07"
       ]
     },
     "M093": {
@@ -4445,12 +4516,17 @@
       "protected_break_min": 567,
       "creditable_break_min": 360,
       "extension_min": 180,
+      "fdp_start_utc": "06:00",
+      "fdp_start_reference": "07:00",
+      "fdp_reference_zone": "CET",
+      "fdp_sector_count": 2,
       "basic_max_fdp_min": 780,
       "adjusted_max_fdp_min": 960,
-      "actual_fdp_min": 940,
+      "actual_fdp_min": 910,
+      "actual_duty_min": 940,
       "pilots": [
-        "F02",
-        "C11"
+        "C03",
+        "F02"
       ]
     }
   },

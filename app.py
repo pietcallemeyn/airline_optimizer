@@ -24,6 +24,7 @@ except ImportError:
 import plotly.express as px
 import plotly.graph_objects as go
 import visualize as viz
+import scratch_boards
 
 
 ROOT = Path(__file__).resolve().parent
@@ -4005,6 +4006,7 @@ def render_operations_board_component(
     missions,
     title,
     pilots_only=False,
+    scratch_board_name=None,
 ):
     """Render a continuous UTC aircraft timeline, one horizontal lane per aircraft."""
     payload = operations_board_payload(solution, missions)
@@ -4028,6 +4030,13 @@ def render_operations_board_component(
     }
     header_json = _json.dumps(header, ensure_ascii=False)
     pilots_only_json = "true" if pilots_only else "false"
+    # Only scratch workspaces expose editing navigation. Original boards stay read-only.
+    scratch_name_json = _json.dumps(str(scratch_board_name) if scratch_board_name else "")
+    try:
+        scratch_base_url = st.context.url
+    except Exception:
+        scratch_base_url = ""
+    scratch_base_json = _json.dumps(str(scratch_base_url or ""))
 
     # New optimizer solutions contain an exact reserve-coverage diagnostic.
     # Keep it compact by default, but make the dates/roles immediately inspectable.
@@ -4125,6 +4134,12 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
 <script>
 (() => {{
  const data={data_json}, header={header_json}, pilotsOnly={pilots_only_json};
+ const scratchBoard={scratch_name_json}, scratchBase={scratch_base_json};
+ function editMission(missionId){{
+   if(!scratchBoard || !missionId) return;
+   if(window.__scratchSelectMission) window.__scratchSelectMission(String(missionId));
+ }}
+
  const board=document.getElementById('board'), viewport=document.getElementById('viewport');
  const dayMs=86400000, baseDayW=112;
  const zoomStorageKey='airline_optimizer_results_board_zoom_v1';
@@ -4161,7 +4176,7 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
    const lab=document.createElement('div');lab.className='label-cell';lab.innerHTML=`<b>${{row.registration}}</b><span>${{row.crew||'—'}}</span>`;line.appendChild(lab);addGrid(line);
    row.cards.forEach(c=>{{if(!c.start_iso||!c.end_iso)return;const el=document.createElement('button');el.type='button';el.className=`block ${{c.kind}}`;el.style.left=`${{pct(c.start_iso)}}%`;el.style.width=`max(48px, ${{widthPct(c.start_iso,c.end_iso)}}%)`;el.style.zIndex=c.kind==='parking'?2:5;
      const destination=(c.route||'').split('→').pop().trim(); const splitBadge=c.split_duty?'<span class="split-badge">SPLIT</span>':''; el.innerHTML=c.kind==='mission'?`${{splitBadge}}<div class="route">${{esc(destination)}}</div><div class="meta">${{esc(c.label)}}</div>`:`<div class="route">${{esc(c.label)}}</div><div class="meta">${{esc(c.route||'')}}</div>`;
-     el.addEventListener('click',()=>detail(c,row.registration,el)); el.onmouseenter=(e)=>{{const si=c.split_duty_info||{{}};const hm=(v)=>{{v=Number(v||0);return `${{String(Math.floor(v/60)).padStart(2,'0')}}:${{String(v%60).padStart(2,'0')}}`;}};const split=c.split_duty?`<br><span style="color:#ffd75e;font-weight:800">SPLIT DUTY · ${{esc(si.station||'')}}</span><br>Ground interval ${{hm(si.ground_break_min)}} · protected break ${{hm(si.protected_break_min)}}<br>FDP extension +${{hm(si.extension_min)}} · basic max ${{hm(si.basic_max_fdp_min)}} → adjusted ${{hm(si.adjusted_max_fdp_min)}} · actual ${{hm(si.actual_fdp_min)}}`:'';showTip(`<b>${{esc(c.label)}} · ${{esc(c.route||'')}}</b><br>${{esc(c.day)}} · ${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(row.registration)}}<br><span style="color:#52bfff">Crew ${{esc(c.crew||'—')}}</span><br>${{esc(c.extra||'')}}${{split}}`,e);}};el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});
+     el.addEventListener('click',()=>{{detail(c,row.registration,el);if(scratchBoard && c.kind==='mission')editMission(c.label);}}); el.onmouseenter=(e)=>{{const si=c.split_duty_info||{{}};const hm=(v)=>{{v=Number(v||0);return `${{String(Math.floor(v/60)).padStart(2,'0')}}:${{String(v%60).padStart(2,'0')}}`;}};const split=c.split_duty?`<br><span style="color:#ffd75e;font-weight:800">SPLIT DUTY · ${{esc(si.station||'')}}</span><br>Ground interval ${{hm(si.ground_break_min)}} · protected break ${{hm(si.protected_break_min)}}<br>FDP start ${{esc(si.fdp_start_utc||'—')}} UTC / ${{esc(si.fdp_start_reference||'—')}} ${{esc(si.fdp_reference_zone||'Brussels')}} · ${{esc(si.fdp_sector_count||'—')}} sectors<br>FDP extension +${{hm(si.extension_min)}} · basic max ${{hm(si.basic_max_fdp_min)}} → adjusted ${{hm(si.adjusted_max_fdp_min)}} · actual FDP ${{hm(si.actual_fdp_min)}} · duty ${{hm(si.actual_duty_min)}}`:'';showTip(`<b>${{esc(c.label)}} · ${{esc(c.route||'')}}</b><br>${{esc(c.day)}} · ${{esc(c.start)}} → ${{esc(c.end)}} UTC<br>Aircraft ${{esc(row.registration)}}<br><span style="color:#52bfff">Crew ${{esc(c.crew||'—')}}</span><br>${{esc(c.extra||'')}}${{split}}`,e);}};el.onmousemove=moveTip;el.onmouseleave=hideTip;line.appendChild(el);}});
    board.appendChild(line);
   }});
   if((data.pilots||[]).length){{
@@ -4247,8 +4262,45 @@ button.ctrl {{ border:1px solid #d5d5d5; background:#fff; padding:6px 9px; borde
 }})();
 </script>
 """
+    if scratch_board_name:
+        # Use Streamlit's bidirectional custom-component protocol, not iframe
+        # top-navigation (blocked by modern browser sandbox policies).
+        from pathlib import Path as _Path
+        import hashlib as _hashlib
+        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', str(scratch_board_name))[:64]
+        comp_dir = ROOT / "scratch_timeline_components" / safe_name
+        comp_dir.mkdir(parents=True, exist_ok=True)
+        bridge = r"""
+<script>
+(function(){
+  const parentWindow=window.parent;
+  window.__scratchSelectMission=function(missionId){
+    parentWindow.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{mission:String(missionId),nonce:Date.now()+Math.random()}},'*');
+  };
+  window.addEventListener('message',function(ev){
+    if(ev.data && ev.data.type==='streamlit:render'){
+      parentWindow.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:980},'*');
+    }
+  });
+  parentWindow.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');
+  parentWindow.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:980},'*');
+})();
+</script>
+"""
+        # Keep one HTML file per scratch board to avoid cross-board collisions.
+        html_file = comp_dir / 'index.html'
+        html_file.write_text(component_html + bridge, encoding='utf-8')
+        if not hasattr(render_operations_board_component, '_scratch_components'):
+            render_operations_board_component._scratch_components = {}
+        registered = render_operations_board_component._scratch_components
+        if safe_name not in registered:
+            registered[safe_name] = components.declare_component(
+                'scratch_timeline_' + _hashlib.sha1(safe_name.encode()).hexdigest()[:12],
+                path=str(comp_dir),
+            )
+        return registered[safe_name](key='scratch_timeline_'+safe_name, default=None)
     components.html(component_html, height=980, scrolling=False)
-
+    return None
 
 
 def render_native_timeline_chart(
@@ -4612,6 +4664,7 @@ def render_timeline_browser():
             f'ALTERNATIVE {index + 1} / {len(gallery)}',
         )
         render_outstation_swap_details(solution)
+        scratch_boards.render_launcher(solution)
         return
 
     mode = st.session_state.timeline_mode
@@ -4642,6 +4695,7 @@ def render_timeline_browser():
     )
     render_outstation_swap_details(solution)
 
+    scratch_boards.render_launcher(solution)
 
 
 def results_page():
@@ -4673,6 +4727,18 @@ def results_page():
     with st.expander("Detailed Pareto info", expanded=False):
         render_results()
 
+
+# Dedicated scratch workspace: same aircraft timeline, separate browser tab.
+if st.query_params.get("scratch_board"):
+    scratch_boards.render_workspace(
+        st.query_params.get("scratch_board"),
+        render_operations_board_component,
+        lambda: timeline_data()[3],
+        pilot_label,
+        actual_outstation_swap_events,
+        render_outstation_swap_details,
+    )
+    st.stop()
 
 st.title(
     "✈️ Airline Scheduling Optimizer"

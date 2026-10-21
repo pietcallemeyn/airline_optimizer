@@ -1,11 +1,19 @@
 from __future__ import annotations
 import argparse, csv, hashlib, json, random, statistics, sys, time
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent; DATA=ROOT/'data'; OUTPUT=ROOT/'output'
 REPORT_MIN=45; RELEASE_MIN=30
+FDP_REFERENCE_ZONE = ZoneInfo("Europe/Brussels")
+
+def fdp_reference_start(utc_start):
+    """Interpret naive schedule datetimes as UTC; convert to Brussels reference time."""
+    utc_aware = utc_start.replace(tzinfo=timezone.utc) if utc_start.tzinfo is None else utc_start.astimezone(timezone.utc)
+    return utc_aware.astimezone(FDP_REFERENCE_ZONE)
+
 # Split-duty rule: the protected break itself must be >=3h. Between two
 # sectors, 20 min post-flight + 20 min travel + 20 min pre-flight are not
 # part of that break, so >=4h elapsed ground time is required. Only the first
@@ -105,14 +113,14 @@ def _clock_min(x):
 def max_fdp_minutes(start, sectors):
     """Basic max FDP for acclimatised crew from the supplied table."""
     idx = 0 if sectors <= 2 else min(sectors,10)-2
-    cm = _clock_min(start)
+    cm = _clock_min(fdp_reference_start(start))
     if cm >= 17*60 or cm <= 4*60+59:
         return FDP_1700_0459[idx]
     for lo,hi,vals in FDP_TABLE:
         lom=lo[0]*60+lo[1]; him=hi[0]*60+hi[1]
         if lom <= cm <= him:
             return vals[idx]
-    raise ValueError(f"No FDP table band for start time {start:%H:%M}")
+    raise ValueError(f"No FDP table band for reference start {fdp_reference_start(start):%H:%M %Z}")
 
 def split_duty_for_period(items):
     """Return the best usable split-duty break inside one FDP, if any.
@@ -195,6 +203,7 @@ def duty_periods_for_missions(ms):
             'end':end,
             'sectors':len(items),
             'duty_min':duty_min,
+            'fdp_min':int((max(m.arrival for m in items)-start).total_seconds()//60),
             'flight_min':sum(int((m.arrival-m.departure).total_seconds()//60) for m in items),
             'missions':items,
         })
@@ -221,7 +230,7 @@ def ftl_ok_for_missions(ms, home_base=None):
         if x['sectors']>10:
             return False
         basic,allowed,split=fdp_limit_for_period(x['missions'])
-        if x['duty_min']>allowed:
+        if x['fdp_min']>allowed:
             return False
 
     # Rest between inferred consecutive FDPs. Normally this is already assured
@@ -326,7 +335,7 @@ def recovery_rest_checks(roster, window_start, window_end):
 def pilot_ftl_checklist(roster, pilot, availability, window_start, window_end, assignments=None):
     """Recalculate FTL and eligibility for one pilot from saved movements."""
     duties = duty_periods_for_missions(roster)
-    fdp_ok = all(x['sectors']<=10 and x['duty_min']<=fdp_limit_for_period(x['missions'])[1] for x in duties)
+    fdp_ok = all(x['sectors']<=10 and x['fdp_min']<=fdp_limit_for_period(x['missions'])[1] for x in duties)
     rest_ok = True
     for prev,nxt in zip(duties,duties[1:]):
         gap = int((nxt['start']-prev['end']).total_seconds()//60)
@@ -406,10 +415,10 @@ def diagnose_ftl_failure(missions, pilots, avail, caps, fos):
                 reasons.append(f"{x['start']:%Y-%m-%d}: {x['sectors']} sectors (>10)")
             else:
                 basic,allowed,split=fdp_limit_for_period(x['missions'])
-                if x['duty_min']>allowed:
+                if x['fdp_min']>allowed:
                     split_txt=(f", split +{split['extension_min']//60:02d}:{split['extension_min']%60:02d} at {split['station']}" if split else "")
                     reasons.append(
-                        f"{x['start']:%Y-%m-%d} FDP {x['duty_min']//60:02d}:{x['duty_min']%60:02d} "
+                        f"{x['start']:%Y-%m-%d} FDP {x['fdp_min']//60:02d}:{x['fdp_min']%60:02d} "
                         f"> {allowed//60:02d}:{allowed%60:02d} allowed "
                         f"(basic {basic//60:02d}:{basic%60:02d}{split_txt}; {x['sectors']} sectors, report {x['start']:%H:%M})"
                     )
@@ -492,7 +501,7 @@ def build_tours(missions):
             tours.append((reg,current))
     return sorted(tours,key=lambda x:(x[1][0].departure,x[0]))
 
-def decode(keys, missions, feasible, caps, fos, avail, pilots, rng=None, failure_stats=None):
+def decode(keys, missions, feasible, caps, fos, avail, pilots, rng=None, failure_stats=None, fixed_tours=None):
     """Assign experienced-compatible CAPT/FO pairs, with joint relief search.
 
     Prefer one crew for a whole tour. If that is impossible, search coordinated
@@ -556,12 +565,33 @@ def decode(keys, missions, feasible, caps, fos, avail, pilots, rng=None, failure
             return (legal_segment(c, 'CAPT', start, end)
                     and legal_segment(f, 'FO', start, end))
 
+        # LNS: preserve the incumbent's crew assignments on frozen tours.
+        # Unfrozen tours are rebuilt, and the complete schedule is validated.
+        frozen = (fixed_tours or {}).get(tour[0].id)
+        if frozen is not None:
+            segments = []
+            for i, m in enumerate(tour):
+                pair = frozen.get(m.id)
+                if pair is None or pair not in possible[i]:
+                    return None
+                if segments and segments[-1][2] == pair:
+                    start, _, old_pair = segments[-1]
+                    segments[-1] = (start, i + 1, old_pair)
+                else:
+                    segments.append((i, i + 1, pair))
+            if not all(legal_pair(pair, a, b) for a, b, pair in segments):
+                return None
+        else:
+            segments = None
         # Fast path: find a complete-tour pair before attempting any relief.
         common = set(possible[0])
         for options in possible[1:]:
             common.intersection_update(options)
-        full = [pair for pair in pair_order(common) if legal_pair(pair, 0, n)]
-        if full:
+        full = ([pair for pair in pair_order(common) if legal_pair(pair, 0, n)]
+                if frozen is None else [])
+        if frozen is not None:
+            pass
+        elif full:
             segments = [(0, n, full[0])]
         else:
             # Search pair segments jointly. Either role or both can change.
@@ -792,11 +822,18 @@ def split_duty_metadata(assign, missions):
     for pid, roster in by_pilot.items():
         for duty in duty_periods_for_missions(roster):
             basic,allowed,split=fdp_limit_for_period(duty['missions'])
-            if not split or duty['duty_min'] <= basic:
+            if not split or duty['fdp_min'] <= basic:
                 continue
             info=dict(split)
-            info.update({'basic_max_fdp_min':basic,'adjusted_max_fdp_min':allowed,
-                         'actual_fdp_min':duty['duty_min']})
+            duty_start=duty['missions'][0].departure-timedelta(minutes=REPORT_MIN)
+            reference_start=fdp_reference_start(duty_start)
+            info.update({'fdp_start_utc':duty_start.strftime('%H:%M'),
+                         'fdp_start_reference':reference_start.strftime('%H:%M'),
+                         'fdp_reference_zone':reference_start.strftime('%Z'),
+                         'fdp_sector_count':len(duty['missions']),
+                         'basic_max_fdp_min':basic,'adjusted_max_fdp_min':allowed,
+                         'actual_fdp_min':duty['fdp_min'],
+                         'actual_duty_min':duty['duty_min']})
             key=split['before_mission']
             existing=result.get(key)
             if existing is None:
@@ -928,15 +965,79 @@ def validate_aircraft_missions(missions):
         return False
     return True
 
+def improve_with_lns(seed_decoded, missions, feasible, caps, fos, avail, pilots,
+                     iterations=100, seed=42, verbose=False, deadline=None):
+    """Destroy-and-repair crew assignments on 2-5 related aircraft tours.
+
+    Freeze all other tours; rebuild selected tours using the existing joint
+    relief search. Only accept fully validated, lexicographically better
+    schedules. No guarantee of a global optimum.
+    """
+    rng = random.Random(seed)
+    tours = build_tours(missions)
+    tour_of = {m.id: i for i, (_, tour) in enumerate(tours) for m in tour}
+    best = seed_decoded
+    best_score = score(best, missions, pilots, avail, caps, fos)
+    attempts = feasible_count = improvements = 0
+    for iteration in range(max(0, iterations)):
+        if deadline is not None and time.perf_counter() >= deadline:
+            break
+        # Choose a tour containing an outstation swap, then free other tours
+        # sharing pilots or overlapping the same dates. This permits genuine
+        # cross-aircraft reassignment rather than just shuffling GA genes.
+        events = [m for m in missions if best[3][m.id]['outstation']]
+        if not events:
+            break
+        target = tour_of[rng.choice(events).id]
+        target_missions = tours[target][1]
+        affected = {best[0][m.id][role] for m in target_missions
+                    for role in ('captain', 'fo')}
+        ranked = []
+        start = min(m.departure for m in target_missions)
+        end = max(m.arrival for m in target_missions)
+        for j, (_, tour) in enumerate(tours):
+            if j == target:
+                continue
+            shared = sum(best[0][m.id][role] in affected
+                         for m in tour for role in ('captain', 'fo'))
+            temporal = sum(start <= m.departure <= end for m in tour)
+            ranked.append((shared * 5 + temporal + rng.random() * 2, j))
+        ranked.sort(reverse=True)
+        # Vary neighborhood size to escape local minima.
+        count = rng.choice((2, 3, 4, 5))
+        released = {target} | {j for _, j in ranked[:count-1]}
+        fixed = {tour[0].id: {m.id: (best[0][m.id]['captain'],
+                                        best[0][m.id]['fo']) for m in tour}
+                 for j, (_, tour) in enumerate(tours) if j not in released}
+        genes = [rng.random() for _ in range(max(2, len(missions) * 2))]
+        candidate = decode(genes, missions, feasible, caps, fos, avail, pilots,
+                           rng=rng, fixed_tours=fixed)
+        attempts += 1
+        if candidate is None:
+            continue
+        feasible_count += 1
+        candidate_score = score(candidate, missions, pilots, avail, caps, fos)
+        if candidate_score < best_score:
+            best, best_score = candidate, candidate_score
+            improvements += 1
+            if verbose:
+                print(f'LNS improvement {iteration+1}/{iterations}: '
+                      f'outstation={best_score[0]} pilot_changes={best_score[1]} '
+                      f'balance={best_score[2]:.3f}', flush=True)
+    return best, {'attempts': attempts, 'feasible': feasible_count,
+                  'improvements': improvements, 'score': best_score}
+
 def main():
     ap=argparse.ArgumentParser(description='Lean GA: fixed missions/aircraft, optimize crew balance and reserve coverage.')
     ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
+    ap.add_argument('--lns-iterations',type=int,default=150,help='Maximum targeted crew reassignment attempts per seed; 0 disables LNS')
+    ap.add_argument('--lns-seconds',type=float,default=60.0,help='Total time budget for targeted crew reassignment')
     a=ap.parse_args(); missions,pilots,avail=load_data()
     if not validate_aircraft_missions(missions): return 2
     feasible,caps,fos=precompute(missions,pilots,avail)
     print(f'LEAN CREW GA · missions={len(missions)} fixed aircraft · captains={len(caps)} · FOs={len(fos)}')
     print('Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers')
-    archive={}; start=time.perf_counter(); evals=0; valid_evals=0; failure_stats={}
+    archive={}; decoded_archive={}; start=time.perf_counter(); evals=0; valid_evals=0; failure_stats={}
     for run in range(a.runs):
         rng=random.Random(a.seed+run*10007); n=max(2,len(missions)*2)
         pop=[]
@@ -956,8 +1057,39 @@ def main():
                 b=pop[0]['score']; print(f'run={run+1}/{a.runs} gen={gen+1}/{a.generations} outstation={b[0]} balance={b[2]:.3f} backup_shortage={b[3]} base_handovers={b[4]} valid={valid_evals}/{evals} elapsed={time.perf_counter()-start:.1f}s',flush=True)
         for x in pop[:20]:
             if x['decoded']:
-                s=make_solution(x['decoded'],x['score'],missions,pilots,avail,caps,fos); archive[s['schedule_signature']]=s
-    save(list(archive.values()),{'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'valid_evaluations':valid_evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
+                s=make_solution(x['decoded'],x['score'],missions,pilots,avail,caps,fos); archive[s['schedule_signature']]=s; decoded_archive[s['schedule_signature']]=x['decoded']
+    lns_stats = {'attempts': 0, 'feasible': 0, 'improvements': 0}
+    if archive and a.lns_iterations > 0 and a.lns_seconds > 0:
+        lns_deadline = time.perf_counter() + a.lns_seconds
+        ga_best = min(x['objectives'].get('outstation_handovers', 10**9) for x in archive.values())
+        # Reconstruct seed schedules from archived mission assignments. This
+        # avoids changing the GA and keeps its solutions as a fallback.
+        seeds = sorted(archive.values(), key=lambda x: (
+            x['objectives'].get('outstation_handovers', 10**9),
+            x['objectives']['crew_balance_score']))[:3]
+        print(f'LNS starting · {a.lns_iterations} attempts per seed · '
+              f'seeds={len(seeds)}', flush=True)
+        for si, solution in enumerate(seeds):
+            # Prefer an in-memory GA decoded solution with the same signature.
+            # Archive is populated only after each run, so store this mapping.
+            initial = decoded_archive.get(solution['schedule_signature'])
+            if initial is None:
+                continue
+            improved, stats = improve_with_lns(
+                initial, missions, feasible, caps, fos, avail, pilots,
+                iterations=a.lns_iterations, seed=a.seed + 200003 + si,
+                verbose=a.verbose, deadline=lns_deadline)
+            for key in ('attempts', 'feasible', 'improvements'):
+                lns_stats[key] += stats[key]
+            sc = score(improved, missions, pilots, avail, caps, fos)
+            result = make_solution(improved, sc, missions, pilots, avail, caps, fos)
+            archive[result['schedule_signature']] = result
+        lns_best = min(x['objectives'].get('outstation_handovers', 10**9) for x in archive.values())
+        print(f'LNS finished · outstation before={ga_best} after={lns_best} · '
+              f'attempts={lns_stats["attempts"]} '
+              f'feasible={lns_stats["feasible"]} '
+              f'improvements={lns_stats["improvements"]}', flush=True)
+    save(list(archive.values()),{'lns': lns_stats, 'runs':a.runs,'population':a.population,'generations':a.generations,'total_evaluations':evals,'valid_evaluations':valid_evals,'seed':a.seed,'elapsed_seconds':round(time.perf_counter()-start,2)})
     if not archive:
         print('NO FEASIBLE CREW SCHEDULE FOUND.')
         print('Crew relief is permitted where legal; each CAPT/FO pair must include an experienced pilot.')
