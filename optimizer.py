@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent; DATA=ROOT/'data'; OUTPUT=Path(__import__('os').environ.get('CREW_OUTPUT_DIR',str(ROOT/'output'))).resolve()
 # GUI supplies the authenticated user's mission CSV; CLI keeps its legacy default.
 MISSIONS_FILE=Path(__import__('os').environ.get('CREW_MISSIONS_FILE',str(DATA/'missions.csv'))).resolve()
+PILOT_AVAILABILITY_FILE=Path(__import__('os').environ.get('CREW_PILOT_AVAILABILITY_FILE',str(DATA/'pilot_availability.csv'))).resolve()
 REPORT_MIN=45; RELEASE_MIN=30
 FDP_REFERENCE_ZONE = ZoneInfo("Europe/Brussels")
 
@@ -71,7 +72,7 @@ def load_data():
     pilots={}; avail={}; missions=[]
     with (DATA/'pilots.csv').open(newline='',encoding='utf-8') as f:
         for r in csv.DictReader(f): pilots[r['id']]=Pilot(r['id'],r['role'].upper(),r['home_base'],int(r.get('max_duty_min') or 600),parse_experienced(r.get('experienced')))
-    p=DATA/'pilot_availability.csv'
+    p=PILOT_AVAILABILITY_FILE
     if p.exists():
         with p.open(newline='',encoding='utf-8') as f:
             for r in csv.DictReader(f):

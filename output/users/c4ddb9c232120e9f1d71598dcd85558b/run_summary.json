@@ -1,16 +1,18 @@
 {
   "lns": {
     "attempts": 450,
-    "feasible": 35,
-    "improvements": 4
+    "feasible": 89,
+    "improvements": 2
   },
   "runs": 2,
   "population": 100,
   "generations": 10,
   "total_evaluations": 2200,
-  "valid_evaluations": 2137,
+  "valid_evaluations": 2191,
   "seed": 42,
-  "elapsed_seconds": 178.94,
-  "solutions": 6,
-  "optimizer": "LEAN_CREW_GA"
+  "elapsed_seconds": 55.4,
+  "solutions": 12,
+  "optimizer": "LEAN_CREW_GA",
+  "mission_input_sha256": "047f80003628ba9ab60f0ccaebc801e232c2d7784e63e6fe0d420ef471255c7e",
+  "mission_input_count": 67
 }
