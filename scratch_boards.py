@@ -6,27 +6,28 @@ from pathlib import Path
 import streamlit as st
 import pandas as pd
 
-STORE = Path(__file__).resolve().parent / 'scratch_board_data'
-LEGACY_STORE = Path(__file__).resolve().parent / 'output' / 'scratch_boards'
+def _store():
+    import auth_local
+    identity=st.session_state.get('identity')
+    if not identity: raise PermissionError('Sign in required for scratch boards')
+    return auth_local.user_output(identity) / 'scratch_boards'
+
 
 def _safe(name):
     name = re.sub(r'[^a-zA-Z0-9_-]+', '_', str(name).strip())[:64]
     return name or 'scratch'
 
 def names():
-    return sorted({p.stem for folder in (STORE, LEGACY_STORE) if folder.exists() for p in folder.glob('*.json')})
+    return sorted({p.stem for folder in (_store(),) if folder.exists() for p in folder.glob('*.json')})
 
 def read(name):
-    p = STORE / (_safe(name)+'.json')
-    if not p.exists():
-        p = LEGACY_STORE / (_safe(name)+'.json')
+    p = _store() / (_safe(name)+'.json')
     data=json.loads(p.read_text(encoding='utf-8'))
-    # Old scenarios remain readable; their next save migrates to scratch_board_data.
     return data
 
 def write(name, solution, history=None, validation=None):
-    STORE.mkdir(parents=True, exist_ok=True)
-    p=STORE / (_safe(name)+'.json')
+    _store().mkdir(parents=True, exist_ok=True)
+    p=_store() / (_safe(name)+'.json')
     data={'schema_version':2,'name':_safe(name),'solution':solution,
           'crew_assignments':assignments(solution), 'history':history or [], 'validation':validation,
           'updated_at':datetime.now().isoformat(timespec='seconds')}
@@ -40,7 +41,7 @@ def create(name, source):
     write(name,copy.deepcopy(source))
 
 def delete(name):
-    for folder in (STORE, LEGACY_STORE):
+    for folder in (_store(),):
         (folder/(_safe(name)+'.json')).unlink(missing_ok=True)
 
 def assignments(solution):

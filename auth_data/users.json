@@ -1,0 +1,16 @@
+{
+  "piet": {
+    "id": "4e868267efc562b8d7ebd2dd3d44f455",
+    "salt": "48c454ca088663b2e33d70e7129a50a2",
+    "password_hash": "e20f338de39b17516b1b561c4228a433a19e9db6c28a0b0de40b0bafb08da52d921cc8df951cf580e325c11aba322652fc50ed9d93ba7b8d1c2b8ccd9892674d",
+    "active": true,
+    "provider": "local"
+  },
+  "risto": {
+    "id": "6a7374aa38a773b264afc1bdcf1fc797",
+    "salt": "2c3c5a20cae1b9ef6e3f2ea75c8fb7bb",
+    "password_hash": "d64fe33ab4fe83dfc3cd30e89259b6be73a16998209c47bdb29f72fdcf53b0f2e66651ddb9fd688c04b85b4ab6916a86a67a7cd26a91dd14e44256f9a3d6a5c4",
+    "active": true,
+    "provider": "local"
+  }
+}

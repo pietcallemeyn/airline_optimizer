@@ -1,0 +1,18 @@
+{
+  "lns": {
+    "attempts": 450,
+    "feasible": 151,
+    "improvements": 1
+  },
+  "runs": 2,
+  "population": 100,
+  "generations": 10,
+  "total_evaluations": 2200,
+  "valid_evaluations": 2199,
+  "seed": 42,
+  "elapsed_seconds": 23.15,
+  "solutions": 6,
+  "optimizer": "LEAN_CREW_GA",
+  "mission_input_sha256": "30add511953f803a61ed2081a9f5f030dbc31e5dbb43bfe60e280adcca4249fa",
+  "mission_input_count": 57
+}

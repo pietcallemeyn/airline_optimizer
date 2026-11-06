@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parent; DATA=ROOT/'data'; OUTPUT=ROOT/'output'
+ROOT=Path(__file__).resolve().parent; DATA=ROOT/'data'; OUTPUT=Path(__import__('os').environ.get('CREW_OUTPUT_DIR',str(ROOT/'output'))).resolve()
+# GUI supplies the authenticated user's mission CSV; CLI keeps its legacy default.
+MISSIONS_FILE=Path(__import__('os').environ.get('CREW_MISSIONS_FILE',str(DATA/'missions.csv'))).resolve()
 REPORT_MIN=45; RELEASE_MIN=30
 FDP_REFERENCE_ZONE = ZoneInfo("Europe/Brussels")
 
@@ -75,7 +77,7 @@ def load_data():
             for r in csv.DictReader(f):
                 try: avail[(r['pilot_id'],dt(r['date']).date())]=(r.get('status') or 'AVAILABLE').upper()
                 except Exception: pass
-    with (DATA/'missions.csv').open(newline='',encoding='utf-8') as f:
+    with MISSIONS_FILE.open(newline='',encoding='utf-8') as f:
         for r in csv.DictReader(f):
             kind=(r.get('type') or r.get('movement_type') or 'MISSION').strip().upper()
             if kind in {'EMPTY','EMPTY_LEG','HISTORICAL_EMPTY','POSITION','POSITIONING'}: continue
@@ -84,8 +86,8 @@ def load_data():
             arr=dt(arrtxt) if arrtxt else None
             missions.append([r,dep,arr])
     estimates={}
-    ep=DATA/'missions_with_estimates.csv'
-    if ep.exists():
+    ep=MISSIONS_FILE.parent/'missions_with_estimates.csv' if __import__('os').environ.get('CREW_MISSIONS_FILE') else DATA/'missions_with_estimates.csv'
+    if ep.exists() and ep.stat().st_mtime >= MISSIONS_FILE.stat().st_mtime:
         with ep.open(newline='',encoding='utf-8') as f:
             for r in csv.DictReader(f):
                 if r.get('arrival'): estimates[r['id']]=dt(r['arrival'])
@@ -931,7 +933,7 @@ def save(solutions,stats):
             })
     (OUTPUT/'diverse_solutions.json').write_text(json.dumps(unique,indent=2),encoding='utf-8')
     if unique: (OUTPUT/'cheapest.json').write_text(json.dumps(unique[0],indent=2),encoding='utf-8')
-    (OUTPUT/'run_summary.json').write_text(json.dumps(stats|{'solutions':len(unique),'optimizer':'LEAN_CREW_GA'},indent=2),encoding='utf-8')
+    (OUTPUT/'run_summary.json').write_text(json.dumps(stats|{'solutions':len(unique),'optimizer':'LEAN_CREW_GA','mission_input_sha256':hashlib.sha256(MISSIONS_FILE.read_bytes()).hexdigest(),'mission_input_count':len(load_data()[0])},indent=2),encoding='utf-8')
 
 
 def validate_aircraft_missions(missions):
@@ -954,7 +956,7 @@ def validate_aircraft_missions(missions):
         print(f"Found {len(conflicts)} conflicting mission pair(s) on "
               f"{len(set(reg for reg, _, _ in conflicts))} aircraft.")
         print("A crew optimizer cannot repair aircraft overlaps while aircraft assignments are fixed.")
-        print("Check departure/arrival timestamps and fixed_aircraft in data/missions.csv "
+        print("Check departure/arrival timestamps and fixed_aircraft in the active missions.csv "
               "and data/missions_with_estimates.csv.")
         print("Conflicting missions (shown only in your local console):")
         for registration, first, second in conflicts[:20]:
@@ -1032,7 +1034,12 @@ def main():
     ap.add_argument('--population',type=int,default=40); ap.add_argument('--generations',type=int,default=30); ap.add_argument('--runs',type=int,default=2); ap.add_argument('--seed',type=int,default=42); ap.add_argument('--verbose',action='store_true'); ap.add_argument('--debug',action='store_true'); ap.add_argument('--live',action='store_true'); ap.add_argument('--live-every',type=int,default=1)
     ap.add_argument('--lns-iterations',type=int,default=150,help='Maximum targeted crew reassignment attempts per seed; 0 disables LNS')
     ap.add_argument('--lns-seconds',type=float,default=60.0,help='Total time budget for targeted crew reassignment')
-    a=ap.parse_args(); missions,pilots,avail=load_data()
+    a=ap.parse_args()
+    if not MISSIONS_FILE.is_file():
+        raise FileNotFoundError(f"Active missions file not found: {MISSIONS_FILE}")
+    mission_input_sha256 = hashlib.sha256(MISSIONS_FILE.read_bytes()).hexdigest()
+    print(f"MISSION INPUT · {MISSIONS_FILE} · sha256={mission_input_sha256[:16]}", flush=True)
+    missions,pilots,avail=load_data()
     if not validate_aircraft_missions(missions): return 2
     feasible,caps,fos=precompute(missions,pilots,avail)
     print(f'LEAN CREW GA · missions={len(missions)} fixed aircraft · captains={len(caps)} · FOs={len(fos)}')

@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;height:0;overflow:hidden">
+<script>
+const KEY='crew_planning_local_session_v1';
+function send(value){window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:value},'*');}
+window.addEventListener('message',ev=>{
+ if(!ev.data||ev.data.type!=='streamlit:render')return;
+ const args=ev.data.args||{};
+ try{
+   if(args.action==='store' && typeof args.token==='string') localStorage.setItem(KEY,args.token);
+   if(args.action==='clear')localStorage.removeItem(KEY);
+   send(args.action==='clear'?'__cleared__':(localStorage.getItem(KEY)||'__missing__'));
+ }catch(e){send('__unavailable__');}
+ window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:0},'*');
+});
+window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');
+</script></body></html>

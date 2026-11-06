@@ -1,0 +1,15 @@
+LEAN CREW GA · missions=93 fixed aircraft · captains=11 · FOs=8
+Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers
+run=1/2 gen=1/10 outstation=8 balance=33.721 backup_shortage=3 base_handovers=17 valid=181/200 elapsed=14.4s
+run=1/2 gen=6/10 outstation=8 balance=32.199 backup_shortage=3 base_handovers=17 valid=674/700 elapsed=50.5s
+run=1/2 gen=10/10 outstation=8 balance=32.199 backup_shortage=3 base_handovers=17 valid=1073/1100 elapsed=78.6s
+run=2/2 gen=1/10 outstation=8 balance=31.317 backup_shortage=3 base_handovers=17 valid=1254/1300 elapsed=93.0s
+run=2/2 gen=6/10 outstation=8 balance=29.317 backup_shortage=3 base_handovers=17 valid=1743/1800 elapsed=129.2s
+run=2/2 gen=10/10 outstation=8 balance=28.418 backup_shortage=3 base_handovers=17 valid=2137/2200 elapsed=158.5s
+LNS starting · 150 attempts per seed · seeds=3
+LNS improvement 19/150: outstation=8 pilot_changes=13 balance=25.418
+LNS improvement 59/150: outstation=8 pilot_changes=13 balance=21.668
+LNS improvement 37/150: outstation=8 pilot_changes=13 balance=27.596
+LNS improvement 146/150: outstation=8 pilot_changes=13 balance=25.295
+LNS finished · outstation before=8 after=8 · attempts=450 feasible=35 improvements=4
+DONE · outstation=8 · balance=21.6682 · backup shortage=3 · handovers=25 · 179.0s

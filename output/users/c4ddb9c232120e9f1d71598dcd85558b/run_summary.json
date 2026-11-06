@@ -1,0 +1,16 @@
+{
+  "lns": {
+    "attempts": 450,
+    "feasible": 35,
+    "improvements": 4
+  },
+  "runs": 2,
+  "population": 100,
+  "generations": 10,
+  "total_evaluations": 2200,
+  "valid_evaluations": 2137,
+  "seed": 42,
+  "elapsed_seconds": 178.94,
+  "solutions": 6,
+  "optimizer": "LEAN_CREW_GA"
+}

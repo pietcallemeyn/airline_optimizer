@@ -1,0 +1,13 @@
+MISSION INPUT · /Users/pcallemeyn/Dropbox/ATPL/ASL Group/Software/airline_optimizer_v19/output/users/e08cda655b2d6fd680f3848f90cbdbb5/input/missions.csv · sha256=30add511953f803a
+LEAN CREW GA · missions=57 fixed aircraft · captains=11 · FOs=8
+Priority: feasibility with fixed crew tours -> crew balance -> backup coverage -> base handovers
+run=1/2 gen=1/10 outstation=2 balance=21.423 backup_shortage=1 base_handovers=14 valid=200/200 elapsed=2.0s
+run=1/2 gen=6/10 outstation=2 balance=16.457 backup_shortage=1 base_handovers=14 valid=700/700 elapsed=6.9s
+run=1/2 gen=10/10 outstation=2 balance=13.207 backup_shortage=1 base_handovers=14 valid=1100/1100 elapsed=10.9s
+run=2/2 gen=1/10 outstation=2 balance=21.453 backup_shortage=1 base_handovers=14 valid=1299/1300 elapsed=13.0s
+run=2/2 gen=6/10 outstation=2 balance=19.321 backup_shortage=1 base_handovers=14 valid=1799/1800 elapsed=17.9s
+run=2/2 gen=10/10 outstation=2 balance=16.389 backup_shortage=1 base_handovers=14 valid=2199/2200 elapsed=21.9s
+LNS starting · 150 attempts per seed · seeds=3
+LNS improvement 68/150: outstation=2 pilot_changes=3 balance=13.866
+LNS finished · outstation before=2 after=2 · attempts=450 feasible=151 improvements=1
+DONE · outstation=2 · balance=13.2069 · backup shortage=1 · handovers=16 · 23.2s

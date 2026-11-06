@@ -25,6 +25,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import visualize as viz
 import scratch_boards
+import auth_local
+import browser_sessions
 
 
 ROOT = Path(__file__).resolve().parent
@@ -38,9 +40,9 @@ OUTPUT = ROOT / "output"
 # Europe/Brussels wall-clock, then store that visible clock time as naive UTC.
 CALENDAR_WALL_TZ = ZoneInfo("Europe/Brussels")
 
-MISSIONS = DATA / "missions.csv"
+MISSIONS = DATA / "missions.csv"  # Rebound after authentication to per-user input
 DEFAULT_MISSIONS_CSV = DATA / "missions_default.csv"
-MISSION_SOURCE_INFO = DATA / "missions_source.json"
+MISSION_SOURCE_INFO = DATA / "missions_source.json"  # Rebound after authentication
 AIRPORTS = DATA / "airports.csv"
 AIRCRAFT = DATA / "aircraft.csv"
 PILOTS = DATA / "pilots.csv"
@@ -56,6 +58,103 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+# Persist authentication across browser tabs. Streamlit session_state is per
+# WebSocket, so a new Scratch Board tab needs to restore a server-side session.
+_auth_component = components.declare_component(
+    'crew_browser_session', path=str(ROOT / 'auth_browser_component')
+)
+if 'identity' not in st.session_state:
+    # A component value arrives after its first render. Never show protected data
+    # before the token has been verified on the server.
+    restored = _auth_component(action='read', token='', key='auth_restore', default=None)
+    if restored not in (None, '__missing__', '__unavailable__', '__cleared__'):
+        identity = browser_sessions.resolve(restored)
+        if identity:
+            st.session_state['identity'] = identity
+            st.session_state['browser_token'] = restored
+            st.rerun()
+    if restored is None:
+        st.caption('Checking your browser session…')
+        st.stop()
+    st.title('Crew Planning · Sign in')
+    with st.form('local_signin'):
+        username = st.text_input('Username')
+        password = st.text_input('Password', type='password')
+        submitted = st.form_submit_button('Sign in')
+    if submitted:
+        identity = auth_local.authenticate(username, password)
+        if identity:
+            st.session_state['identity'] = identity
+            st.session_state['pending_browser_token'] = browser_sessions.create(identity)
+            st.rerun()
+        else:
+            st.error('Invalid username or password')
+    st.stop()
+
+_identity = st.session_state['identity']
+if not auth_local.is_active(_identity):
+    browser_sessions.revoke(st.session_state.get('browser_token'))
+    st.session_state.clear()
+    st.error('Account disabled or unavailable. Please sign in again.')
+    st.stop()
+
+if 'pending_browser_token' in st.session_state:
+    pending = st.session_state['pending_browser_token']
+    written = _auth_component(action='store', token=pending, key='auth_store', default=None)
+    if written == pending:
+        st.session_state['browser_token'] = pending
+        del st.session_state['pending_browser_token']
+        st.rerun()
+    st.caption('Saving your browser session…')
+    st.stop()
+
+# Do not use the user-supplied name in filesystem paths.
+OUTPUT = auth_local.user_output(_identity)
+# visualize.py defaults to the shared output/ directory. Bind its result loaders
+# to the authenticated user's output before any planning board is rendered.
+viz.OUTPUT = OUTPUT
+PID_FILE = OUTPUT / 'gui_optimizer.pid'
+LOG_FILE = OUTPUT / 'gui_optimizer.log'
+OUTPUT.mkdir(parents=True, exist_ok=True)
+
+# Every user owns an independent working mission set. The shared data/ folder
+# remains the immutable source for initial/default missions and reference data.
+USER_INPUT = OUTPUT / "input"
+USER_INPUT.mkdir(parents=True, exist_ok=True)
+MISSIONS = USER_INPUT / "missions.csv"
+MISSION_SOURCE_INFO = USER_INPUT / "missions_source.json"
+if not MISSIONS.exists():
+    import shutil
+    # First login: seed a private copy. Never edit the shared source.
+    seed = DATA / "missions.csv"
+    if not seed.exists():
+        seed = DEFAULT_MISSIONS_CSV
+    if seed.exists():
+        # Atomic creation avoids exposing a half-written file to another tab.
+        with seed.open("rb") as source, MISSIONS.open("xb") as target:
+            shutil.copyfileobj(source, target)
+    else:
+        st.error("No default missions found in data/. Contact the administrator.")
+        st.stop()
+    if not MISSION_SOURCE_INFO.exists():
+        MISSION_SOURCE_INFO.write_text(
+            json.dumps({"source": "Initial shared mission set"}, indent=2), encoding="utf-8"
+        )
+
+with st.sidebar:
+    st.caption(f"Signed in: {_identity['username']}")
+    if st.button('Sign out', key='sign_out'):
+        browser_sessions.revoke(st.session_state.get('browser_token'))
+        st.session_state['signout_pending'] = True
+        st.rerun()
+
+if st.session_state.get('signout_pending'):
+    cleared = _auth_component(action='clear', token='', key='auth_clear', default=None)
+    if cleared == '__cleared__':
+        st.session_state.clear()
+        st.rerun()
+    st.stop()
 
 def load_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -159,10 +258,12 @@ def save_missions(df: pd.DataFrame, source_name: str | None = None) -> None:
     """Save the active mission set in the application's standard CSV format."""
     normalized = normalize_missions(df)
     save_csv(normalized, MISSIONS)
+    # Estimates belong to the previous mission set; never reuse them after an import/edit.
+    (USER_INPUT / "missions_with_estimates.csv").unlink(missing_ok=True)
 
     # Force widgets that keep their own Streamlit state (especially the
     # mission table editor) to remount with the newly saved dataset. Without
-    # this, activating another CSV updates data/missions.csv correctly but the
+    # this, activating another CSV updates the personal missions.csv correctly but the
     # Table tab can continue displaying its previous widget state.
     st.session_state["mission_table_revision"] = int(
         st.session_state.get("mission_table_revision", 0)
@@ -600,6 +701,10 @@ def start_optimizer(
     elif verbose:
         command.append("--verbose")
 
+    # Record the exact mission set supplied to this optimizer run.
+    import hashlib
+    mission_hash = hashlib.sha256(MISSIONS.read_bytes()).hexdigest()
+    st.session_state["last_optimizer_mission_hash"] = mission_hash
     log = LOG_FILE.open(
         "w",
         encoding="utf-8",
@@ -608,6 +713,7 @@ def start_optimizer(
     process = subprocess.Popen(
         command,
         cwd=str(ROOT),
+        env={**os.environ, "CREW_OUTPUT_DIR": str(OUTPUT), "CREW_MISSIONS_FILE": str(MISSIONS)},
         stdout=log,
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -742,6 +848,9 @@ def _replace_pilot_ids_for_display(value):
 
 
 def render_results():
+    if optimizer_results_are_stale():
+        st.warning("These optimizer results belong to a different mission set. Run the optimizer again.")
+        return
     summary_path = OUTPUT / "run_summary.json"
     pareto_path = OUTPUT / "pareto.csv"
 
@@ -1013,10 +1122,18 @@ def optimizer_results_are_stale() -> bool:
     if not output_files:
         return False
     try:
+        summary_path = OUTPUT / "run_summary.json"
+        if summary_path.exists():
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            recorded_hash = summary.get("mission_input_sha256")
+            if recorded_hash:
+                import hashlib
+                return hashlib.sha256(MISSIONS.read_bytes()).hexdigest() != recorded_hash
+        # Compatibility with results produced by older optimizer versions.
         newest_result = max(p.stat().st_mtime for p in output_files)
         return MISSIONS.stat().st_mtime > newest_result
-    except OSError:
-        return False
+    except (OSError, ValueError, json.JSONDecodeError):
+        return True
 
 
 def _calendar_callback_signature(state: dict) -> str:
@@ -1481,7 +1598,7 @@ def mission_editor():
 
     if optimizer_results_are_stale():
         st.warning(
-            "Planning changed — the current optimizer results are older than missions.csv. "
+            "Planning changed — the current optimizer results are older than your missions.csv. "
             "Run the optimizer again before comparing schedules."
         )
     elif st.session_state.pop("missions_changed_notice", False):
@@ -1666,7 +1783,7 @@ def mission_editor():
             else:
                 save_missions(normalized)
                 st.session_state["missions_changed_notice"] = True
-                st.success("missions.csv saved.")
+                st.success("Your personal missions.csv was saved.")
                 st.rerun()
         c2.caption(f"{len(edited)} missions currently in the table.")
 
@@ -2863,41 +2980,29 @@ def timeline_data():
     gallery = viz.load_gallery()
     named = viz.named_solutions(pareto)
 
-    estimated_missions_path = DATA / "missions_with_estimates.csv"
-    raw_missions_path = DATA / "missions.csv"
+    # Never mix a user's mission set with estimates from the shared dataset.
+    estimated_missions_path = USER_INPUT / "missions_with_estimates.csv"
+    raw_missions_path = MISSIONS
 
-    # Load the estimated file for calculated timing fields, but keep the
-    # currently active missions.csv authoritative for user-entered metadata
-    # such as pax. missions_with_estimates.csv can be stale after a new CSV/XLSX
-    # import and was the reason the Results board could show "0 pax" while the
-    # Missions tab showed the correct value.
-    missions = viz.load_csv_dict(
-        (
-            estimated_missions_path
-            if estimated_missions_path.exists()
-            else raw_missions_path
-        ),
-        "id",
-    )
-
-    if raw_missions_path.exists():
-        raw_missions = viz.load_csv_dict(raw_missions_path, "id")
-        for mid, raw_row in raw_missions.items():
-            if mid not in missions:
-                missions[mid] = dict(raw_row)
+    # The active per-user mission list is the ONLY authority for which missions
+    # exist. Never seed the board from an older estimates file.
+    missions = viz.load_csv_dict(raw_missions_path, "id")
+    if estimated_missions_path.exists():
+        estimated = viz.load_csv_dict(estimated_missions_path, "id")
+        for mid, current in missions.items():
+            prior = estimated.get(mid)
+            if not prior:
                 continue
-
-            # These fields belong to the active mission input and must never be
-            # taken from an older estimates file.
-            for key in (
-                "pax",
-                "origin",
-                "destination",
-                "fixed_aircraft",
-                "source_mission_number",
-            ):
-                if key in raw_row:
-                    missions[mid][key] = raw_row[key]
+            # Only use an estimated arrival when the current flight still has
+            # the same route and departure. Never copy stale mission metadata.
+            same_flight = all(
+                str(current.get(k, "")).strip() == str(prior.get(k, "")).strip()
+                for k in ("origin", "destination", "departure")
+            )
+            if same_flight and not str(current.get("arrival", "")).strip():
+                estimate = str(prior.get("arrival", "")).strip()
+                if estimate:
+                    current["arrival"] = estimate
 
     airports = viz.load_csv_dict(
         DATA / "airports.csv",
@@ -4009,6 +4114,29 @@ def render_operations_board_component(
     scratch_board_name=None,
 ):
     """Render a continuous UTC aircraft timeline, one horizontal lane per aircraft."""
+    # A saved solution can contain aircraft movements from a previous input set.
+    # The active personal CSV, not the solution snapshot, defines valid missions.
+    active_ids = {str(mid).strip() for mid in _mission_lookup(missions) if str(mid).strip()}
+    solution_ids = {
+        str(movement.get("mission", "")).strip()
+        for movements in (solution.get("aircraft_movements") or {}).values()
+        for movement in movements
+        if str(movement.get("type", "")).upper() == "MISSION"
+        and str(movement.get("mission", "")).strip()
+    }
+    unexpected = sorted(solution_ids - active_ids)
+    if unexpected:
+        st.error(
+            "This saved optimizer solution does not match your active personal "
+            "missions.csv. The board is hidden to avoid displaying old flights. "
+            f"{len(unexpected)} mission(s) are absent from the active input "
+            f"(examples: {', '.join(unexpected[:8])}). "
+            "Run the optimizer again and check that its output directory belongs "
+            "to your signed-in account."
+        )
+        st.caption(f"Active mission file: {MISSIONS} · {len(active_ids)} missions; "
+                   f"solution: {len(solution_ids)} mission IDs")
+        return
     payload = operations_board_payload(solution, missions)
 
     if not payload["dates"]:
@@ -4504,6 +4632,16 @@ def render_timeline_browser():
     st.subheader(
         "Mission planning board"
     )
+
+    # Saved optimizer solutions must never be presented as a valid board for
+    # a different or newly uploaded per-user mission set.
+    if optimizer_results_are_stale():
+        st.warning(
+            "Your missions have changed since these optimizer results were created. "
+            "Run the optimizer again to display a matching Mission planning board."
+        )
+        st.caption(f"Active personal mission input: {MISSIONS}")
+        return
 
     st.caption(
         "Default view: CHEAPEST. The planning canvas now contains the full "
