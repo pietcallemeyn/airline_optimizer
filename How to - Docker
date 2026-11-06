@@ -1,0 +1,7 @@
+How to - Docket
+
+docker build -t asl-optimizer-app .
+=> this will build the image starting from the dockerfile
+
+docker run --rm -p 8501:8501 --name asl-optimizer-container -v asl-optimizer_output:/app/output asl-optimizer-app
+=> this will start and run a container called "asl-optimizer-container" with persistent data storage in a docker volume called "asl-optimizer_output"
