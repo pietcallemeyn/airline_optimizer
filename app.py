@@ -124,6 +124,21 @@ USER_INPUT = OUTPUT / "input"
 USER_INPUT.mkdir(parents=True, exist_ok=True)
 MISSIONS = USER_INPUT / "missions.csv"
 MISSION_SOURCE_INFO = USER_INPUT / "missions_source.json"
+# Personal availability, shared pilot roster. Seed once from the shared template.
+PILOT_AVAILABILITY = USER_INPUT / "pilot_availability.csv"
+if not PILOT_AVAILABILITY.exists():
+    import shutil
+    shared_availability = DATA / "pilot_availability.csv"
+    try:
+        if shared_availability.exists():
+            with shared_availability.open("rb") as source, PILOT_AVAILABILITY.open("xb") as target:
+                shutil.copyfileobj(source, target)
+        else:
+            with PILOT_AVAILABILITY.open("x", encoding="utf-8", newline="") as target:
+                target.write("pilot_id,date,status,note\n")
+    except FileExistsError:
+        pass  # Another tab initialized this user's file.
+
 if not MISSIONS.exists():
     import shutil
     # First login: seed a private copy. Never edit the shared source.
@@ -713,7 +728,7 @@ def start_optimizer(
     process = subprocess.Popen(
         command,
         cwd=str(ROOT),
-        env={**os.environ, "CREW_OUTPUT_DIR": str(OUTPUT), "CREW_MISSIONS_FILE": str(MISSIONS)},
+        env={**os.environ, "CREW_OUTPUT_DIR": str(OUTPUT), "CREW_MISSIONS_FILE": str(MISSIONS), "CREW_PILOT_AVAILABILITY_FILE": str(PILOT_AVAILABILITY)},
         stdout=log,
         stderr=subprocess.STDOUT,
         start_new_session=True,
